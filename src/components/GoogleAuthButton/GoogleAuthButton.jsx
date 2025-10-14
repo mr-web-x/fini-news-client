@@ -115,6 +115,18 @@ export default function GoogleAuthButton({ onSuccess, onError }) {
                 return;
             }
 
+            // ✅✅✅ ДОБАВЬ ЭТИ 3 СТРОКИ: ✅✅✅
+            console.log('🔑 ========================================');
+            console.log('🔑 GOOGLE TOKEN ДЛЯ POSTMAN:');
+            console.log(credential);
+            console.log('🔑 ========================================');
+
+            // Копируем в буфер обмена автоматически
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(credential);
+                console.log('✅ Токен автоматически скопирован в буфер обмена!');
+            }
+
             setLoading(true);
 
             try {
@@ -125,7 +137,7 @@ export default function GoogleAuthButton({ onSuccess, onError }) {
                         Authorization: `Bearer ${credential}`,
                         "Content-Type": "application/json",
                     },
-                    credentials: "include", // важно для cookie!
+                    credentials: "include",
                 });
 
                 const data = await res.json().catch(() => ({}));
