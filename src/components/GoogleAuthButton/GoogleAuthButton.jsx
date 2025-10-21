@@ -115,11 +115,7 @@ export default function GoogleAuthButton({ onSuccess, onError }) {
                 return;
             }
 
-            // ✅✅✅ ДОБАВЬ ЭТИ 3 СТРОКИ: ✅✅✅
-            console.log('🔑 ========================================');
-            console.log('🔑 GOOGLE TOKEN ДЛЯ POSTMAN:');
-            console.log(credential);
-            console.log('🔑 ========================================');
+ 
 
             // Копируем в буфер обмена автоматически
             if (navigator.clipboard) {

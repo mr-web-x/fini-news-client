@@ -16,13 +16,9 @@ body {
   overflow-x: hidden;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* body {
+
+} */
 
 * {
   box-sizing: border-box;
@@ -35,8 +31,77 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+
+.container {
+  max-width: 1260px;
+  padding: 0 10px;
+  margin: 0 auto;
 }
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+
+.btn {
+  height: 42px;
+  background: white;
+  color: black;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 25px;
+  line-height: 42px;
+  border: 2px solid black;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  position: relative;
+  justify-content: center;
+}
+
+.btn::after {
+  content: "";
+  display: block;
+  position: absolute;
+  height: 4px;
+  width: 22px;
+  background: white;
+  top: -3px;
+  right: 25px;
+  transition: all 0.3s;
+}
+
+.btn:hover::after {
+  right: 120px;
+}
+
+.btn:disabled::after {
+  right: 120px;
+}
+
+.btn img {
+  width: 20px;
+  height: 20px;
+}
+
+h2 {
+  font-weight: 600;
+  text-align: center;
+  font-size: 32px;
+  margin-bottom: 40px;
+}
+
+section {
+  margin: 100px 0;
+}
+
+/* Header */
+
+main {
+  padding: 56px 0 0 0;
+}
+

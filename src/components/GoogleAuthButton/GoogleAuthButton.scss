@@ -2,6 +2,7 @@
     position: relative;
     width: 100%;
     min-height: 44px;
+    background: var(--background);
 
     &.is-loading {
         pointer-events: none;
