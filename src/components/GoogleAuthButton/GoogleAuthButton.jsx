@@ -115,7 +115,7 @@ export default function GoogleAuthButton({ onSuccess, onError }) {
                 return;
             }
 
- 
+
 
             // Копируем в буфер обмена автоматически
             if (navigator.clipboard) {

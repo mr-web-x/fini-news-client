@@ -1,0 +1,34 @@
+.login-form__wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    height: 100dvh;
+
+
+    .login-form {
+        border-radius: 20px;
+        padding: 25px;
+        background: white;
+        max-width: 400px;
+        margin: 0 auto;
+        box-shadow: 1px 1px 4px #ccc;
+        margin-bottom: 70px;
+
+        .login-form-title {
+            h2 {
+                font-weight: 600;
+                font-size: 24px;
+            }
+
+            p {
+                margin-bottom: 24px;
+                text-align: center;
+                font-size: 14px;
+            }
+        }
+
+    }
+
+
+}

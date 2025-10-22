@@ -1,6 +1,8 @@
 "use client";
+import "./LoginPage.scss"
 
 import GoogleAuthButton from "@/components/GoogleAuthButton/GoogleAuthButton";
+
 
 export default function LoginPage() {
     const handleSuccess = (user) => {
@@ -12,14 +14,25 @@ export default function LoginPage() {
     };
 
     return (
-        <div style={{ maxWidth: "400px", margin: "100px auto", padding: "20px" }}>
-            <h1>Вход в систему</h1>
-            <p>Войдите через Google для продолжения</p>
+        <div className="login-form__wrapper">
+            <div class="login-form">
+                <div class="login-form-title">
+                    <h2>Autorizovať sa</h2>
+                    <p>
+                        Na prihlásenie do profilu použite svoj účet Google.
+                    </p>
+                </div>
 
-            <GoogleAuthButton
-                onSuccess={handleSuccess}
-                onError={handleError}
-            />
+                <GoogleAuthButton
+                    onSuccess={handleSuccess}
+                    onError={handleError}
+                />
+
+
+            </div>
+
         </div>
     );
 }
+
+
