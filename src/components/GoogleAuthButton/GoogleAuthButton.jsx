@@ -152,7 +152,7 @@ export default function GoogleAuthButton({ onSuccess, onError }) {
                 }
 
                 // Перенаправление
-                const redirectTo = searchParams.get("next") || "/dashboard";
+                const redirectTo = searchParams.get("next") || "/profil";
                 window.location.href = redirectTo;
 
             } catch (error) {
