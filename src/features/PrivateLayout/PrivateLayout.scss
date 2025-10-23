@@ -1,0 +1,334 @@
+.private-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #f8f9fa;
+
+    &__sidebar {
+        width: 280px;
+        background: white;
+        border-right: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        z-index: 1000;
+        overflow-y: auto;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+    }
+
+    &__content {
+        flex: 1;
+        margin-left: 280px;
+        padding: 32px;
+        min-height: 100vh;
+        max-width: calc(100% - 280px);
+    }
+}
+
+/* === SIDEBAR HEADER === */
+.sidebar__header {
+    padding: 24px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fafbfc;
+}
+
+.sidebar__logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: #2d3748;
+    font-weight: 700;
+    font-size: 20px;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: #5a67d8;
+    }
+}
+
+.sidebar__logo-icon {
+    font-size: 28px;
+}
+
+.sidebar__logo-text {
+    font-family: "Montserrat", sans-serif;
+}
+
+/* === USER INFO === */
+.sidebar__user {
+    padding: 24px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.sidebar__user-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.sidebar__user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar__user-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar__user-role {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+/* === NAVIGATION === */
+.sidebar__nav {
+    flex: 1;
+    padding: 16px 0;
+}
+
+.sidebar__nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar__nav-item {
+    margin-bottom: 2px;
+}
+
+.sidebar__nav-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    text-decoration: none;
+    color: #4a5568;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 0;
+    transition: all 0.2s ease;
+    position: relative;
+
+    &:hover {
+        background: #f7fafc;
+        color: #5a67d8;
+        padding-left: 24px;
+    }
+
+    &--active {
+        background: #e6fffa;
+        color: #319795;
+        border-right: 4px solid #319795;
+        font-weight: 600;
+
+        .sidebar__nav-icon {
+            color: #319795;
+        }
+
+        &:hover {
+            background: #e6fffa;
+            color: #319795;
+        }
+    }
+}
+
+.sidebar__nav-icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.sidebar__nav-link:hover .sidebar__nav-icon {
+    transform: scale(1.1);
+}
+
+.sidebar__nav-text {
+    flex: 1;
+    font-family: "Montserrat", sans-serif;
+}
+
+/* === FOOTER / LOGOUT === */
+.sidebar__footer {
+    padding: 20px;
+    border-top: 1px solid #e2e8f0;
+    background: #fafbfc;
+}
+
+.sidebar__logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: 2px solid #fed7d7;
+    border-radius: 8px;
+    color: #e53e3e;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: "Montserrat", sans-serif;
+
+    &:hover {
+        background: #fed7d7;
+        color: #c53030;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(229, 62, 62, 0.2);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    .sidebar__nav-icon {
+        color: inherit;
+        font-size: 18px;
+    }
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 1024px) {
+    .private-layout {
+        &__sidebar {
+            width: 260px;
+        }
+
+        &__content {
+            margin-left: 260px;
+            padding: 24px;
+            max-width: calc(100% - 260px);
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .private-layout {
+        flex-direction: column;
+
+        &__sidebar {
+            width: 100%;
+            height: auto;
+            position: relative;
+            box-shadow: none;
+            border-right: none;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        &__content {
+            margin-left: 0;
+            padding: 16px;
+            max-width: 100%;
+        }
+    }
+
+    .sidebar__user {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+        padding: 20px;
+    }
+
+    .sidebar__user-avatar {
+        width: 72px;
+        height: 72px;
+    }
+
+    .sidebar__nav-link {
+        justify-content: center;
+        flex-direction: column;
+        gap: 6px;
+        padding: 16px 12px;
+        text-align: center;
+
+        .sidebar__nav-text {
+            font-size: 12px;
+        }
+    }
+
+    .sidebar__nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        padding: 8px;
+    }
+
+    .sidebar__nav-list {
+        display: contents;
+    }
+
+    .sidebar__nav-item {
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .private-layout__content {
+        padding: 12px;
+    }
+
+    .sidebar__header {
+        padding: 16px;
+    }
+
+    .sidebar__user {
+        padding: 16px;
+    }
+
+    .sidebar__footer {
+        padding: 16px;
+    }
+
+    .sidebar__logout-btn {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+}
+
+/* === SCROLLBAR STYLING === */
+.private-layout__sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.private-layout__sidebar::-webkit-scrollbar-track {
+    background: #f7fafc;
+}
+
+.private-layout__sidebar::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+.private-layout__sidebar::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}

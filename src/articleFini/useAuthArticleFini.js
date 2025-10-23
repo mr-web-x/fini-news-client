@@ -4,7 +4,7 @@ import { create } from 'zustand';
  * Zustand store для управления авторизацией
  * Хранит данные пользователя и статус авторизации
  */
-const useAuthStore = create((set) => ({
+const useAuthArticle = create((set) => ({
     // Состояние
     user: null,
     isAuthenticated: false,
@@ -42,7 +42,7 @@ const useAuthStore = create((set) => ({
      * @returns {boolean}
      */
     hasRole: (role) => {
-        const state = useAuthStore.getState();
+        const state = useAuthArticle.getState();
         if (!state.user) return false;
 
         const userRole = state.user.role;
@@ -56,4 +56,4 @@ const useAuthStore = create((set) => ({
     }
 }));
 
-export default useAuthStore;
+export default useAuthArticle;
