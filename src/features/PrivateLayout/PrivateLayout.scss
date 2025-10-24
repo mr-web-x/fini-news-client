@@ -3,6 +3,10 @@
     min-height: 100vh;
     background: #f8f9fa;
 
+    .private-layout__wrapper {
+        position: relative;
+    }
+
     &__sidebar {
         width: 280px;
         background: white;
@@ -10,18 +14,18 @@
         display: flex;
         flex-direction: column;
         position: fixed;
-        height: 100vh;
-        left: 0;
-        top: 0;
+        bottom: 32px;
+        top: 66px;
         z-index: 1000;
         overflow-y: auto;
         box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
     }
 
     &__content {
+        margin-top: 66px;
         flex: 1;
         margin-left: 280px;
-        padding: 32px;
+        padding: 0px 32px 32px 32px;
         min-height: 100vh;
         max-width: calc(100% - 280px);
     }
