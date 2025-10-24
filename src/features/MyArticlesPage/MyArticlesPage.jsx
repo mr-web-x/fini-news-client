@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getMyArticles, deleteArticle, submitArticleForReview } from "@/actions/articles.actions";
 import "./MyArticlesPage.scss";
 
 const MyArticlesPage = ({ user }) => {
@@ -16,6 +17,7 @@ const MyArticlesPage = ({ user }) => {
         rejected: 0,
         totalViews: 0
     });
+    const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
         loadUserArticles();
@@ -23,68 +25,37 @@ const MyArticlesPage = ({ user }) => {
 
     const loadUserArticles = async () => {
         setLoading(true);
+        setMessage({ type: '', text: '' });
+
         try {
-            // TODO: заменить на реальный API вызов
-            // const result = await getUserArticles(user.id, filter);
+            // Получаем статьи текущего пользователя через Server Action
+            const result = await getMyArticles(filter);
 
-            // Моковые данные
-            const mockArticles = [
-                {
-                    id: 1,
-                    title: "Ako investovať do kryptomien v roku 2025",
-                    slug: "ako-investovat-kryptomeny-2025",
-                    excerpt: "Kompletný sprievodca investovaním do kryptomien pre začiatočníkov...",
-                    status: "published",
-                    views: 1245,
-                    likes: 23,
-                    comments: 8,
-                    createdAt: "2025-01-15T10:30:00Z",
-                    updatedAt: "2025-01-18T14:20:00Z",
-                    publishedAt: "2025-01-18T14:20:00Z"
-                },
-                {
-                    id: 2,
-                    title: "Budúcnosť umelej inteligencie",
-                    slug: "buducnost-umelej-inteligencie",
-                    excerpt: "Analýza trendov AI a ich vplyv na spoločnosť...",
-                    status: "pending",
-                    views: 0,
-                    likes: 0,
-                    comments: 0,
-                    createdAt: "2025-01-20T09:15:00Z",
-                    updatedAt: "2025-01-20T09:15:00Z",
-                    publishedAt: null
-                },
-                {
-                    id: 3,
-                    title: "Tipy pre efektívne home office",
-                    slug: "tipy-efektivne-home-office",
-                    excerpt: "Praktické rady ako zlepšiť produktivitu pri práci z domu...",
-                    status: "draft",
-                    views: 0,
-                    likes: 0,
-                    comments: 0,
-                    createdAt: "2025-01-19T16:45:00Z",
-                    updatedAt: "2025-01-19T18:30:00Z",
-                    publishedAt: null
-                }
-            ];
+            if (!result.success) {
+                setMessage({ type: 'error', text: result.message });
+                setArticles([]);
+                setLoading(false);
+                return;
+            }
 
-            setArticles(mockArticles);
+            const articlesData = result.data.articles || result.data || [];
+            setArticles(articlesData);
 
-            // Kalkulácia štatistík
-            const totalViews = mockArticles.reduce((sum, article) => sum + article.views, 0);
+            // Калkulácia štatistík
+            const totalViews = articlesData.reduce((sum, article) => sum + (article.views || 0), 0);
             setStats({
-                total: mockArticles.length,
-                draft: mockArticles.filter(a => a.status === 'draft').length,
-                pending: mockArticles.filter(a => a.status === 'pending').length,
-                published: mockArticles.filter(a => a.status === 'published').length,
-                rejected: mockArticles.filter(a => a.status === 'rejected').length,
+                total: articlesData.length,
+                draft: articlesData.filter(a => a.status === 'draft').length,
+                pending: articlesData.filter(a => a.status === 'pending').length,
+                published: articlesData.filter(a => a.status === 'published').length,
+                rejected: articlesData.filter(a => a.status === 'rejected').length,
                 totalViews
             });
 
         } catch (error) {
             console.error('Error loading articles:', error);
+            setMessage({ type: 'error', text: 'Chyba pri načítavaní článkov' });
+            setArticles([]);
         } finally {
             setLoading(false);
         }
@@ -111,6 +82,7 @@ const MyArticlesPage = ({ user }) => {
     };
 
     const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('sk-SK', {
             year: 'numeric',
             month: 'long',
@@ -124,12 +96,66 @@ const MyArticlesPage = ({ user }) => {
         }
 
         try {
-            // TODO: API call to delete article
-            // await deleteArticle(articleId);
+            const result = await deleteArticle(articleId);
 
-            setArticles(prev => prev.filter(article => article.id !== articleId));
+            if (result.success) {
+                setMessage({ type: 'success', text: 'Článok bol úspešne vymazaný' });
+                // Убираем статью из списка
+                setArticles(prev => prev.filter(article => article._id !== articleId));
+
+                // Обновляем статистику
+                setStats(prev => ({
+                    ...prev,
+                    total: prev.total - 1
+                }));
+
+                // Очищаем сообщение через 3 секунды
+                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            } else {
+                setMessage({ type: 'error', text: result.message });
+                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+            }
         } catch (error) {
             console.error('Error deleting article:', error);
+            setMessage({ type: 'error', text: 'Chyba pri mazaní článku' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+        }
+    };
+
+    const handleSubmitForReview = async (articleId) => {
+        if (!confirm('Odoslať článok na moderáciu? Potom ho už nebudete môcť upravovať.')) {
+            return;
+        }
+
+        try {
+            const result = await submitArticleForReview(articleId);
+
+            if (result.success) {
+                setMessage({ type: 'success', text: 'Článok bol odoslaný na moderáciu' });
+
+                // Обновляем статус статьи в списке
+                setArticles(prev => prev.map(article =>
+                    article._id === articleId
+                        ? { ...article, status: 'pending' }
+                        : article
+                ));
+
+                // Обновляем статистику
+                setStats(prev => ({
+                    ...prev,
+                    draft: prev.draft - 1,
+                    pending: prev.pending + 1
+                }));
+
+                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            } else {
+                setMessage({ type: 'error', text: result.message });
+                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+            }
+        } catch (error) {
+            console.error('Error submitting article:', error);
+            setMessage({ type: 'error', text: 'Chyba pri odosielaní článku' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
         }
     };
 
@@ -157,6 +183,13 @@ const MyArticlesPage = ({ user }) => {
                     ➕ Nový článok
                 </Link>
             </div>
+
+            {/* Message (success/error) */}
+            {message.text && (
+                <div className={`articles__message articles__message--${message.type}`}>
+                    {message.text}
+                </div>
+            )}
 
             {/* Statistics */}
             <div className="articles__stats">
@@ -204,6 +237,12 @@ const MyArticlesPage = ({ user }) => {
                 >
                     Koncepty ({stats.draft})
                 </button>
+                <button
+                    onClick={() => setFilter('rejected')}
+                    className={`articles__filter-btn ${filter === 'rejected' ? 'active' : ''}`}
+                >
+                    Zamietnuté ({stats.rejected})
+                </button>
             </div>
 
             {/* Articles List */}
@@ -211,24 +250,29 @@ const MyArticlesPage = ({ user }) => {
                 {filteredArticles.length === 0 ? (
                     <div className="articles__empty">
                         <div className="articles__empty-icon">📝</div>
-                        <h3>Zatiaľ žiadne články</h3>
-                        <p>Začnite písať svoj prvý článok a zdieľajte svoje myšlienky so svetom.</p>
-                        <Link href="/profil/novy-clanok" className="articles__empty-btn">
-                            Napísať prvý článok
-                        </Link>
+                        <h3>Žiadne články</h3>
+                        <p>
+                            {filter === 'all'
+                                ? 'Zatiaľ ste nevytvorili žiadne články. Začnite písať svoj první článok!'
+                                : `Nemáte žiadne články so stavom "${getStatusLabel(filter)}".`
+                            }
+                        </p>
+                        {filter === 'all' && (
+                            <Link href="/profil/novy-clanok" className="articles__empty-btn">
+                                ➕ Vytvoriť prvý článok
+                            </Link>
+                        )}
                     </div>
                 ) : (
-                    filteredArticles.map((article) => (
-                        <div key={article.id} className="article-card">
+                    filteredArticles.map(article => (
+                        <div key={article._id} className="article-card">
                             <div className="article-card__header">
-                                <div className="article-card__status">
-                                    <span className={`article-card__status-badge ${getStatusColor(article.status)}`}>
-                                        {getStatusLabel(article.status)}
-                                    </span>
-                                </div>
-                                <div className="article-card__date">
+                                <span className={`article-card__status ${getStatusColor(article.status)}`}>
+                                    {getStatusLabel(article.status)}
+                                </span>
+                                <span className="article-card__date">
                                     {formatDate(article.updatedAt)}
-                                </div>
+                                </span>
                             </div>
 
                             <div className="article-card__content">
@@ -242,22 +286,43 @@ const MyArticlesPage = ({ user }) => {
                                     )}
                                 </h3>
                                 <p className="article-card__excerpt">{article.excerpt}</p>
+
+                                {/* Показываем причину отклонения если есть */}
+                                {article.status === 'rejected' && article.moderationNote && (
+                                    <div className="article-card__moderation-note">
+                                        <strong>Dôvod zamietnutia:</strong> {article.moderationNote}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="article-card__footer">
                                 <div className="article-card__stats">
-                                    <span className="article-card__stat">👁️ {article.views}</span>
-                                    <span className="article-card__stat">👍 {article.likes}</span>
-                                    <span className="article-card__stat">💬 {article.comments}</span>
+                                    <span className="article-card__stat">👁️ {article.views || 0}</span>
+                                    <span className="article-card__stat">💬 {article.commentsCount || 0}</span>
                                 </div>
 
                                 <div className="article-card__actions">
-                                    <Link
-                                        href={`/profil/upravit-clanok/${article.id}`}
-                                        className="article-card__action-btn article-card__edit-btn"
-                                    >
-                                        ✏️ Upraviť
-                                    </Link>
+                                    {/* Редактирование доступно только для draft и rejected */}
+                                    {(article.status === 'draft' || article.status === 'rejected') && (
+                                        <Link
+                                            href={`/profil/upravit-clanok/${article._id}`}
+                                            className="article-card__action-btn article-card__edit-btn"
+                                        >
+                                            ✏️ Upraviť
+                                        </Link>
+                                    )}
+
+                                    {/* Кнопка отправки на модерацию для черновиков и отклонённых */}
+                                    {(article.status === 'draft' || article.status === 'rejected') && (
+                                        <button
+                                            onClick={() => handleSubmitForReview(article._id)}
+                                            className="article-card__action-btn article-card__submit-btn"
+                                        >
+                                            📤 Odoslať na moderáciu
+                                        </button>
+                                    )}
+
+                                    {/* Просмотр опубликованных статей */}
                                     {article.status === 'published' && (
                                         <a
                                             href={`/clanky/${article.slug}`}
@@ -268,12 +333,16 @@ const MyArticlesPage = ({ user }) => {
                                             👁️ Zobraziť
                                         </a>
                                     )}
-                                    <button
-                                        onClick={() => handleDelete(article.id)}
-                                        className="article-card__action-btn article-card__delete-btn"
-                                    >
-                                        🗑️ Vymazať
-                                    </button>
+
+                                    {/* Удаление доступно для всех статей кроме опубликованных */}
+                                    {article.status !== 'published' && (
+                                        <button
+                                            onClick={() => handleDelete(article._id)}
+                                            className="article-card__action-btn article-card__delete-btn"
+                                        >
+                                            🗑️ Vymazať
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>

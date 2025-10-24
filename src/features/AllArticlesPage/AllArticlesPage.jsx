@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getAllArticlesForAdmin, approveArticle, rejectArticle, deleteArticle } from "@/actions/articles.actions";
 import "./AllArticlesPage.scss";
 
 const AllArticlesPage = ({ user }) => {
@@ -18,178 +19,69 @@ const AllArticlesPage = ({ user }) => {
         totalViews: 0,
         totalComments: 0
     });
+    const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
         loadAllArticles();
-    }, [filter, searchTerm, sortBy]);
+    }, [filter, sortBy]);
+
+    // Debounce для поиска
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (searchTerm) {
+                loadAllArticles();
+            }
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
 
     const loadAllArticles = async () => {
         setLoading(true);
+        setMessage({ type: '', text: '' });
+
         try {
-            // TODO: заменить на реальный API вызов
-            // const result = await getAllArticles(filter, searchTerm, sortBy);
+            // Подготовка фильтров для API
+            const filters = {
+                status: filter !== 'all' ? filter : undefined,
+                search: searchTerm || undefined,
+                sort: sortBy,
+                limit: 100 // можно добавить пагинацию позже
+            };
 
-            // Моковые данные всех статей в системе
-            const mockArticles = [
-                {
-                    id: 1,
-                    title: "Ako investovať do kryptomien v roku 2025",
-                    slug: "ako-investovat-kryptomeny-2025",
-                    excerpt: "Kompletný sprievodca investovaním do kryptomien pre začiatočníkov...",
-                    author: {
-                        id: 2,
-                        displayName: "Mária Svobodová",
-                        email: "maria.svobodova@gmail.com"
-                    },
-                    status: "published",
-                    views: 1245,
-                    likes: 23,
-                    comments: 8,
-                    createdAt: "2025-01-15T10:30:00Z",
-                    updatedAt: "2025-01-18T14:20:00Z",
-                    publishedAt: "2025-01-18T14:20:00Z"
-                },
-                {
-                    id: 2,
-                    title: "Budúcnosť umelej inteligencie",
-                    slug: "buducnost-umelej-inteligencie",
-                    excerpt: "Analýza trendov AI a ich vplyv na spoločnosť...",
-                    author: {
-                        id: 3,
-                        displayName: "Peter Kováč",
-                        email: "peter.kovac@gmail.com"
-                    },
-                    status: "pending",
-                    views: 0,
-                    likes: 0,
-                    comments: 0,
-                    createdAt: "2025-01-20T09:15:00Z",
-                    updatedAt: "2025-01-20T09:15:00Z",
-                    publishedAt: null
-                },
-                {
-                    id: 3,
-                    title: "Tipy pre efektívne home office",
-                    slug: "tipy-efektivne-home-office",
-                    excerpt: "Praktické rady ako zlepšiť produktivitu pri práci z domu...",
-                    author: {
-                        id: 2,
-                        displayName: "Mária Svobodová",
-                        email: "maria.svobodova@gmail.com"
-                    },
-                    status: "draft",
-                    views: 0,
-                    likes: 0,
-                    comments: 0,
-                    createdAt: "2025-01-19T16:45:00Z",
-                    updatedAt: "2025-01-19T18:30:00Z",
-                    publishedAt: null
-                },
-                {
-                    id: 4,
-                    title: "Finančné plánovanie pre mladých",
-                    slug: "financne-planovanie-mladi",
-                    excerpt: "Základy finančného plánovania pre ľudí do 30 rokov...",
-                    author: {
-                        id: 4,
-                        displayName: "Tomáš Novotný",
-                        email: "tomas.novotny@gmail.com"
-                    },
-                    status: "rejected",
-                    views: 0,
-                    likes: 0,
-                    comments: 0,
-                    createdAt: "2025-01-17T12:00:00Z",
-                    updatedAt: "2025-01-17T12:00:00Z",
-                    publishedAt: null,
-                    moderationNote: "Článok obsahuje neoverené informácie. Prosím, pridajte zdroje."
-                }
-            ];
+            // Получаем все статьи через Server Action
+            const result = await getAllArticlesForAdmin(filters);
 
-            // Фильтрация и поиск
-            let filteredArticles = mockArticles;
-            if (filter !== 'all') {
-                filteredArticles = mockArticles.filter(a => a.status === filter);
+            if (!result.success) {
+                setMessage({ type: 'error', text: result.message });
+                setArticles([]);
+                setLoading(false);
+                return;
             }
 
-            if (searchTerm) {
-                filteredArticles = filteredArticles.filter(a =>
-                    a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    a.author.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    a.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
-                );
-            }
-
-            // Сортировка
-            filteredArticles.sort((a, b) => {
-                switch (sortBy) {
-                    case 'newest':
-                        return new Date(b.updatedAt) - new Date(a.updatedAt);
-                    case 'oldest':
-                        return new Date(a.updatedAt) - new Date(b.updatedAt);
-                    case 'views':
-                        return b.views - a.views;
-                    case 'popular':
-                        return (b.likes + b.comments) - (a.likes + a.comments);
-                    default:
-                        return 0;
-                }
-            });
-
-            setArticles(filteredArticles);
+            const articlesData = result.data.articles || result.data || [];
+            setArticles(articlesData);
 
             // Калkulácia štatistík
-            const totalViews = mockArticles.reduce((sum, article) => sum + article.views, 0);
-            const totalComments = mockArticles.reduce((sum, article) => sum + article.comments, 0);
+            const totalViews = articlesData.reduce((sum, article) => sum + (article.views || 0), 0);
+            const totalComments = articlesData.reduce((sum, article) => sum + (article.commentsCount || 0), 0);
+
             setStats({
-                total: mockArticles.length,
-                draft: mockArticles.filter(a => a.status === 'draft').length,
-                pending: mockArticles.filter(a => a.status === 'pending').length,
-                published: mockArticles.filter(a => a.status === 'published').length,
-                rejected: mockArticles.filter(a => a.status === 'rejected').length,
+                total: articlesData.length,
+                draft: articlesData.filter(a => a.status === 'draft').length,
+                pending: articlesData.filter(a => a.status === 'pending').length,
+                published: articlesData.filter(a => a.status === 'published').length,
+                rejected: articlesData.filter(a => a.status === 'rejected').length,
                 totalViews,
                 totalComments
             });
 
         } catch (error) {
             console.error('Error loading articles:', error);
+            setMessage({ type: 'error', text: 'Chyba pri načítavaní článkov' });
+            setArticles([]);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleStatusChange = async (articleId, newStatus, moderationNote = '') => {
-        try {
-            // TODO: API call to change article status
-            // await updateArticleStatus(articleId, newStatus, moderationNote);
-
-            setArticles(prev => prev.map(article =>
-                article.id === articleId
-                    ? {
-                        ...article,
-                        status: newStatus,
-                        moderationNote: moderationNote || article.moderationNote,
-                        publishedAt: newStatus === 'published' ? new Date().toISOString() : article.publishedAt
-                    }
-                    : article
-            ));
-        } catch (error) {
-            console.error('Error changing article status:', error);
-        }
-    };
-
-    const handleDelete = async (articleId) => {
-        if (!confirm('Ste si istí, že chcete vymazať tento článok? Táto akcia je nevratná.')) {
-            return;
-        }
-
-        try {
-            // TODO: API call to delete article
-            // await deleteArticle(articleId);
-
-            setArticles(prev => prev.filter(article => article.id !== articleId));
-        } catch (error) {
-            console.error('Error deleting article:', error);
         }
     };
 
@@ -214,18 +106,131 @@ const AllArticlesPage = ({ user }) => {
     };
 
     const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('sk-SK', {
             year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            month: 'long',
+            day: 'numeric'
         });
+    };
+
+    const handleApprove = async (articleId) => {
+        if (!confirm('Schváliť a publikovať tento článok?')) {
+            return;
+        }
+
+        try {
+            const result = await approveArticle(articleId);
+
+            if (result.success) {
+                setMessage({ type: 'success', text: 'Článok bol schválený a publikovaný' });
+
+                // Обновляем статус статьи в списке
+                setArticles(prev => prev.map(article =>
+                    article._id === articleId
+                        ? { ...article, status: 'published', publishedAt: new Date().toISOString() }
+                        : article
+                ));
+
+                // Обновляем статистику
+                setStats(prev => ({
+                    ...prev,
+                    pending: prev.pending - 1,
+                    published: prev.published + 1
+                }));
+
+                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            } else {
+                setMessage({ type: 'error', text: result.message });
+                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+            }
+        } catch (error) {
+            console.error('Error approving article:', error);
+            setMessage({ type: 'error', text: 'Chyba pri schvaľovaní článku' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+        }
+    };
+
+    const handleReject = async (articleId) => {
+        const reason = prompt('Dôvod zamietnutia (povinné, minimálne 10 znakov):');
+
+        if (reason === null) {
+            // User cancelled
+            return;
+        }
+
+        if (!reason || reason.trim().length < 10) {
+            alert('Dôvod zamietnutia musí obsahovať minimálne 10 znakov');
+            return;
+        }
+
+        try {
+            const result = await rejectArticle(articleId, reason.trim());
+
+            if (result.success) {
+                setMessage({ type: 'success', text: 'Článok bol zamietnutý' });
+
+                // Обновляем статус статьи в списке
+                setArticles(prev => prev.map(article =>
+                    article._id === articleId
+                        ? { ...article, status: 'rejected', moderationNote: reason.trim() }
+                        : article
+                ));
+
+                // Обновляем статистику
+                setStats(prev => ({
+                    ...prev,
+                    pending: prev.pending - 1,
+                    rejected: prev.rejected + 1
+                }));
+
+                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            } else {
+                setMessage({ type: 'error', text: result.message });
+                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+            }
+        } catch (error) {
+            console.error('Error rejecting article:', error);
+            setMessage({ type: 'error', text: 'Chyba pri zamietnutí článku' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+        }
+    };
+
+    const handleDelete = async (articleId) => {
+        if (!confirm('Ste si istí, že chcete vymazať tento článok? Táto akcia je nenávratná!')) {
+            return;
+        }
+
+        try {
+            const result = await deleteArticle(articleId);
+
+            if (result.success) {
+                setMessage({ type: 'success', text: 'Článok bol vymazaný' });
+
+                // Убираем статью из списка
+                setArticles(prev => prev.filter(article => article._id !== articleId));
+
+                // Обновляем статистику
+                setStats(prev => ({
+                    ...prev,
+                    total: prev.total - 1
+                }));
+
+                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            } else {
+                setMessage({ type: 'error', text: result.message });
+                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+            }
+        } catch (error) {
+            console.error('Error deleting article:', error);
+            setMessage({ type: 'error', text: 'Chyba pri mazaní článku' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+        }
     };
 
     if (loading) {
         return (
-            <div className="all-articles-loading">
+            <div className="articles-loading">
                 <div className="spinner"></div>
                 <p>Načítavam články...</p>
             </div>
@@ -238,6 +243,13 @@ const AllArticlesPage = ({ user }) => {
                 <h1>Všetky články</h1>
                 <p>Spravujte všetky články v systéme, ich stavy a moderáciu</p>
             </div>
+
+            {/* Message */}
+            {message.text && (
+                <div className={`all-articles__message all-articles__message--${message.type}`}>
+                    {message.text}
+                </div>
+            )}
 
             {/* Statistics */}
             <div className="all-articles__stats">
@@ -324,25 +336,32 @@ const AllArticlesPage = ({ user }) => {
             <div className="all-articles__list">
                 {articles.length === 0 ? (
                     <div className="all-articles__empty">
-                        <div className="all-articles__empty-icon">📚</div>
+                        <div className="all-articles__empty-icon">📝</div>
                         <h3>Žiadne články</h3>
-                        <p>Podľa zadaných kritérií sa nenašli žiadne články.</p>
+                        <p>
+                            {searchTerm
+                                ? `Nenašli sa žiadne články pre hľadanie "${searchTerm}"`
+                                : filter === 'all'
+                                    ? 'V systéme zatiaľ nie sú žiadne články.'
+                                    : `Nie sú žiadne články so stavom "${getStatusLabel(filter)}".`
+                            }
+                        </p>
                     </div>
                 ) : (
-                    articles.map((article) => (
-                        <div key={article.id} className="admin-article-card">
+                    articles.map(article => (
+                        <div key={article._id} className="admin-article-card">
                             <div className="admin-article-card__header">
-                                <div className="admin-article-card__status">
-                                    <span className={`admin-article-card__status-badge ${getStatusColor(article.status)}`}>
+                                <div className="admin-article-card__header-left">
+                                    <span className={`admin-article-card__status ${getStatusColor(article.status)}`}>
                                         {getStatusLabel(article.status)}
                                     </span>
+                                    <span className="admin-article-card__author">
+                                        👤 {article.author?.displayName || article.author?.email || 'Neznámy autor'}
+                                    </span>
                                 </div>
-                                <div className="admin-article-card__author">
-                                    Autor: {article.author.displayName}
-                                </div>
-                                <div className="admin-article-card__date">
+                                <span className="admin-article-card__date">
                                     {formatDate(article.updatedAt)}
-                                </div>
+                                </span>
                             </div>
 
                             <div className="admin-article-card__content">
@@ -357,36 +376,32 @@ const AllArticlesPage = ({ user }) => {
                                 </h3>
                                 <p className="admin-article-card__excerpt">{article.excerpt}</p>
 
-                                {article.moderationNote && (
+                                {/* Показываем причину отклонения если есть */}
+                                {article.status === 'rejected' && article.moderationNote && (
                                     <div className="admin-article-card__moderation-note">
-                                        <strong>Poznámka moderátora:</strong> {article.moderationNote}
+                                        <strong>Dôvod zamietnutia:</strong> {article.moderationNote}
                                     </div>
                                 )}
                             </div>
 
                             <div className="admin-article-card__footer">
                                 <div className="admin-article-card__stats">
-                                    <span className="admin-article-card__stat">👁️ {article.views}</span>
-                                    <span className="admin-article-card__stat">👍 {article.likes}</span>
-                                    <span className="admin-article-card__stat">💬 {article.comments}</span>
+                                    <span className="admin-article-card__stat">👁️ {article.views || 0}</span>
+                                    <span className="admin-article-card__stat">💬 {article.commentsCount || 0}</span>
                                 </div>
 
                                 <div className="admin-article-card__actions">
+                                    {/* Модерация для статей на рассмотрении */}
                                     {article.status === 'pending' && (
                                         <>
                                             <button
-                                                onClick={() => handleStatusChange(article.id, 'published')}
+                                                onClick={() => handleApprove(article._id)}
                                                 className="admin-article-card__action-btn admin-article-card__approve-btn"
                                             >
                                                 ✅ Schváliť
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    const note = prompt('Dôvod zamietnutia (voliteľné):');
-                                                    if (note !== null) {
-                                                        handleStatusChange(article.id, 'rejected', note);
-                                                    }
-                                                }}
+                                                onClick={() => handleReject(article._id)}
                                                 className="admin-article-card__action-btn admin-article-card__reject-btn"
                                             >
                                                 ❌ Zamietnuť
@@ -394,15 +409,7 @@ const AllArticlesPage = ({ user }) => {
                                         </>
                                     )}
 
-                                    {article.status === 'published' && (
-                                        <button
-                                            onClick={() => handleStatusChange(article.id, 'draft')}
-                                            className="admin-article-card__action-btn admin-article-card__unpublish-btn"
-                                        >
-                                            📥 Unpublikovať
-                                        </button>
-                                    )}
-
+                                    {/* Просмотр опубликованных статей */}
                                     {article.status === 'published' && (
                                         <a
                                             href={`/clanky/${article.slug}`}
@@ -414,12 +421,15 @@ const AllArticlesPage = ({ user }) => {
                                         </a>
                                     )}
 
-                                    <button
-                                        onClick={() => handleDelete(article.id)}
-                                        className="admin-article-card__action-btn admin-article-card__delete-btn"
-                                    >
-                                        🗑️ Vymazať
-                                    </button>
+                                    {/* Удаление (для всех статей кроме опубликованных) */}
+                                    {article.status !== 'published' && (
+                                        <button
+                                            onClick={() => handleDelete(article._id)}
+                                            className="admin-article-card__action-btn admin-article-card__delete-btn"
+                                        >
+                                            🗑️ Vymazať
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
