@@ -128,7 +128,9 @@ class CommentsService {
 
     /**
      * Получить комментарии пользователя (для профиля)
-     * @param {string} userId - ID пользователя
+     * ИСПРАВЛЕНО: теперь использует GET /api/comments без query параметров
+     * Backend автоматически определяет userId из JWT токена
+     * @param {string} userId - ID пользователя (игнорируется, используется для совместимости)
      * @param {Object} options - Опции (page, limit)
      * @param {string} token - JWT токен (для SSR)
      * @returns {Promise<Object>} - Список комментариев пользователя
@@ -140,11 +142,14 @@ class CommentsService {
             }
         } : {};
 
-        const params = new URLSearchParams({ author: userId });
+        const params = new URLSearchParams();
 
         if (options.page) params.append('page', options.page);
         if (options.limit) params.append('limit', options.limit);
+        if (options.sort) params.append('sort', options.sort);
 
+        // ИСПРАВЛЕНО: используем базовый endpoint GET /api/comments
+        // Backend сам определит userId из JWT токена через req.user.userId
         const response = await api.get(`/api/comments?${params.toString()}`, config);
         return response.data;
     }
