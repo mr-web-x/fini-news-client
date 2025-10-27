@@ -164,17 +164,16 @@ class ArticlesService {
      * @param {string} token - JWT токен (для SSR)
      * @returns {Promise<Object>} - Отклонённая статья
      */
-    async rejectArticle(id, reason, token = null) {
+    async rejectArticle(id, moderationNote, token = null) {
         const config = token ? {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         } : {};
 
-        const response = await api.post(`/api/articles/${id}/reject`, { reason }, config);
+        const response = await api.post(`/api/articles/${id}/reject`, { moderationNote }, config);
         return response.data;
     }
-
 
     /**
      * Получить статьи на модерации (admin)
@@ -204,8 +203,8 @@ class ArticlesService {
 
     /**
      * ИСПРАВЛЕНО: Получить статьи ТЕКУЩЕГО пользователя
-     * Использует endpoint /api/articles/author/:authorId
-     * Декодирует userId из JWT токена
+     * Использует приватный endpoint /api/articles/me
+     * Который возвращает ВСЕ статьи пользователя (draft, pending, published, rejected)
      * @param {string} status - Статус статей (draft, pending, published, rejected, all)
      * @param {string} token - JWT токен (для SSR)
      * @returns {Promise<Object>} - Статьи текущего пользователя
@@ -217,38 +216,6 @@ class ArticlesService {
             }
         } : {};
 
-        // Декодируем токен чтобы получить userId
-        let userId;
-        try {
-            if (token) {
-                const decoded = jwtDecode(token);
-                userId = decoded.userId;
-            } else {
-                // Если токена нет в параметрах, берём из cookies (для клиентской стороны)
-                // Axios автоматически добавит токен из cookies
-                // Но нам нужен userId, поэтому попробуем получить токен из document.cookie
-                if (typeof document !== 'undefined') {
-                    const cookieToken = document.cookie
-                        .split('; ')
-                        .find(row => row.startsWith('auth_token='))
-                        ?.split('=')[1];
-
-                    if (cookieToken) {
-                        const decoded = jwtDecode(cookieToken);
-                        userId = decoded.userId;
-                    }
-                }
-            }
-
-            if (!userId) {
-                throw new Error('Не удалось получить ID пользователя из токена');
-            }
-
-        } catch (error) {
-            console.error('Error decoding token:', error);
-            throw new Error('Ошибка авторизации');
-        }
-
         const params = new URLSearchParams();
         if (status && status !== 'all') {
             params.append('status', status);
@@ -256,8 +223,8 @@ class ArticlesService {
 
         const queryString = params.toString();
         const url = queryString
-            ? `/api/articles/author/${userId}?${queryString}`
-            : `/api/articles/author/${userId}`;
+            ? `/api/articles/me?${queryString}`
+            : `/api/articles/me`;
 
         const response = await api.get(url, config);
         return response.data;

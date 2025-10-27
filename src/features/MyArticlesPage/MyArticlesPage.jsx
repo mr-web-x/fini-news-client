@@ -8,6 +8,7 @@ import "./MyArticlesPage.scss";
 const MyArticlesPage = ({ user }) => {
     const [articles, setArticles] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [statsLoading, setStatsLoading] = useState(true);
     const [filter, setFilter] = useState('all'); // all, draft, pending, published, rejected
     const [stats, setStats] = useState({
         total: 0,
@@ -19,10 +20,51 @@ const MyArticlesPage = ({ user }) => {
     });
     const [message, setMessage] = useState({ type: '', text: '' });
 
+    // ✅ Загружаем статистику ОДИН РАЗ при монтировании
+    useEffect(() => {
+        loadAllStats();
+    }, []);
+
+    // ✅ Загружаем статьи при изменении фильтра
     useEffect(() => {
         loadUserArticles();
     }, [filter]);
 
+    /**
+     * Загрузка ОБЩЕЙ статистики по всем статьям пользователя
+     * Вызывается ОДИН РАЗ при монтировании
+     */
+    const loadAllStats = async () => {
+        setStatsLoading(true);
+
+        try {
+            // Загружаем ВСЕ статьи пользователя для подсчета статистики
+            const result = await getMyArticles('all');
+
+            if (result.success) {
+                const allArticles = result.data.articles || result.data || [];
+
+                const totalViews = allArticles.reduce((sum, article) => sum + (article.views || 0), 0);
+
+                setStats({
+                    total: allArticles.length,
+                    draft: allArticles.filter(a => a.status === 'draft').length,
+                    pending: allArticles.filter(a => a.status === 'pending').length,
+                    published: allArticles.filter(a => a.status === 'published').length,
+                    rejected: allArticles.filter(a => a.status === 'rejected').length,
+                    totalViews
+                });
+            }
+        } catch (error) {
+            console.error('Error loading stats:', error);
+        } finally {
+            setStatsLoading(false);
+        }
+    };
+
+    /**
+     * Загрузка статей по текущему фильтру
+     */
     const loadUserArticles = async () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
@@ -40,17 +82,6 @@ const MyArticlesPage = ({ user }) => {
 
             const articlesData = result.data.articles || result.data || [];
             setArticles(articlesData);
-
-            // Калkulácia štatistík
-            const totalViews = articlesData.reduce((sum, article) => sum + (article.views || 0), 0);
-            setStats({
-                total: articlesData.length,
-                draft: articlesData.filter(a => a.status === 'draft').length,
-                pending: articlesData.filter(a => a.status === 'pending').length,
-                published: articlesData.filter(a => a.status === 'published').length,
-                rejected: articlesData.filter(a => a.status === 'rejected').length,
-                totalViews
-            });
 
         } catch (error) {
             console.error('Error loading articles:', error);
@@ -91,100 +122,56 @@ const MyArticlesPage = ({ user }) => {
     };
 
     const handleDelete = async (articleId) => {
-        if (!confirm('Ste si istí, že chcete vymazať tento článok?')) {
-            return;
-        }
+        if (!confirm('Naozaj chcete vymazať tento článok?')) return;
 
         try {
             const result = await deleteArticle(articleId);
 
             if (result.success) {
-                setMessage({ type: 'success', text: 'Článok bol úspešne vymazaný' });
-                // Убираем статью из списка
-                setArticles(prev => prev.filter(article => article._id !== articleId));
-
-                // Обновляем статистику
-                setStats(prev => ({
-                    ...prev,
-                    total: prev.total - 1
-                }));
-
-                // Очищаем сообщение через 3 секунды
-                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+                setMessage({ type: 'success', text: result.message });
+                loadUserArticles(); // Перезагружаем список
+                loadAllStats(); // Обновляем статистику
             } else {
                 setMessage({ type: 'error', text: result.message });
-                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
             }
         } catch (error) {
             console.error('Error deleting article:', error);
             setMessage({ type: 'error', text: 'Chyba pri mazaní článku' });
-            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
         }
     };
 
     const handleSubmitForReview = async (articleId) => {
-        if (!confirm('Odoslať článok na moderáciu? Potom ho už nebudete môcť upravovať.')) {
-            return;
-        }
+        if (!confirm('Odoslať článok na moderáciu?')) return;
 
         try {
             const result = await submitArticleForReview(articleId);
 
             if (result.success) {
-                setMessage({ type: 'success', text: 'Článok bol odoslaný na moderáciu' });
-
-                // Обновляем статус статьи в списке
-                setArticles(prev => prev.map(article =>
-                    article._id === articleId
-                        ? { ...article, status: 'pending' }
-                        : article
-                ));
-
-                // Обновляем статистику
-                setStats(prev => ({
-                    ...prev,
-                    draft: prev.draft - 1,
-                    pending: prev.pending + 1
-                }));
-
-                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+                setMessage({ type: 'success', text: result.message });
+                loadUserArticles(); // Перезагружаем список
+                loadAllStats(); // Обновляем статистику
             } else {
                 setMessage({ type: 'error', text: result.message });
-                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
             }
         } catch (error) {
             console.error('Error submitting article:', error);
             setMessage({ type: 'error', text: 'Chyba pri odosielaní článku' });
-            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
         }
     };
-
-    const filteredArticles = filter === 'all'
-        ? articles
-        : articles.filter(article => article.status === filter);
-
-    if (loading) {
-        return (
-            <div className="articles-loading">
-                <div className="spinner"></div>
-                <p>Načítavam články...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="my-articles-page">
             <div className="articles__header">
                 <div className="articles__header-content">
                     <h1>Moje články</h1>
-                    <p>Spravujte svoje články a sledujte ich výkonnosť</p>
+                    <p>Spravujte svoje články a ich stavy</p>
                 </div>
                 <Link href="/profil/novy-clanok" className="articles__new-btn">
                     ➕ Nový článok
                 </Link>
             </div>
 
-            {/* Message (success/error) */}
+            {/* Message */}
             {message.text && (
                 <div className={`articles__message articles__message--${message.type}`}>
                     {message.text}
@@ -194,19 +181,27 @@ const MyArticlesPage = ({ user }) => {
             {/* Statistics */}
             <div className="articles__stats">
                 <div className="articles__stat-card">
-                    <div className="articles__stat-number">{stats.total}</div>
+                    <div className="articles__stat-number">
+                        {statsLoading ? '...' : stats.total}
+                    </div>
                     <div className="articles__stat-label">Celkovo článkov</div>
                 </div>
                 <div className="articles__stat-card">
-                    <div className="articles__stat-number">{stats.published}</div>
+                    <div className="articles__stat-number">
+                        {statsLoading ? '...' : stats.published}
+                    </div>
                     <div className="articles__stat-label">Publikované</div>
                 </div>
                 <div className="articles__stat-card">
-                    <div className="articles__stat-number">{stats.pending}</div>
+                    <div className="articles__stat-number">
+                        {statsLoading ? '...' : stats.pending}
+                    </div>
                     <div className="articles__stat-label">Na moderácii</div>
                 </div>
                 <div className="articles__stat-card">
-                    <div className="articles__stat-number">{stats.totalViews}</div>
+                    <div className="articles__stat-number">
+                        {statsLoading ? '...' : stats.totalViews}
+                    </div>
                     <div className="articles__stat-label">Celkové zobrazenia</div>
                 </div>
             </div>
@@ -215,79 +210,69 @@ const MyArticlesPage = ({ user }) => {
             <div className="articles__filters">
                 <button
                     onClick={() => setFilter('all')}
-                    className={`articles__filter-btn ${filter === 'all' ? 'active' : ''}`}
+                    className={`articles__filter-btn ${filter === 'all' ? 'articles__filter-btn--active' : ''}`}
                 >
-                    Všetky ({stats.total})
+                    Všetky ({statsLoading ? '...' : stats.total})
                 </button>
                 <button
                     onClick={() => setFilter('published')}
-                    className={`articles__filter-btn ${filter === 'published' ? 'active' : ''}`}
+                    className={`articles__filter-btn ${filter === 'published' ? 'articles__filter-btn--active' : ''}`}
                 >
-                    Publikované ({stats.published})
+                    Publikované ({statsLoading ? '...' : stats.published})
                 </button>
                 <button
                     onClick={() => setFilter('pending')}
-                    className={`articles__filter-btn ${filter === 'pending' ? 'active' : ''}`}
+                    className={`articles__filter-btn ${filter === 'pending' ? 'articles__filter-btn--active' : ''}`}
                 >
-                    Na moderácii ({stats.pending})
+                    Na moderácii ({statsLoading ? '...' : stats.pending})
                 </button>
                 <button
                     onClick={() => setFilter('draft')}
-                    className={`articles__filter-btn ${filter === 'draft' ? 'active' : ''}`}
+                    className={`articles__filter-btn ${filter === 'draft' ? 'articles__filter-btn--active' : ''}`}
                 >
-                    Koncepty ({stats.draft})
+                    Koncepty ({statsLoading ? '...' : stats.draft})
                 </button>
                 <button
                     onClick={() => setFilter('rejected')}
-                    className={`articles__filter-btn ${filter === 'rejected' ? 'active' : ''}`}
+                    className={`articles__filter-btn ${filter === 'rejected' ? 'articles__filter-btn--active' : ''}`}
                 >
-                    Zamietnuté ({stats.rejected})
+                    Zamietnuté ({statsLoading ? '...' : stats.rejected})
                 </button>
             </div>
 
             {/* Articles List */}
             <div className="articles__list">
-                {filteredArticles.length === 0 ? (
+                {loading ? (
+                    <div className="articles__loading">
+                        <div className="spinner"></div>
+                        <p>Načítavam články...</p>
+                    </div>
+                ) : articles.length === 0 ? (
                     <div className="articles__empty">
                         <div className="articles__empty-icon">📝</div>
                         <h3>Žiadne články</h3>
-                        <p>
-                            {filter === 'all'
-                                ? 'Zatiaľ ste nevytvorili žiadne články. Začnite písať svoj první článok!'
-                                : `Nemáte žiadne články so stavom "${getStatusLabel(filter)}".`
-                            }
-                        </p>
-                        {filter === 'all' && (
-                            <Link href="/profil/novy-clanok" className="articles__empty-btn">
-                                ➕ Vytvoriť prvý článok
-                            </Link>
-                        )}
+                        <p>Zatiaľ ste nevytvorili žiadne články v tejto kategórii.</p>
+                        <Link href="/profil/novy-clanok" className="articles__empty-btn">
+                            Vytvoriť prvý článok
+                        </Link>
                     </div>
                 ) : (
-                    filteredArticles.map(article => (
+                    articles.map(article => (
                         <div key={article._id} className="article-card">
                             <div className="article-card__header">
                                 <span className={`article-card__status ${getStatusColor(article.status)}`}>
                                     {getStatusLabel(article.status)}
                                 </span>
                                 <span className="article-card__date">
-                                    {formatDate(article.updatedAt)}
+                                    {formatDate(article.createdAt)}
                                 </span>
                             </div>
 
                             <div className="article-card__content">
-                                <h3 className="article-card__title">
-                                    {article.status === 'published' ? (
-                                        <a href={`/clanky/${article.slug}`} target="_blank" rel="noopener noreferrer">
-                                            {article.title}
-                                        </a>
-                                    ) : (
-                                        article.title
-                                    )}
-                                </h3>
+                                <h3 className="article-card__title">{article.title}</h3>
                                 <p className="article-card__excerpt">{article.excerpt}</p>
 
-                                {/* Показываем причину отклонения если есть */}
+                                {/* Причина отклонения */}
                                 {article.status === 'rejected' && article.moderationNote && (
                                     <div className="article-card__moderation-note">
                                         <strong>Dôvod zamietnutia:</strong> {article.moderationNote}
@@ -302,27 +287,7 @@ const MyArticlesPage = ({ user }) => {
                                 </div>
 
                                 <div className="article-card__actions">
-                                    {/* Редактирование доступно только для draft и rejected */}
-                                    {(article.status === 'draft' || article.status === 'rejected') && (
-                                        <Link
-                                            href={`/profil/upravit-clanok/${article._id}`}
-                                            className="article-card__action-btn article-card__edit-btn"
-                                        >
-                                            ✏️ Upraviť
-                                        </Link>
-                                    )}
-
-                                    {/* Кнопка отправки на модерацию для черновиков и отклонённых */}
-                                    {(article.status === 'draft' || article.status === 'rejected') && (
-                                        <button
-                                            onClick={() => handleSubmitForReview(article._id)}
-                                            className="article-card__action-btn article-card__submit-btn"
-                                        >
-                                            📤 Odoslať na moderáciu
-                                        </button>
-                                    )}
-
-                                    {/* Просмотр опубликованных статей */}
+                                    {/* Опубликованные статьи - только просмотр */}
                                     {article.status === 'published' && (
                                         <a
                                             href={`/clanky/${article.slug}`}
@@ -334,8 +299,51 @@ const MyArticlesPage = ({ user }) => {
                                         </a>
                                     )}
 
-                                    {/* Удаление доступно для всех статей кроме опубликованных */}
-                                    {article.status !== 'published' && (
+                                    {/* Черновики - редактировать и отправить на модерацию */}
+                                    {article.status === 'draft' && (
+                                        <>
+                                            <Link
+                                                href={`/profil/upravit-clanok/${article._id}`}
+                                                className="article-card__action-btn article-card__edit-btn"
+                                            >
+                                                ✏️ Upraviť
+                                            </Link>
+                                            <button
+                                                onClick={() => handleSubmitForReview(article._id)}
+                                                className="article-card__action-btn article-card__submit-btn"
+                                            >
+                                                📤 Odoslať na moderáciu
+                                            </button>
+                                        </>
+                                    )}
+
+                                    {/* На модерации - только просмотр */}
+                                    {article.status === 'pending' && (
+                                        <span className="article-card__info">
+                                            ⏳ Čaká sa na schválenie administrátorom
+                                        </span>
+                                    )}
+
+                                    {/* Отклоненные - редактировать и отправить снова */}
+                                    {article.status === 'rejected' && (
+                                        <>
+                                            <Link
+                                                href={`/profil/upravit-clanok/${article._id}`}
+                                                className="article-card__action-btn article-card__edit-btn"
+                                            >
+                                                ✏️ Upraviť
+                                            </Link>
+                                            <button
+                                                onClick={() => handleSubmitForReview(article._id)}
+                                                className="article-card__action-btn article-card__submit-btn"
+                                            >
+                                                📤 Odoslať znova
+                                            </button>
+                                        </>
+                                    )}
+
+                                    {/* Удаление (для всех кроме published) */}
+                                    {article.status !== 'published' && article.status !== 'pending' && (
                                         <button
                                             onClick={() => handleDelete(article._id)}
                                             className="article-card__action-btn article-card__delete-btn"
