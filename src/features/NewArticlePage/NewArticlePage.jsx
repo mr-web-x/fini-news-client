@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createArticle } from "@/actions/articles.actions";
+import { getAllCategories, createCategory } from "@/actions/categories.actions";
 import "./NewArticlePage.scss";
 
 const NewArticlePage = ({ user }) => {
@@ -22,19 +23,50 @@ const NewArticlePage = ({ user }) => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [imagePreview, setImagePreview] = useState(null);
 
-    // Predefined categories (в будущем можно получать из API)
-    const categories = [
-        { id: '1', name: 'Bankovníctvo' },
-        { id: '2', name: 'Úvery a hypotéky' },
-        { id: '3', name: 'Poisťovníctvo' },
-        { id: '4', name: 'Dane a účtovníctvo' },
-        { id: '5', name: 'Investície' },
-        { id: '6', name: 'Kryptomeny' },
-        { id: '7', name: 'Ekonomika' },
-        { id: '8', name: 'Finančné plánovanie' },
-        { id: '9', name: 'Podnikanie' },
-        { id: '10', name: 'Technológie vo financiách' }
-    ];
+    // Состояние для категорий
+    const [categories, setCategories] = useState([]);
+    const [loadingCategories, setLoadingCategories] = useState(true);
+
+    // Состояние для создания новой категории (только для admin)
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [creatingCategory, setCreatingCategory] = useState(false);
+    const [categoryMessage, setCategoryMessage] = useState({ type: '', text: '' });
+
+    // Загрузка категорий при монтировании компонента
+    useEffect(() => {
+        loadCategories();
+    }, []);
+
+    const loadCategories = async () => {
+        setLoadingCategories(true);
+        try {
+            const result = await getAllCategories();
+
+            if (result.success) {
+                // Проверяем разные варианты структуры ответа
+                let categoriesData = [];
+
+                if (Array.isArray(result.data)) {
+                    categoriesData = result.data;
+                } else if (result.data?.data && Array.isArray(result.data.data)) {
+                    categoriesData = result.data.data;
+                } else if (result.data?.categories && Array.isArray(result.data.categories)) {
+                    categoriesData = result.data.categories;
+                }
+
+                setCategories(categoriesData);
+                console.log('Loaded categories:', categoriesData);
+            } else {
+                console.error('Error loading categories:', result.message);
+                setCategories([]);
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            setCategories([]);
+        } finally {
+            setLoadingCategories(false);
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -60,34 +92,42 @@ const NewArticlePage = ({ user }) => {
         return title
             .toLowerCase()
             .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') // убираем диакритику
-            .replace(/[^\w\s-]/g, '') // убираем спецсимволы
-            .replace(/\s+/g, '-') // пробелы в дефисы
-            .replace(/-+/g, '-') // множественные дефисы в один
-            .replace(/^-+|-+$/g, ''); // убираем дефисы в начале и конце
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim();
     };
 
+    // Обработка загрузки изображения
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Validation
-            if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                setMessage({ type: 'error', text: 'Obrázok nesmie byť väčší ako 5MB' });
+            // Проверка размера файла (макс 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setMessage({
+                    type: 'error',
+                    text: 'Súbor je príliš veľký. Maximálna veľkosť je 5MB.'
+                });
                 return;
             }
 
+            // Проверка типа файла
             if (!file.type.startsWith('image/')) {
-                setMessage({ type: 'error', text: 'Povolené sú len obrázky' });
+                setMessage({
+                    type: 'error',
+                    text: 'Nahrajte prosím obrázok (JPG, PNG, GIF, WebP).'
+                });
                 return;
             }
 
-            // Create preview
+            // Создаем превью
             const reader = new FileReader();
-            reader.onload = (e) => {
-                setImagePreview(e.target.result);
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
                 setFormData(prev => ({
                     ...prev,
-                    featuredImage: e.target.result
+                    featuredImage: reader.result
                 }));
             };
             reader.readAsDataURL(file);
@@ -95,89 +135,134 @@ const NewArticlePage = ({ user }) => {
     };
 
     const removeImage = () => {
+        setImagePreview(null);
         setFormData(prev => ({
             ...prev,
             featuredImage: ''
         }));
-        setImagePreview(null);
-        // Clear file input
-        const fileInput = document.getElementById('featuredImage');
-        if (fileInput) fileInput.value = '';
     };
 
-    const handleContentChange = (content) => {
-        setFormData(prev => ({
-            ...prev,
-            content
-        }));
-    };
-
-    const validateForm = () => {
-        if (!formData.title.trim() || formData.title.trim().length < 10) {
-            setMessage({ type: 'error', text: 'Nadpis musí obsahovať minimálne 10 znakov' });
-            return false;
+    // Обработка создания новой категории (только admin)
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) {
+            setCategoryMessage({
+                type: 'error',
+                text: 'Zadajte názov kategórie'
+            });
+            return;
         }
 
-        if (!formData.slug.trim() || formData.slug.trim().length < 5) {
-            setMessage({ type: 'error', text: 'URL adresa (slug) musí obsahovať minimálne 5 znakov' });
-            return false;
+        if (newCategoryName.trim().length < 2) {
+            setCategoryMessage({
+                type: 'error',
+                text: 'Názov kategórie musí obsahovať minimálne 2 znaky'
+            });
+            return;
         }
 
-        if (!/^[a-z0-9-]+$/.test(formData.slug)) {
-            setMessage({ type: 'error', text: 'URL adresa môže obsahovať len malé písmená, čísla a pomlčky' });
-            return false;
-        }
+        setCreatingCategory(true);
+        setCategoryMessage({ type: '', text: '' });
 
-        if (!formData.excerpt.trim() || formData.excerpt.trim().length < 150) {
-            setMessage({ type: 'error', text: 'Perex musí obsahovať minimálne 150 znakov' });
-            return false;
-        }
+        try {
+            const result = await createCategory({
+                name: newCategoryName.trim()
+            });
 
-        if (!formData.content.trim() || formData.content.trim().length < 100) {
-            setMessage({ type: 'error', text: 'Obsah článku musí obsahovať minimálne 100 znakov' });
-            return false;
-        }
+            if (result.success) {
+                setCategoryMessage({
+                    type: 'success',
+                    text: result.message || 'Kategória bola úspešne vytvorená!'
+                });
 
-        if (!formData.category) {
-            setMessage({ type: 'error', text: 'Vyberte kategóriu' });
-            return false;
-        }
+                // Обновляем список категорий
+                await loadCategories();
 
-        return true;
+                // Очищаем поле ввода
+                setNewCategoryName('');
+
+                // Автоматически выбираем новую категорию
+                if (result.data?.data?._id) {
+                    setFormData(prev => ({
+                        ...prev,
+                        category: result.data.data._id
+                    }));
+                }
+
+                // Убираем сообщение через 3 секунды
+                setTimeout(() => {
+                    setCategoryMessage({ type: '', text: '' });
+                }, 3000);
+            } else {
+                setCategoryMessage({
+                    type: 'error',
+                    text: result.message || 'Chyba pri vytváraní kategórie'
+                });
+            }
+        } catch (error) {
+            console.error('Error creating category:', error);
+            setCategoryMessage({
+                type: 'error',
+                text: 'Neočakávaná chyba pri vytváraní kategórie'
+            });
+        } finally {
+            setCreatingCategory(false);
+        }
     };
 
     const handleSave = async (submitForReview = false) => {
         setMessage({ type: '', text: '' });
 
-        // Валидация формы
-        if (!validateForm()) {
+        // Базовая валидация
+        if (!formData.title.trim()) {
+            setMessage({ type: 'error', text: 'Nadpis článku je povinný' });
+            return;
+        }
+
+        if (!formData.slug.trim()) {
+            setMessage({ type: 'error', text: 'URL adresa (slug) je povinná' });
+            return;
+        }
+
+        if (!formData.excerpt.trim() || formData.excerpt.length < 150) {
+            setMessage({ type: 'error', text: 'Perex musí obsahovať minimálne 150 znakov' });
+            return;
+        }
+
+        if (!formData.content.trim() || formData.content.length < 500) {
+            setMessage({ type: 'error', text: 'Obsah článku musí obsahovať minimálne 500 znakov' });
+            return;
+        }
+
+        if (!formData.category) {
+            setMessage({ type: 'error', text: 'Vyberte kategóriu článku' });
             return;
         }
 
         setLoading(true);
 
         try {
-            // Подготовка данных для отправки
             const articleData = {
                 title: formData.title.trim(),
                 slug: formData.slug.trim(),
                 excerpt: formData.excerpt.trim(),
                 content: formData.content.trim(),
                 category: formData.category,
-                tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
-                featuredImage: formData.featuredImage || undefined
+                tags: formData.tags
+                    .split(',')
+                    .map(tag => tag.trim())
+                    .filter(tag => tag.length > 0),
+                featuredImage: formData.featuredImage || undefined,
+                submitForReview
             };
 
-            // Создание статьи через Server Action
             const result = await createArticle(articleData);
 
             if (!result.success) {
-                setMessage({ type: 'error', text: result.message || 'Chyba pri vytváraní článku' });
+                setMessage({ type: 'error', text: result.message });
                 setLoading(false);
                 return;
             }
 
-            // Успешное создание
             setMessage({
                 type: 'success',
                 text: submitForReview
@@ -297,26 +382,73 @@ const NewArticlePage = ({ user }) => {
                         </div>
                     </div>
 
+                    {/* ADMIN: Create new category block */}
+                    {user.role === 'admin' && (
+                        <div className="new-article__category-creator">
+                            <h3>➕ Vytvoriť novú kategóriu (len pre admina)</h3>
+
+                            {categoryMessage.text && (
+                                <div className={`new-article__message new-article__message--${categoryMessage.type}`}>
+                                    {categoryMessage.text}
+                                </div>
+                            )}
+
+                            <div className="new-article__category-form">
+                                <input
+                                    type="text"
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    placeholder="Názov novej kategórie..."
+                                    className="new-article__input"
+                                    disabled={creatingCategory}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleCreateCategory();
+                                        }
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleCreateCategory}
+                                    disabled={creatingCategory || !newCategoryName.trim()}
+                                    className="new-article__btn new-article__btn--create-category"
+                                >
+                                    {creatingCategory ? '⏳ Vytváram...' : '✅ Vytvoriť kategóriu'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Category */}
                     <div className="new-article__field">
                         <label htmlFor="category" className="new-article__label">
                             Kategória *
                         </label>
-                        <select
-                            id="category"
-                            name="category"
-                            value={formData.category}
-                            onChange={handleInputChange}
-                            className="new-article__select"
-                            disabled={loading}
-                        >
-                            <option value="">Vyberte kategóriu</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                </option>
-                            ))}
-                        </select>
+                        {loadingCategories ? (
+                            <div className="new-article__loading">Načítavam kategórie...</div>
+                        ) : (
+                            <select
+                                id="category"
+                                name="category"
+                                value={formData.category}
+                                onChange={handleInputChange}
+                                className="new-article__select"
+                                disabled={loading}
+                            >
+                                <option value="">Vyberte kategóriu</option>
+                                {Array.isArray(categories) && categories.map(cat => (
+                                    <option key={cat._id} value={cat._id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        {!loadingCategories && categories.length === 0 && (
+                            <small className="new-article__hint new-article__hint--error">
+                                Žiadne kategórie nie sú k dispozícii. {user.role === 'admin' ? 'Vytvorte novú kategóriu vyššie.' : 'Kontaktujte administrátora.'}
+                            </small>
+                        )}
                     </div>
 
                     {/* Tags */}
@@ -354,47 +486,42 @@ const NewArticlePage = ({ user }) => {
                                         className="new-article__remove-image"
                                         disabled={loading}
                                     >
-                                        ✕
+                                        ✕ Odstrániť
                                     </button>
                                 </div>
                             ) : (
-                                <label htmlFor="featuredImage" className="new-article__upload-area">
-                                    <div className="new-article__upload-icon">📷</div>
-                                    <p>Kliknite pre nahratie obrázka</p>
-                                    <small>JPG, PNG, max 5MB</small>
+                                <label className="new-article__upload-label">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        disabled={loading}
+                                        style={{ display: 'none' }}
+                                    />
+                                    📁 Nahrať obrázok (max 5MB)
                                 </label>
                             )}
-                            <input
-                                type="file"
-                                id="featuredImage"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                                className="new-article__file-input"
-                                disabled={loading}
-                            />
                         </div>
                     </div>
 
-                    {/* Content Editor */}
+                    {/* Content */}
                     <div className="new-article__field">
-                        <label className="new-article__label">
+                        <label htmlFor="content" className="new-article__label">
                             Obsah článku *
                         </label>
-                        <div className="new-article__editor">
-                            <textarea
-                                value={formData.content}
-                                onChange={(e) => handleContentChange(e.target.value)}
-                                className="new-article__content-textarea"
-                                placeholder="Napíšte obsah článku... (minimálne 100 znakov)"
-                                rows="15"
-                                disabled={loading}
-                            />
-                            <div className="new-article__editor-note">
-                                <small>💡 Tip: Používajte odsady a prázdne riadky pre lepšiu čitateľnosť</small>
-                            </div>
-                            <div className={`character-count ${contentCount.className}`}>
-                                {contentCount.count} znakov (min. 100)
-                            </div>
+                        <textarea
+                            id="content"
+                            name="content"
+                            value={formData.content}
+                            onChange={handleInputChange}
+                            className="new-article__textarea new-article__textarea--large"
+                            placeholder="Napíšte obsah článku... (minimálne 500 znakov)"
+                            rows="15"
+                            maxLength="10000"
+                            disabled={loading}
+                        />
+                        <div className={`character-count ${contentCount.className}`}>
+                            {contentCount.count}/10000 znakov (min. 500)
                         </div>
                     </div>
 

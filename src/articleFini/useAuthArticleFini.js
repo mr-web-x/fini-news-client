@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /**
- * Zustand store для управления авторизацией
+ * Zustand  для управления авторизацией
  * Хранит данные пользователя и статус авторизации
  */
 const useAuthArticle = create((set) => ({

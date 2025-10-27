@@ -361,11 +361,6 @@ export async function submitArticleForReview(id) {
     }
 }
 
-/**
- * Получить статьи текущего пользователя
- * @param {string} status - Статус статей (draft, pending, published, rejected, all)
- * @returns {Promise<Object>} - Результат операции
- */
 export async function getMyArticles(status = 'all') {
     try {
         const token = await getAuthToken();
@@ -377,10 +372,8 @@ export async function getMyArticles(status = 'all') {
             };
         }
 
-        // Получаем ID текущего пользователя из токена
-        // (в реальности токен содержит userId, можно декодировать)
-        // Для простоты используем эндпоинт, который сам определит пользователя по токену
-        const articles = await articlesService.getUserArticles('me', status, token);
+        // ИСПРАВЛЕНО: используем getMyArticles вместо getUserArticles
+        const articles = await articlesService.getMyArticles(status, token);
 
         return {
             success: true,
@@ -484,6 +477,8 @@ export async function rejectArticle(id, reason) {
         };
     }
 }
+
+
 
 /**
  * Получить статьи на модерации (admin)

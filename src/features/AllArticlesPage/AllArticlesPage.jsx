@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getAllArticlesForAdmin, approveArticle, rejectArticle, deleteArticle } from "@/actions/articles.actions";
+import { getAllArticlesForAdmin, getPendingArticles, getMyArticles , approveArticle, rejectArticle, deleteArticle } from "@/actions/articles.actions";
 import "./AllArticlesPage.scss";
 
 const AllArticlesPage = ({ user }) => {
     const [articles, setArticles] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all'); // all, draft, pending, published, rejected
+    const [statsLoading, setStatsLoading] = useState(true);
+    const [filter, setFilter] = useState('moderation'); // moderation, all, draft, pending, published, rejected
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('newest'); // newest, oldest, views, popular
     const [stats, setStats] = useState({
@@ -20,38 +21,111 @@ const AllArticlesPage = ({ user }) => {
         totalComments: 0
     });
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [rejectReason, setRejectReason] = useState('');
+    const [rejectingArticleId, setRejectingArticleId] = useState(null);
 
+    // Загружаем общую статистику при монтировании компонента
     useEffect(() => {
-        loadAllArticles();
+        loadAllStats();
+    }, []);
+
+    // Загружаем статьи при изменении фильтров
+    useEffect(() => {
+        loadArticles();
     }, [filter, sortBy]);
 
     // Debounce для поиска
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             if (searchTerm) {
-                loadAllArticles();
+                loadArticles();
             }
         }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [searchTerm]);
 
-    const loadAllArticles = async () => {
+    /**
+     * Загрузка общей статистики по всем статьям
+     * Вызывается один раз при монтировании
+     */
+    const loadAllStats = async () => {
+        setStatsLoading(true);
+
+        try {
+            let result;
+
+            if (user?.role === 'admin') {
+                result = await getAllArticlesForAdmin({ limit: 100 });
+            } else {
+                result = await getMyArticles('all');
+            }
+
+            if (result.success) {
+                const articles = result.data.articles || result.data || [];
+
+                const totalViews = articles.reduce((sum, a) => sum + (a.views || 0), 0);
+                const totalComments = articles.reduce((sum, a) => sum + (a.commentsCount || 0), 0);
+
+                const newStats = {
+                    total: articles.length,
+                    draft: articles.filter(a => a.status === 'draft').length,
+                    pending: articles.filter(a => a.status === 'pending').length,
+                    published: articles.filter(a => a.status === 'published').length,
+                    rejected: articles.filter(a => a.status === 'rejected').length,
+                    totalViews,
+                    totalComments
+                };
+
+                setStats(newStats);
+            }
+
+        } catch (error) {
+            console.error('❌ Error loading stats:', error);
+        } finally {
+            setStatsLoading(false);
+        }
+    };
+
+
+    /**
+     * Загрузка статей по текущему фильтру
+     */
+    const loadArticles = async () => {
         setLoading(true);
         setMessage({ type: '', text: '' });
 
         try {
-            // Подготовка фильтров для API
-            const filters = {
-                status: filter !== 'all' ? filter : undefined,
-                search: searchTerm || undefined,
-                sort: sortBy,
-                limit: 100 // можно добавить пагинацию позже
-            };
+            let result;
 
-            // Получаем все статьи через Server Action
-            const result = await getAllArticlesForAdmin(filters);
+            // =========================
+            // ЕСЛИ АДМИН
+            // =========================
+            if (user?.role === 'admin') {
 
+                if (filter === 'moderation') {
+                    result = await getPendingArticles();
+                } else {
+                    const filters = {
+                        status: filter !== 'all' ? filter : undefined,
+                        search: searchTerm || undefined,
+                        sort: sortBy,
+                        limit: 100
+                    };
+                    result = await getAllArticlesForAdmin(filters);
+                }
+
+            }
+            // =========================
+            // ЕСЛИ АВТОР
+            // =========================
+            else {
+                result = await getMyArticles(filter !== 'all' ? filter : null);
+            }
+
+            // =========================
+            // ОБРАБОТКА РЕЗУЛЬТАТА
+            // =========================
             if (!result.success) {
                 setMessage({ type: 'error', text: result.message });
                 setArticles([]);
@@ -62,20 +136,6 @@ const AllArticlesPage = ({ user }) => {
             const articlesData = result.data.articles || result.data || [];
             setArticles(articlesData);
 
-            // Калkulácia štatistík
-            const totalViews = articlesData.reduce((sum, article) => sum + (article.views || 0), 0);
-            const totalComments = articlesData.reduce((sum, article) => sum + (article.commentsCount || 0), 0);
-
-            setStats({
-                total: articlesData.length,
-                draft: articlesData.filter(a => a.status === 'draft').length,
-                pending: articlesData.filter(a => a.status === 'pending').length,
-                published: articlesData.filter(a => a.status === 'published').length,
-                rejected: articlesData.filter(a => a.status === 'rejected').length,
-                totalViews,
-                totalComments
-            });
-
         } catch (error) {
             console.error('Error loading articles:', error);
             setMessage({ type: 'error', text: 'Chyba pri načítavaní článkov' });
@@ -84,6 +144,7 @@ const AllArticlesPage = ({ user }) => {
             setLoading(false);
         }
     };
+
 
     const getStatusLabel = (status) => {
         switch (status) {
@@ -115,132 +176,76 @@ const AllArticlesPage = ({ user }) => {
     };
 
     const handleApprove = async (articleId) => {
-        if (!confirm('Schváliť a publikovať tento článok?')) {
-            return;
-        }
+        if (!confirm('Schváliť a publikovať tento článok?')) return;
 
         try {
             const result = await approveArticle(articleId);
 
             if (result.success) {
-                setMessage({ type: 'success', text: 'Článok bol schválený a publikovaný' });
-
-                // Обновляем статус статьи в списке
-                setArticles(prev => prev.map(article =>
-                    article._id === articleId
-                        ? { ...article, status: 'published', publishedAt: new Date().toISOString() }
-                        : article
-                ));
-
-                // Обновляем статистику
-                setStats(prev => ({
-                    ...prev,
-                    pending: prev.pending - 1,
-                    published: prev.published + 1
-                }));
-
-                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+                setMessage({ type: 'success', text: result.message });
+                loadArticles(); // Перезагружаем список
+                loadAllStats(); // Обновляем статистику
             } else {
                 setMessage({ type: 'error', text: result.message });
-                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
             }
         } catch (error) {
             console.error('Error approving article:', error);
             setMessage({ type: 'error', text: 'Chyba pri schvaľovaní článku' });
-            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
         }
     };
 
-    const handleReject = async (articleId) => {
-        const reason = prompt('Dôvod zamietnutia (povinné, minimálne 10 znakov):');
+    const handleRejectClick = (articleId) => {
+        setRejectingArticleId(articleId);
+        setRejectReason('');
+    };
 
-        if (reason === null) {
-            // User cancelled
-            return;
-        }
-
-        if (!reason || reason.trim().length < 10) {
-            alert('Dôvod zamietnutia musí obsahovať minimálne 10 znakov');
+    const handleRejectSubmit = async () => {
+        if (!rejectReason || rejectReason.trim().length < 10) {
+            alert('Zadajte dôvod zamietnutia (minimálne 10 znakov)');
             return;
         }
 
         try {
-            const result = await rejectArticle(articleId, reason.trim());
+            const result = await rejectArticle(rejectingArticleId, rejectReason);
 
             if (result.success) {
-                setMessage({ type: 'success', text: 'Článok bol zamietnutý' });
-
-                // Обновляем статус статьи в списке
-                setArticles(prev => prev.map(article =>
-                    article._id === articleId
-                        ? { ...article, status: 'rejected', moderationNote: reason.trim() }
-                        : article
-                ));
-
-                // Обновляем статистику
-                setStats(prev => ({
-                    ...prev,
-                    pending: prev.pending - 1,
-                    rejected: prev.rejected + 1
-                }));
-
-                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+                setMessage({ type: 'success', text: result.message });
+                setRejectingArticleId(null);
+                setRejectReason('');
+                loadArticles(); // Перезагружаем список
+                loadAllStats(); // Обновляем статистику
             } else {
                 setMessage({ type: 'error', text: result.message });
-                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
             }
         } catch (error) {
             console.error('Error rejecting article:', error);
-            setMessage({ type: 'error', text: 'Chyba pri zamietnutí článku' });
-            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+            setMessage({ type: 'error', text: 'Chyba pri zamietaní článku' });
         }
     };
 
     const handleDelete = async (articleId) => {
-        if (!confirm('Ste si istí, že chcete vymazať tento článok? Táto akcia je nenávratná!')) {
-            return;
-        }
+        if (!confirm('Naozaj chcete vymazať tento článok? Táto akcia sa nedá vrátiť späť.')) return;
 
         try {
             const result = await deleteArticle(articleId);
 
             if (result.success) {
-                setMessage({ type: 'success', text: 'Článok bol vymazaný' });
-
-                // Убираем статью из списка
-                setArticles(prev => prev.filter(article => article._id !== articleId));
-
-                // Обновляем статистику
-                setStats(prev => ({
-                    ...prev,
-                    total: prev.total - 1
-                }));
-
-                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+                setMessage({ type: 'success', text: result.message });
+                loadArticles(); // Перезагружаем список
+                loadAllStats(); // Обновляем статистику
             } else {
                 setMessage({ type: 'error', text: result.message });
-                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
             }
         } catch (error) {
             console.error('Error deleting article:', error);
             setMessage({ type: 'error', text: 'Chyba pri mazaní článku' });
-            setTimeout(() => setMessage({ type: '', text: '' }), 5000);
         }
     };
-
-    if (loading) {
-        return (
-            <div className="articles-loading">
-                <div className="spinner"></div>
-                <p>Načítavam články...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="all-articles-page">
             <div className="all-articles__header">
-                <h1>Všetky články</h1>
+                <h1>Všetky články v systéme</h1>
                 <p>Spravujte všetky články v systéme, ich stavy a moderáciu</p>
             </div>
 
@@ -254,19 +259,27 @@ const AllArticlesPage = ({ user }) => {
             {/* Statistics */}
             <div className="all-articles__stats">
                 <div className="all-articles__stat-card">
-                    <div className="all-articles__stat-number">{stats.total}</div>
+                    <div className="all-articles__stat-number">
+                        {statsLoading ? '...' : stats.total}
+                    </div>
                     <div className="all-articles__stat-label">Celkovo článkov</div>
                 </div>
-                <div className="all-articles__stat-card">
-                    <div className="all-articles__stat-number">{stats.pending}</div>
-                    <div className="all-articles__stat-label">Na moderácii</div>
+                <div className="all-articles__stat-card all-articles__stat-card--warning">
+                    <div className="all-articles__stat-number">
+                        {statsLoading ? '...' : stats.pending}
+                    </div>
+                    <div className="all-articles__stat-label">⚠️ Na moderácii</div>
                 </div>
                 <div className="all-articles__stat-card">
-                    <div className="all-articles__stat-number">{stats.published}</div>
+                    <div className="all-articles__stat-number">
+                        {statsLoading ? '...' : stats.published}
+                    </div>
                     <div className="all-articles__stat-label">Publikované</div>
                 </div>
                 <div className="all-articles__stat-card">
-                    <div className="all-articles__stat-number">{stats.totalViews}</div>
+                    <div className="all-articles__stat-number">
+                        {statsLoading ? '...' : stats.totalViews}
+                    </div>
                     <div className="all-articles__stat-label">Celkové zobrazenia</div>
                 </div>
             </div>
@@ -280,6 +293,7 @@ const AllArticlesPage = ({ user }) => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="all-articles__search-input"
+                        disabled={filter === 'moderation'} // Поиск отключен для вкладки модерации
                     />
                 </div>
 
@@ -301,67 +315,69 @@ const AllArticlesPage = ({ user }) => {
             {/* Filter Tabs */}
             <div className="all-articles__filters">
                 <button
+                    onClick={() => setFilter('moderation')}
+                    className={`all-articles__filter-btn ${filter === 'moderation' ? 'all-articles__filter-btn--active' : ''}`}
+                >
+                    ⚠️ Zapro sy na moderáciu ({statsLoading ? '...' : stats.pending})
+                </button>
+                <button
                     onClick={() => setFilter('all')}
-                    className={`all-articles__filter-btn ${filter === 'all' ? 'active' : ''}`}
+                    className={`all-articles__filter-btn ${filter === 'all' ? 'all-articles__filter-btn--active' : ''}`}
                 >
-                    Všetky ({stats.total})
-                </button>
-                <button
-                    onClick={() => setFilter('pending')}
-                    className={`all-articles__filter-btn ${filter === 'pending' ? 'active' : ''}`}
-                >
-                    Na moderácii ({stats.pending})
-                </button>
-                <button
-                    onClick={() => setFilter('published')}
-                    className={`all-articles__filter-btn ${filter === 'published' ? 'active' : ''}`}
-                >
-                    Publikované ({stats.published})
+                    Všetky ({statsLoading ? '...' : stats.total})
                 </button>
                 <button
                     onClick={() => setFilter('draft')}
-                    className={`all-articles__filter-btn ${filter === 'draft' ? 'active' : ''}`}
+                    className={`all-articles__filter-btn ${filter === 'draft' ? 'all-articles__filter-btn--active' : ''}`}
                 >
-                    Koncepty ({stats.draft})
+                    Koncepty ({statsLoading ? '...' : stats.draft})
+                </button>
+                <button
+                    onClick={() => setFilter('published')}
+                    className={`all-articles__filter-btn ${filter === 'published' ? 'all-articles__filter-btn--active' : ''}`}
+                >
+                    Publikované ({statsLoading ? '...' : stats.published})
                 </button>
                 <button
                     onClick={() => setFilter('rejected')}
-                    className={`all-articles__filter-btn ${filter === 'rejected' ? 'active' : ''}`}
+                    className={`all-articles__filter-btn ${filter === 'rejected' ? 'all-articles__filter-btn--active' : ''}`}
                 >
-                    Zamietnuté ({stats.rejected})
+                    Zamietnuté ({statsLoading ? '...' : stats.rejected})
                 </button>
             </div>
 
             {/* Articles List */}
             <div className="all-articles__list">
-                {articles.length === 0 ? (
+                {loading ? (
+                    <div className="all-articles__loading">
+                        <div className="spinner"></div>
+                        <p>Načítavam články...</p>
+                    </div>
+                ) : articles.length === 0 ? (
                     <div className="all-articles__empty">
-                        <div className="all-articles__empty-icon">📝</div>
+                        <div className="all-articles__empty-icon">📭</div>
                         <h3>Žiadne články</h3>
                         <p>
-                            {searchTerm
-                                ? `Nenašli sa žiadne články pre hľadanie "${searchTerm}"`
-                                : filter === 'all'
-                                    ? 'V systéme zatiaľ nie sú žiadne články.'
-                                    : `Nie sú žiadne články so stavom "${getStatusLabel(filter)}".`
-                            }
+                            {filter === 'moderation'
+                                ? 'Momentálne nie sú žiadne články na moderáciu.'
+                                : 'V tejto kategórii nie sú žiadne články.'}
                         </p>
                     </div>
                 ) : (
                     articles.map(article => (
                         <div key={article._id} className="admin-article-card">
                             <div className="admin-article-card__header">
-                                <div className="admin-article-card__header-left">
+                                <div className="admin-article-card__meta">
                                     <span className={`admin-article-card__status ${getStatusColor(article.status)}`}>
                                         {getStatusLabel(article.status)}
                                     </span>
+                                    <span className="admin-article-card__date">
+                                        {formatDate(article.createdAt)}
+                                    </span>
                                     <span className="admin-article-card__author">
-                                        👤 {article.author?.displayName || article.author?.email || 'Neznámy autor'}
+                                        👤 {article.author?.displayName || 'Neznámy'}
                                     </span>
                                 </div>
-                                <span className="admin-article-card__date">
-                                    {formatDate(article.updatedAt)}
-                                </span>
                             </div>
 
                             <div className="admin-article-card__content">
@@ -401,7 +417,7 @@ const AllArticlesPage = ({ user }) => {
                                                 ✅ Schváliť
                                             </button>
                                             <button
-                                                onClick={() => handleReject(article._id)}
+                                                onClick={() => handleRejectClick(article._id)}
                                                 className="admin-article-card__action-btn admin-article-card__reject-btn"
                                             >
                                                 ❌ Zamietnuť
@@ -421,17 +437,47 @@ const AllArticlesPage = ({ user }) => {
                                         </a>
                                     )}
 
-                                    {/* Удаление (для всех статей кроме опубликованных) */}
-                                    {article.status !== 'published' && (
-                                        <button
-                                            onClick={() => handleDelete(article._id)}
-                                            className="admin-article-card__action-btn admin-article-card__delete-btn"
-                                        >
-                                            🗑️ Vymazať
-                                        </button>
-                                    )}
+                                    {/* Удаление статьи (для всех статусов) */}
+                                    <button
+                                        onClick={() => handleDelete(article._id)}
+                                        className="admin-article-card__action-btn admin-article-card__delete-btn"
+                                    >
+                                        🗑️ Vymazať
+                                    </button>
                                 </div>
                             </div>
+
+                            {/* Модальное окно для отклонения статьи */}
+                            {rejectingArticleId === article._id && (
+                                <div className="admin-article-card__reject-modal">
+                                    <h4>Dôvod zamietnutia článku</h4>
+                                    <textarea
+                                        value={rejectReason}
+                                        onChange={(e) => setRejectReason(e.target.value)}
+                                        placeholder="Zadajte dôvod zamietnutia (minimálne 10 znakov)..."
+                                        rows="4"
+                                        className="admin-article-card__reject-textarea"
+                                    />
+                                    <div className="admin-article-card__reject-actions">
+                                        <button
+                                            onClick={() => {
+                                                setRejectingArticleId(null);
+                                                setRejectReason('');
+                                            }}
+                                            className="admin-article-card__action-btn"
+                                        >
+                                            Zrušiť
+                                        </button>
+                                        <button
+                                            onClick={handleRejectSubmit}
+                                            className="admin-article-card__action-btn admin-article-card__reject-btn"
+                                            disabled={!rejectReason || rejectReason.trim().length < 10}
+                                        >
+                                            Zamietnuť článok
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))
                 )}
