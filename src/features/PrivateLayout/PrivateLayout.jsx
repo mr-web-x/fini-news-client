@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import "./PrivateLayout.scss";
 
 const PrivateLayout = ({ children, user }) => {
@@ -55,6 +56,12 @@ const PrivateLayout = ({ children, user }) => {
         ];
 
         const adminItems = [
+            {
+                href: "/profil/kategorie",
+                label: "Kategórie",
+                icon: "🏷️",
+                roles: ["admin"]
+            },
             {
                 href: "/profil/pouzivatelia",
                 label: "Správa používateľov",
@@ -112,7 +119,13 @@ const PrivateLayout = ({ children, user }) => {
                         {/* Header sidebar */}
                         <div className="sidebar__header">
                             <Link href="/" className="sidebar__logo">
-                                <span className="sidebar__logo-icon">📰</span>
+                                <Image
+                                    alt="Logo spoločnosti"
+                                    src="/icons/logo.svg"
+                                    width={36}
+                                    height={36}
+                                    priority
+                                />
                                 <span className="sidebar__logo-text">Fini.sk</span>
                             </Link>
                         </div>

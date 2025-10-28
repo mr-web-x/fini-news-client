@@ -192,18 +192,11 @@ export async function createArticle(data) {
             };
         }
 
-        // Валидация обязательных полей
+        // Валидация обязательных полей (БЕЗ SLUG!)
         if (!data.title || data.title.trim().length < 10) {
             return {
                 success: false,
                 message: 'Заголовок должен содержать минимум 10 символов'
-            };
-        }
-
-        if (!data.slug || !/^[a-z0-9-]+$/.test(data.slug)) {
-            return {
-                success: false,
-                message: 'Некорректный slug (только латиница, цифры и дефисы)'
             };
         }
 
@@ -214,10 +207,10 @@ export async function createArticle(data) {
             };
         }
 
-        if (!data.content || data.content.trim().length < 100) {
+        if (!data.content || data.content.trim().length < 500) {
             return {
                 success: false,
-                message: 'Содержимое статьи должно содержать минимум 100 символов'
+                message: 'Содержимое статьи должно содержать минимум 500 символов'
             };
         }
 
@@ -455,13 +448,6 @@ export async function rejectArticle(id, reason) {
             };
         }
 
-        if (!reason || reason.trim().length < 10) {
-            return {
-                success: false,
-                message: 'Укажите причину отклонения (минимум 10 символов)'
-            };
-        }
-
         const article = await articlesService.rejectArticle(id, reason, token);
 
         return {
@@ -477,8 +463,6 @@ export async function rejectArticle(id, reason) {
         };
     }
 }
-
-
 
 /**
  * Получить статьи на модерации (admin)
@@ -511,8 +495,8 @@ export async function getPendingArticles() {
 }
 
 /**
- * Получить все статьи в системе с фильтрами (admin)
- * @param {Object} filters - Фильтры (status, author, search, page, limit, sort)
+ * Получить все статьи для админа (с фильтрами)
+ * @param {Object} filters - Фильтры
  * @returns {Promise<Object>} - Результат операции
  */
 export async function getAllArticlesForAdmin(filters = {}) {
@@ -526,11 +510,11 @@ export async function getAllArticlesForAdmin(filters = {}) {
             };
         }
 
-        const articles = await articlesService.getAllArticlesForAdmin(filters, token);
+        const result = await articlesService.getAllArticlesForAdmin(filters, token);
 
         return {
             success: true,
-            data: articles
+            data: result
         };
     } catch (error) {
         console.error('[Server Action] getAllArticlesForAdmin error:', error);

@@ -1,36 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createArticle } from "@/actions/articles.actions";
-import { getAllCategories, createCategory } from "@/actions/categories.actions";
+import { getAllCategories } from "@/actions/categories.actions";
+import { Editor } from '@tinymce/tinymce-react';
 import "./NewArticlePage.scss";
 
 const NewArticlePage = ({ user }) => {
     const router = useRouter();
+    const editorRef = useRef(null);
 
     const [formData, setFormData] = useState({
         title: '',
-        slug: '',
         excerpt: '',
         content: '',
         category: '',
-        tags: '',
-        featuredImage: ''
+        tags: ''
     });
 
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
-    const [imagePreview, setImagePreview] = useState(null);
 
     // Состояние для категорий
     const [categories, setCategories] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
-
-    // Состояние для создания новой категории (только для admin)
-    const [newCategoryName, setNewCategoryName] = useState('');
-    const [creatingCategory, setCreatingCategory] = useState(false);
-    const [categoryMessage, setCategoryMessage] = useState({ type: '', text: '' });
 
     // Загрузка категорий при монтировании компонента
     useEffect(() => {
@@ -43,7 +37,6 @@ const NewArticlePage = ({ user }) => {
             const result = await getAllCategories();
 
             if (result.success) {
-                // Проверяем разные варианты структуры ответа
                 let categoriesData = [];
 
                 if (Array.isArray(result.data)) {
@@ -70,143 +63,18 @@ const NewArticlePage = ({ user }) => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-
-        // Автогенерация slug при изменении заголовка
-        if (name === 'title') {
-            const autoSlug = generateSlug(value);
-            setFormData(prev => ({
-                ...prev,
-                title: value,
-                slug: autoSlug
-            }));
-        } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
-        }
-    };
-
-    // Генерация slug из заголовка
-    const generateSlug = (title) => {
-        return title
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
-            .trim();
-    };
-
-    // Обработка загрузки изображения
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            // Проверка размера файла (макс 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                setMessage({
-                    type: 'error',
-                    text: 'Súbor je príliš veľký. Maximálna veľkosť je 5MB.'
-                });
-                return;
-            }
-
-            // Проверка типа файла
-            if (!file.type.startsWith('image/')) {
-                setMessage({
-                    type: 'error',
-                    text: 'Nahrajte prosím obrázok (JPG, PNG, GIF, WebP).'
-                });
-                return;
-            }
-
-            // Создаем превью
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-                setFormData(prev => ({
-                    ...prev,
-                    featuredImage: reader.result
-                }));
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const removeImage = () => {
-        setImagePreview(null);
         setFormData(prev => ({
             ...prev,
-            featuredImage: ''
+            [name]: value
         }));
     };
 
-    // Обработка создания новой категории (только admin)
-    const handleCreateCategory = async () => {
-        if (!newCategoryName.trim()) {
-            setCategoryMessage({
-                type: 'error',
-                text: 'Zadajte názov kategórie'
-            });
-            return;
-        }
-
-        if (newCategoryName.trim().length < 2) {
-            setCategoryMessage({
-                type: 'error',
-                text: 'Názov kategórie musí obsahovať minimálne 2 znaky'
-            });
-            return;
-        }
-
-        setCreatingCategory(true);
-        setCategoryMessage({ type: '', text: '' });
-
-        try {
-            const result = await createCategory({
-                name: newCategoryName.trim()
-            });
-
-            if (result.success) {
-                setCategoryMessage({
-                    type: 'success',
-                    text: result.message || 'Kategória bola úspešne vytvorená!'
-                });
-
-                // Обновляем список категорий
-                await loadCategories();
-
-                // Очищаем поле ввода
-                setNewCategoryName('');
-
-                // Автоматически выбираем новую категорию
-                if (result.data?.data?._id) {
-                    setFormData(prev => ({
-                        ...prev,
-                        category: result.data.data._id
-                    }));
-                }
-
-                // Убираем сообщение через 3 секунды
-                setTimeout(() => {
-                    setCategoryMessage({ type: '', text: '' });
-                }, 3000);
-            } else {
-                setCategoryMessage({
-                    type: 'error',
-                    text: result.message || 'Chyba pri vytváraní kategórie'
-                });
-            }
-        } catch (error) {
-            console.error('Error creating category:', error);
-            setCategoryMessage({
-                type: 'error',
-                text: 'Neočakávaná chyba pri vytváraní kategórie'
-            });
-        } finally {
-            setCreatingCategory(false);
-        }
+    // Обработка изменений в TinyMCE
+    const handleEditorChange = (content) => {
+        setFormData(prev => ({
+            ...prev,
+            content: content
+        }));
     };
 
     const handleSave = async (submitForReview = false) => {
@@ -215,11 +83,6 @@ const NewArticlePage = ({ user }) => {
         // Базовая валидация
         if (!formData.title.trim()) {
             setMessage({ type: 'error', text: 'Nadpis článku je povinný' });
-            return;
-        }
-
-        if (!formData.slug.trim()) {
-            setMessage({ type: 'error', text: 'URL adresa (slug) je povinná' });
             return;
         }
 
@@ -243,7 +106,6 @@ const NewArticlePage = ({ user }) => {
         try {
             const articleData = {
                 title: formData.title.trim(),
-                slug: formData.slug.trim(),
                 excerpt: formData.excerpt.trim(),
                 content: formData.content.trim(),
                 category: formData.category,
@@ -251,7 +113,6 @@ const NewArticlePage = ({ user }) => {
                     .split(',')
                     .map(tag => tag.trim())
                     .filter(tag => tag.length > 0),
-                featuredImage: formData.featuredImage || undefined,
                 submitForReview
             };
 
@@ -341,26 +202,6 @@ const NewArticlePage = ({ user }) => {
                         </div>
                     </div>
 
-                    {/* Slug */}
-                    <div className="new-article__field">
-                        <label htmlFor="slug" className="new-article__label">
-                            URL adresa (slug) *
-                        </label>
-                        <input
-                            type="text"
-                            id="slug"
-                            name="slug"
-                            value={formData.slug}
-                            onChange={handleInputChange}
-                            className="new-article__input"
-                            placeholder="url-adresa-clanku"
-                            disabled={loading}
-                        />
-                        <small className="new-article__hint">
-                            Automaticky sa generuje z nadpisu. Môžete upraviť podľa potreby.
-                        </small>
-                    </div>
-
                     {/* Excerpt */}
                     <div className="new-article__field">
                         <label htmlFor="excerpt" className="new-article__label">
@@ -382,51 +223,24 @@ const NewArticlePage = ({ user }) => {
                         </div>
                     </div>
 
-                    {/* ADMIN: Create new category block */}
-                    {user.role === 'admin' && (
-                        <div className="new-article__category-creator">
-                            <h3>➕ Vytvoriť novú kategóriu (len pre admina)</h3>
-
-                            {categoryMessage.text && (
-                                <div className={`new-article__message new-article__message--${categoryMessage.type}`}>
-                                    {categoryMessage.text}
-                                </div>
-                            )}
-
-                            <div className="new-article__category-form">
-                                <input
-                                    type="text"
-                                    value={newCategoryName}
-                                    onChange={(e) => setNewCategoryName(e.target.value)}
-                                    placeholder="Názov novej kategórie..."
-                                    className="new-article__input"
-                                    disabled={creatingCategory}
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleCreateCategory();
-                                        }
-                                    }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleCreateCategory}
-                                    disabled={creatingCategory || !newCategoryName.trim()}
-                                    className="new-article__btn new-article__btn--create-category"
-                                >
-                                    {creatingCategory ? '⏳ Vytváram...' : '✅ Vytvoriť kategóriu'}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
                     {/* Category */}
                     <div className="new-article__field">
                         <label htmlFor="category" className="new-article__label">
                             Kategória *
                         </label>
                         {loadingCategories ? (
-                            <div className="new-article__loading">Načítavam kategórie...</div>
+                            <div className="new-article__loading">
+                                Načítavanie kategórií...
+                            </div>
+                        ) : categories.length === 0 ? (
+                            <div className="new-article__no-categories">
+                                <p>Zatiaľ neboli vytvorené žiadne kategórie.</p>
+                                {user.role === 'admin' && (
+                                    <p className="new-article__hint">
+                                        Admin môže vytvoriť kategórie v sekcii "Kategórie".
+                                    </p>
+                                )}
+                            </div>
                         ) : (
                             <select
                                 id="category"
@@ -436,25 +250,20 @@ const NewArticlePage = ({ user }) => {
                                 className="new-article__select"
                                 disabled={loading}
                             >
-                                <option value="">Vyberte kategóriu</option>
-                                {Array.isArray(categories) && categories.map(cat => (
+                                <option value="">-- Vyberte kategóriu --</option>
+                                {categories.map((cat) => (
                                     <option key={cat._id} value={cat._id}>
                                         {cat.name}
                                     </option>
                                 ))}
                             </select>
                         )}
-                        {!loadingCategories && categories.length === 0 && (
-                            <small className="new-article__hint new-article__hint--error">
-                                Žiadne kategórie nie sú k dispozícii. {user.role === 'admin' ? 'Vytvorte novú kategóriu vyššie.' : 'Kontaktujte administrátora.'}
-                            </small>
-                        )}
                     </div>
 
                     {/* Tags */}
                     <div className="new-article__field">
                         <label htmlFor="tags" className="new-article__label">
-                            Tagy (nepovinné)
+                            Tagy (voliteľné)
                         </label>
                         <input
                             type="text"
@@ -463,95 +272,92 @@ const NewArticlePage = ({ user }) => {
                             value={formData.tags}
                             onChange={handleInputChange}
                             className="new-article__input"
-                            placeholder="investície, kryptomeny, Bitcoin"
+                            placeholder="technológie, financie, spravodajstvo (oddelené čiarkou)"
                             disabled={loading}
                         />
                         <small className="new-article__hint">
-                            Oddeľte tagy čiarkou. Napríklad: investície, kryptomeny, Bitcoin
+                            Oddeľte tagy čiarkou. Príklad: finančné trhy, investície, burza
                         </small>
                     </div>
 
-                    {/* Featured Image */}
+                    {/* Content - TinyMCE Editor */}
                     <div className="new-article__field">
                         <label className="new-article__label">
-                            Hlavný obrázok (nepovinné)
-                        </label>
-                        <div className="new-article__image-upload">
-                            {imagePreview ? (
-                                <div className="new-article__image-preview">
-                                    <img src={imagePreview} alt="Preview" />
-                                    <button
-                                        type="button"
-                                        onClick={removeImage}
-                                        className="new-article__remove-image"
-                                        disabled={loading}
-                                    >
-                                        ✕ Odstrániť
-                                    </button>
-                                </div>
-                            ) : (
-                                <label className="new-article__upload-label">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        disabled={loading}
-                                        style={{ display: 'none' }}
-                                    />
-                                    📁 Nahrať obrázok (max 5MB)
-                                </label>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="new-article__field">
-                        <label htmlFor="content" className="new-article__label">
                             Obsah článku *
                         </label>
-                        <textarea
-                            id="content"
-                            name="content"
-                            value={formData.content}
-                            onChange={handleInputChange}
-                            className="new-article__textarea new-article__textarea--large"
-                            placeholder="Napíšte obsah článku... (minimálne 500 znakov)"
-                            rows="15"
-                            maxLength="10000"
-                            disabled={loading}
-                        />
+                        <div className="new-article__editor-wrapper">
+                            <Editor
+                                apiKey = {process.env.NEXT_PUBLIC_TINYMCE} 
+                                onInit={(evt, editor) => editorRef.current = editor}
+                                value={formData.content}
+                                onEditorChange={handleEditorChange}
+                                init={{
+                                    height: 600,
+                                    menubar: true,
+                                    plugins: [
+                                        // Core editing features
+                                        'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 
+                                        'link', 'lists', 'media', 'searchreplace', 'table', 
+                                        'visualblocks', 'wordcount',
+                                        // Premium features (trial until Nov 4, 2025)
+                                        'checklist', 'mediaembed', 'casechange', 'formatpainter', 
+                                        'pageembed', 'a11ychecker', 'tinymcespellchecker', 
+                                        'permanentpen', 'powerpaste', 'advtable', 'advcode', 
+                                        'advtemplate', 'mentions', 'tinycomments', 
+                                        'tableofcontents', 'footnotes', 'mergetags', 
+                                        'autocorrect', 'typography', 'inlinecss', 'markdown',
+                                        'importword', 'exportword', 'exportpdf'
+                                    ],
+                                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | ' +
+                                        'link media table mergetags | addcomment showcomments | ' +
+                                        'spellcheckdialog a11ycheck typography | align lineheight | ' +
+                                        'checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                                    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; line-height: 1.6; }',
+                                    language: 'sk',
+                                    placeholder: 'Začnite písať obsah článku...',
+                                    tinycomments_mode: 'embedded',
+                                    tinycomments_author: user?.displayName || 'Author',
+                                    mergetags_list: [
+                                        { value: 'First.Name', title: 'First Name' },
+                                        { value: 'Email', title: 'Email' },
+                                    ],
+                                }}
+                                disabled={loading}
+                            />
+                        </div>
                         <div className={`character-count ${contentCount.className}`}>
                             {contentCount.count}/10000 znakov (min. 500)
                         </div>
                     </div>
 
-                    {/* Actions */}
+                    {/* Action Buttons */}
                     <div className="new-article__actions">
                         <button
                             type="button"
-                            onClick={() => router.back()}
+                            className="new-article__btn new-article__btn--secondary"
+                            onClick={() => router.push('/profil/moje-clanky')}
                             disabled={loading}
-                            className="new-article__btn new-article__btn--cancel"
                         >
                             Zrušiť
                         </button>
                         <button
                             type="button"
+                            className="new-article__btn new-article__btn--draft"
                             onClick={() => handleSave(false)}
                             disabled={loading}
-                            className="new-article__btn new-article__btn--draft"
                         >
-                            {loading ? '💾 Ukladám...' : '💾 Uložiť ako koncept'}
+                            {loading ? 'Ukladanie...' : 'Uložiť ako koncept'}
                         </button>
                         <button
                             type="button"
+                            className="new-article__btn new-article__btn--primary"
                             onClick={() => handleSave(true)}
                             disabled={loading}
-                            className="new-article__btn new-article__btn--submit"
                         >
-                            {loading ? '📤 Odosielam...' : '📤 Uložiť a odoslať na moderáciu'}
+                            {loading ? 'Odosiela sa...' : 'Odoslať na moderáciu'}
                         </button>
                     </div>
+
                 </form>
             </div>
         </div>
