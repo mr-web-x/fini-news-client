@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getAllArticlesForAdmin, getPendingArticles, getMyArticles , approveArticle, rejectArticle, deleteArticle } from "@/actions/articles.actions";
 import "./AllArticlesPage.scss";
+import { useState, useEffect } from "react";
+import { getAllArticlesForAdmin, getPendingArticles, getMyArticles, approveArticle, rejectArticle, deleteArticle } from "@/actions/articles.actions";
+import CommentModal from "@/components/Modal/CommentModal"; // ✅ добавлено
 
 const AllArticlesPage = ({ user }) => {
     const [articles, setArticles] = useState([]);
@@ -23,6 +24,15 @@ const AllArticlesPage = ({ user }) => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [rejectReason, setRejectReason] = useState('');
     const [rejectingArticleId, setRejectingArticleId] = useState(null);
+
+    // ✅ Comments state
+    const [showCommentModal, setShowCommentModal] = useState(false);
+    const [selectedArticleId, setSelectedArticleId] = useState(null);
+
+    const handleOpenCommentModal = (articleId) => {
+        setSelectedArticleId(articleId);
+        setShowCommentModal(true);
+    };
 
     // Загружаем общую статистику при монтировании компонента
     useEffect(() => {
@@ -87,7 +97,6 @@ const AllArticlesPage = ({ user }) => {
         }
     };
 
-
     /**
      * Загрузка статей по текущему фильтру
      */
@@ -145,7 +154,6 @@ const AllArticlesPage = ({ user }) => {
         }
     };
 
-
     const getStatusLabel = (status) => {
         switch (status) {
             case 'draft': return 'Koncept';
@@ -183,8 +191,8 @@ const AllArticlesPage = ({ user }) => {
 
             if (result.success) {
                 setMessage({ type: 'success', text: result.message });
-                loadArticles(); // Перезагружаем список
-                loadAllStats(); // Обновляем статистику
+                loadArticles();
+                loadAllStats();
             } else {
                 setMessage({ type: 'error', text: result.message });
             }
@@ -212,8 +220,8 @@ const AllArticlesPage = ({ user }) => {
                 setMessage({ type: 'success', text: result.message });
                 setRejectingArticleId(null);
                 setRejectReason('');
-                loadArticles(); // Перезагружаем список
-                loadAllStats(); // Обновляем статистику
+                loadArticles();
+                loadAllStats();
             } else {
                 setMessage({ type: 'error', text: result.message });
             }
@@ -231,8 +239,8 @@ const AllArticlesPage = ({ user }) => {
 
             if (result.success) {
                 setMessage({ type: 'success', text: result.message });
-                loadArticles(); // Перезагружаем список
-                loadAllStats(); // Обновляем статистику
+                loadArticles();
+                loadAllStats();
             } else {
                 setMessage({ type: 'error', text: result.message });
             }
@@ -249,14 +257,12 @@ const AllArticlesPage = ({ user }) => {
                 <p>Spravujte všetky články v systéme, ich stavy a moderáciu</p>
             </div>
 
-            {/* Message */}
             {message.text && (
                 <div className={`all-articles__message all-articles__message--${message.type}`}>
                     {message.text}
                 </div>
             )}
 
-            {/* Statistics */}
             <div className="all-articles__stats">
                 <div className="all-articles__stat-card">
                     <div className="all-articles__stat-number">
@@ -284,7 +290,6 @@ const AllArticlesPage = ({ user }) => {
                 </div>
             </div>
 
-            {/* Controls */}
             <div className="all-articles__controls">
                 <div className="all-articles__search">
                     <input
@@ -293,7 +298,7 @@ const AllArticlesPage = ({ user }) => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="all-articles__search-input"
-                        disabled={filter === 'moderation'} // Поиск отключен для вкладки модерации
+                        disabled={filter === 'moderation'}
                     />
                 </div>
 
@@ -312,7 +317,6 @@ const AllArticlesPage = ({ user }) => {
                 </div>
             </div>
 
-            {/* Filter Tabs */}
             <div className="all-articles__filters">
                 <button
                     onClick={() => setFilter('moderation')}
@@ -346,7 +350,6 @@ const AllArticlesPage = ({ user }) => {
                 </button>
             </div>
 
-            {/* Articles List */}
             <div className="all-articles__list">
                 {loading ? (
                     <div className="all-articles__loading">
@@ -392,7 +395,6 @@ const AllArticlesPage = ({ user }) => {
                                 </h3>
                                 <p className="admin-article-card__excerpt">{article.excerpt}</p>
 
-                                {/* Показываем причину отклонения если есть */}
                                 {article.status === 'rejected' && article.moderationNote && (
                                     <div className="admin-article-card__moderation-note">
                                         <strong>Dôvod zamietnutia:</strong> {article.moderationNote}
@@ -400,54 +402,53 @@ const AllArticlesPage = ({ user }) => {
                                 )}
                             </div>
 
-                            <div className="admin-article-card__footer">
-                                <div className="admin-article-card__stats">
-                                    <span className="admin-article-card__stat">👁️ {article.views || 0}</span>
-                                    <span className="admin-article-card__stat">💬 {article.commentsCount || 0}</span>
-                                </div>
-
-                                <div className="admin-article-card__actions">
-                                    {/* Модерация для статей на рассмотрении */}
-                                    {article.status === 'pending' && (
-                                        <>
-                                            <button
-                                                onClick={() => handleApprove(article._id)}
-                                                className="admin-article-card__action-btn admin-article-card__approve-btn"
-                                            >
-                                                ✅ Schváliť
-                                            </button>
-                                            <button
-                                                onClick={() => handleRejectClick(article._id)}
-                                                className="admin-article-card__action-btn admin-article-card__reject-btn"
-                                            >
-                                                ❌ Zamietnuť
-                                            </button>
-                                        </>
-                                    )}
-
-                                    {/* Просмотр опубликованных статей */}
-                                    {article.status === 'published' && (
-                                        <a
-                                            href={`/clanky/${article.slug}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="admin-article-card__action-btn admin-article-card__view-btn"
-                                        >
-                                            👁️ Zobraziť
-                                        </a>
-                                    )}
-
-                                    {/* Удаление статьи (для всех статусов) */}
-                                    <button
-                                        onClick={() => handleDelete(article._id)}
-                                        className="admin-article-card__action-btn admin-article-card__delete-btn"
-                                    >
-                                        🗑️ Vymazať
-                                    </button>
-                                </div>
+                            <div className="admin-article-card__stats">
+                                <span className="admin-article-card__stat">👁️ {article.views || 0}</span>
+                                <button
+                                    className="admin-article-card__stat admin-article-card__comments-btn"
+                                    onClick={() => handleOpenCommentModal(article._id)}
+                                >
+                                    💬 {article.commentsCount || 0}
+                                </button>
                             </div>
 
-                            {/* Модальное окно для отклонения статьи */}
+                            <div className="admin-article-card__actions">
+                                {article.status === 'pending' && (
+                                    <>
+                                        <button
+                                            onClick={() => handleApprove(article._id)}
+                                            className="admin-article-card__action-btn admin-article-card__approve-btn"
+                                        >
+                                            ✅ Schváliť
+                                        </button>
+                                        <button
+                                            onClick={() => handleRejectClick(article._id)}
+                                            className="admin-article-card__action-btn admin-article-card__reject-btn"
+                                        >
+                                            ❌ Zamietnuť
+                                        </button>
+                                    </>
+                                )}
+
+                                {article.status === 'published' && (
+                                    <a
+                                        href={`/clanky/${article.slug}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="admin-article-card__action-btn admin-article-card__view-btn"
+                                    >
+                                        👁️ Zobraziť
+                                    </a>
+                                )}
+
+                                <button
+                                    onClick={() => handleDelete(article._id)}
+                                    className="admin-article-card__action-btn admin-article-card__delete-btn"
+                                >
+                                    🗑️ Vymazať
+                                </button>
+                            </div>
+
                             {rejectingArticleId === article._id && (
                                 <div className="admin-article-card__reject-modal">
                                     <h4>Dôvod zamietnutia článku</h4>
@@ -482,6 +483,18 @@ const AllArticlesPage = ({ user }) => {
                     ))
                 )}
             </div>
+
+            {/* ✅ Модальное окно для добавления комментариев */}
+            {showCommentModal && (
+                <CommentModal
+                    articleId={selectedArticleId}
+                    isOpen={showCommentModal}
+                    onClose={() => setShowCommentModal(false)}
+                    onSuccess={() => {
+                        loadArticles(); // обновляем счётчик комментариев после добавления
+                    }}
+                />
+            )}
         </div>
     );
 };
