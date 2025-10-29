@@ -1,7 +1,8 @@
 import { getMe } from '@/actions/auth.actions';
 import { redirect } from 'next/navigation';
+import ArticlePreviewPage from '@/features/ArticlePreviewPage/ArticlePreviewPage';
 
-export default async function EditArticleRedirectPage({ params }) {
+export default async function UkazkaPage({ params, searchParams }) {
     // SSR: Получаем данные пользователя на сервере
     const user = await getMe();
 
@@ -10,12 +11,12 @@ export default async function EditArticleRedirectPage({ params }) {
         redirect('/prihlasenie');
     }
 
-    // Проверяем роль - только author и admin могут редактировать статьи
+    // Проверяем роль - доступ для author и admin
     if (user.role !== 'author' && user.role !== 'admin') {
         redirect('/profil');
     }
 
-    // Получаем ID статьи из параметров
+    // Получаем ID статьи из динамического параметра
     const articleId = params['moje-clankyId'];
 
     // Если нет ID - редирект на список статей
@@ -23,7 +24,5 @@ export default async function EditArticleRedirectPage({ params }) {
         redirect('/profil/moje-clanky');
     }
 
-    // Редирект на страницу редактирования с ID в query параметре
-    // NewArticlePage уже умеет работать с query параметром ?id=...
-    redirect(`/profil/novy-clanok?id=${articleId}`);
+    return <ArticlePreviewPage user={user} articleId={articleId} />;
 }

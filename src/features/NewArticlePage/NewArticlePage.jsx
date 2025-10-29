@@ -1,15 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { createArticle } from "@/actions/articles.actions";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createArticle, getArticleById, updateArticle } from "@/actions/articles.actions";
 import { getAllCategories } from "@/actions/categories.actions";
 import { Editor } from '@tinymce/tinymce-react';
 import "./NewArticlePage.scss";
 
 const NewArticlePage = ({ user }) => {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const editorRef = useRef(null);
+
+    // ✅ НОВОЕ: получаем articleId из query параметра
+    const articleId = searchParams.get('id');
+    const isEditMode = !!articleId;
 
     const [formData, setFormData] = useState({
         title: '',
@@ -20,16 +25,24 @@ const NewArticlePage = ({ user }) => {
     });
 
     const [loading, setLoading] = useState(false);
+    const [loadingArticle, setLoadingArticle] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
     // Состояние для категорий
     const [categories, setCategories] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
 
-    // Загрузка категорий при монтировании компонента
+    // ✅ Загрузка категорий при монтировании компонента
     useEffect(() => {
         loadCategories();
     }, []);
+
+    // ✅ НОВОЕ: Загрузка статьи при монтировании (если есть articleId)
+    useEffect(() => {
+        if (articleId) {
+            loadArticle(articleId);
+        }
+    }, [articleId]);
 
     const loadCategories = async () => {
         setLoadingCategories(true);
@@ -61,6 +74,69 @@ const NewArticlePage = ({ user }) => {
         }
     };
 
+    // ✅ НОВОЕ: Загрузка статьи для редактирования
+    const loadArticle = async (id) => {
+        setLoadingArticle(true);
+        try {
+            const result = await getArticleById(id);
+
+            if (!result.success) {
+                setMessage({ type: 'error', text: result.message || 'Статья не найдена' });
+                // Редирект на страницу со списком статей
+                setTimeout(() => {
+                    router.push('/profil/moje-clanky');
+                }, 2000);
+                return;
+            }
+
+            const article = result.data;
+
+            // Проверяем права доступа
+            const isAuthor = article.author?._id === user._id;
+            const isAdmin = user.role === 'admin';
+
+            if (!isAuthor && !isAdmin) {
+                setMessage({ type: 'error', text: 'Nemáte oprávnenie upravovať tento článok' });
+                setTimeout(() => {
+                    router.push('/profil/moje-clanky');
+                }, 2000);
+                return;
+            }
+
+            // Проверяем статус статьи
+            if (article.status === 'published') {
+                setMessage({ type: 'error', text: 'Publikované články nie je možné upravovať' });
+                setTimeout(() => {
+                    router.push('/profil/moje-clanky');
+                }, 2000);
+                return;
+            }
+
+            if (article.status === 'pending' && !isAdmin) {
+                setMessage({ type: 'error', text: 'Článok je na moderácii. Počkajte na rozhodnutie administrátora.' });
+                setTimeout(() => {
+                    router.push('/profil/moje-clanky');
+                }, 2000);
+                return;
+            }
+
+            // Заполняем форму данными статьи
+            setFormData({
+                title: article.title || '',
+                excerpt: article.excerpt || '',
+                content: article.content || '',
+                category: article.category?._id || '',
+                tags: article.tags?.join(', ') || ''
+            });
+
+        } catch (error) {
+            console.error('Error loading article:', error);
+            setMessage({ type: 'error', text: 'Chyba pri načítavaní článku' });
+        } finally {
+            setLoadingArticle(false);
+        }
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -86,18 +162,28 @@ const NewArticlePage = ({ user }) => {
             return;
         }
 
-        if (!formData.excerpt.trim() || formData.excerpt.length < 150) {
+        if (!formData.excerpt.trim()) {
+            setMessage({ type: 'error', text: 'Perex je povinný' });
+            return;
+        }
+
+        if (formData.excerpt.trim().length < 150) {
             setMessage({ type: 'error', text: 'Perex musí obsahovať minimálne 150 znakov' });
             return;
         }
 
-        if (!formData.content.trim() || formData.content.length < 500) {
-            setMessage({ type: 'error', text: 'Obsah článku musí obsahovať minimálne 500 znakov' });
+        if (!formData.content.trim()) {
+            setMessage({ type: 'error', text: 'Obsah článku je povinný' });
+            return;
+        }
+
+        if (formData.content.trim().length < 500) {
+            setMessage({ type: 'error', text: 'Obsah musí obsahovať minimálne 500 znakov' });
             return;
         }
 
         if (!formData.category) {
-            setMessage({ type: 'error', text: 'Vyberte kategóriu článku' });
+            setMessage({ type: 'error', text: 'Kategória je povinná' });
             return;
         }
 
@@ -112,38 +198,60 @@ const NewArticlePage = ({ user }) => {
                 tags: formData.tags
                     .split(',')
                     .map(tag => tag.trim())
-                    .filter(tag => tag.length > 0),
-                submitForReview
+                    .filter(tag => tag.length > 0)
             };
 
-            const result = await createArticle(articleData);
+            let result;
 
-            if (!result.success) {
-                setMessage({ type: 'error', text: result.message });
-                setLoading(false);
-                return;
+            // ✅ НОВОЕ: Редактирование или создание статьи
+            if (isEditMode) {
+                result = await updateArticle(articleId, articleData);
+            } else {
+                result = await createArticle(articleData);
             }
 
-            setMessage({
-                type: 'success',
-                text: submitForReview
-                    ? 'Článok bol vytvorený a odoslaný na moderáciu!'
-                    : 'Článok bol úspešne uložený ako koncept!'
-            });
+            if (result.success) {
+                const savedArticle = result.data;
 
-            // Redirect через 2 секунды
-            setTimeout(() => {
-                router.push('/profil/moje-clanky');
-            }, 2000);
+                setMessage({
+                    type: 'success',
+                    text: isEditMode
+                        ? 'Článok bol úspešne upravený'
+                        : 'Článok bol úspešne vytvorený ako koncept'
+                });
 
+                // Если это создание новой статьи, обновляем URL с articleId
+                if (!isEditMode) {
+                    router.push(`/profil/novy-clanok?id=${savedArticle._id}`);
+                }
+
+                // Если нужно отправить на модерацию
+                if (submitForReview) {
+                    setTimeout(() => {
+                        router.push('/profil/moje-clanky');
+                    }, 1000);
+                }
+            } else {
+                setMessage({
+                    type: 'error',
+                    text: result.message || 'Chyba pri ukladaní článku'
+                });
+            }
         } catch (error) {
-            console.error('Error creating article:', error);
+            console.error('Error saving article:', error);
             setMessage({
                 type: 'error',
-                text: 'Neočakávaná chyba pri vytváraní článku. Skúste to znova.'
+                text: 'Neočakávaná chyba. Skúste to znova.'
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    // ✅ НОВОЕ: Обработчик клика на кнопку "Náhľad"
+    const handlePreview = () => {
+        if (articleId) {
+            router.push(`/profil/moje-clanky/${articleId}/ukazka`);
         }
     };
 
@@ -164,11 +272,32 @@ const NewArticlePage = ({ user }) => {
     const excerptCount = getCharacterCount(formData.excerpt, 320);
     const contentCount = getCharacterCount(formData.content, 10000);
 
+    // ✅ Показываем загрузку, если загружается статья
+    if (loadingArticle) {
+        return (
+            <div className="new-article-page">
+                <div className="new-article__header">
+                    <h1>Načítavam článok...</h1>
+                </div>
+                <div className="new-article__content">
+                    <div className="new-article__loading">
+                        <div className="spinner"></div>
+                        <p>Načítavam...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="new-article-page">
             <div className="new-article__header">
-                <h1>Nový článok</h1>
-                <p>Vytvorte nový článok pre publikáciu na portáli</p>
+                <h1>{isEditMode ? 'Upraviť článok' : 'Nový článok'}</h1>
+                <p>
+                    {isEditMode
+                        ? 'Upravte existujúci článok'
+                        : 'Vytvorte nový článok pre publikáciu na portáli'}
+                </p>
             </div>
 
             <div className="new-article__content">
@@ -228,36 +357,21 @@ const NewArticlePage = ({ user }) => {
                         <label htmlFor="category" className="new-article__label">
                             Kategória *
                         </label>
-                        {loadingCategories ? (
-                            <div className="new-article__loading">
-                                Načítavanie kategórií...
-                            </div>
-                        ) : categories.length === 0 ? (
-                            <div className="new-article__no-categories">
-                                <p>Zatiaľ neboli vytvorené žiadne kategórie.</p>
-                                {user.role === 'admin' && (
-                                    <p className="new-article__hint">
-                                        Admin môže vytvoriť kategórie v sekcii "Kategórie".
-                                    </p>
-                                )}
-                            </div>
-                        ) : (
-                            <select
-                                id="category"
-                                name="category"
-                                value={formData.category}
-                                onChange={handleInputChange}
-                                className="new-article__select"
-                                disabled={loading}
-                            >
-                                <option value="">-- Vyberte kategóriu --</option>
-                                {categories.map((cat) => (
-                                    <option key={cat._id} value={cat._id}>
-                                        {cat.name}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
+                        <select
+                            id="category"
+                            name="category"
+                            value={formData.category}
+                            onChange={handleInputChange}
+                            className="new-article__select"
+                            disabled={loading || loadingCategories}
+                        >
+                            <option value="">Vyberte kategóriu</option>
+                            {categories.map(cat => (
+                                <option key={cat._id} value={cat._id}>
+                                    {cat.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Tags */}
@@ -272,22 +386,22 @@ const NewArticlePage = ({ user }) => {
                             value={formData.tags}
                             onChange={handleInputChange}
                             className="new-article__input"
-                            placeholder="technológie, financie, spravodajstvo (oddelené čiarkou)"
+                            placeholder="React, JavaScript, Web Development (oddeľte čiarkou)"
                             disabled={loading}
                         />
-                        <small className="new-article__hint">
-                            Oddeľte tagy čiarkou. Príklad: finančné trhy, investície, burza
+                        <small className="new-article__help-text">
+                            Pridajte tagy oddelené čiarkou (napr. React, JavaScript)
                         </small>
                     </div>
 
-                    {/* Content - TinyMCE Editor */}
+                    {/* Content (TinyMCE) */}
                     <div className="new-article__field">
-                        <label className="new-article__label">
+                        <label htmlFor="content" className="new-article__label">
                             Obsah článku *
                         </label>
-                        <div className="new-article__editor-wrapper">
+                        <div className="new-article__content-editor">
                             <Editor
-                                apiKey = {process.env.NEXT_PUBLIC_TINYMCE} 
+                                apiKey={process.env.NEXT_PUBLIC_TINYMCE}
                                 onInit={(evt, editor) => editorRef.current = editor}
                                 value={formData.content}
                                 onEditorChange={handleEditorChange}
@@ -295,32 +409,17 @@ const NewArticlePage = ({ user }) => {
                                     height: 600,
                                     menubar: true,
                                     plugins: [
-                                        // Core editing features
-                                        'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 
-                                        'link', 'lists', 'media', 'searchreplace', 'table', 
-                                        'visualblocks', 'wordcount',
-                                        // Premium features (trial until Nov 4, 2025)
-                                        'checklist', 'mediaembed', 'casechange', 'formatpainter', 
-                                        'pageembed', 'a11ychecker', 'tinymcespellchecker', 
-                                        'permanentpen', 'powerpaste', 'advtable', 'advcode', 
-                                        'advtemplate', 'mentions', 'tinycomments', 
-                                        'tableofcontents', 'footnotes', 'mergetags', 
-                                        'autocorrect', 'typography', 'inlinecss', 'markdown',
-                                        'importword', 'exportword', 'exportpdf'
+                                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                                        'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
                                     ],
-                                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | ' +
-                                        'link media table mergetags | addcomment showcomments | ' +
-                                        'spellcheckdialog a11ycheck typography | align lineheight | ' +
-                                        'checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                                    toolbar: 'undo redo | blocks | ' +
+                                        'bold italic forecolor | alignleft aligncenter ' +
+                                        'alignright alignjustify | bullist numlist outdent indent | ' +
+                                        'removeformat | help',
                                     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; line-height: 1.6; }',
                                     language: 'sk',
                                     placeholder: 'Začnite písať obsah článku...',
-                                    tinycomments_mode: 'embedded',
-                                    tinycomments_author: user?.displayName || 'Author',
-                                    mergetags_list: [
-                                        { value: 'First.Name', title: 'First Name' },
-                                        { value: 'Email', title: 'Email' },
-                                    ],
                                 }}
                                 disabled={loading}
                             />
@@ -340,14 +439,28 @@ const NewArticlePage = ({ user }) => {
                         >
                             Zrušiť
                         </button>
+
+                        {/* ✅ НОВОЕ: Кнопка "Náhľad" - только если статья уже сохранена */}
+                        {isEditMode && (
+                            <button
+                                type="button"
+                                className="new-article__btn new-article__btn--preview"
+                                onClick={handlePreview}
+                                disabled={loading}
+                            >
+                                👁️ Náhľad
+                            </button>
+                        )}
+
                         <button
                             type="button"
                             className="new-article__btn new-article__btn--draft"
                             onClick={() => handleSave(false)}
                             disabled={loading}
                         >
-                            {loading ? 'Ukladanie...' : 'Uložiť ako koncept'}
+                            {loading ? 'Ukladanie...' : isEditMode ? 'Uložiť zmeny' : 'Uložiť ako koncept'}
                         </button>
+
                         <button
                             type="button"
                             className="new-article__btn new-article__btn--primary"

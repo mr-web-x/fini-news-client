@@ -1,0 +1,199 @@
+/* ============================================
+   MODAL - Универсальный компонент модального окна
+   ============================================ */
+
+/* === OVERLAY === */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+    backdrop-filter: blur(2px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* === MODAL CONTAINER === */
+.modal {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
+    position: relative;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === SIZES === */
+.modal--small {
+    max-width: 400px;
+}
+
+.modal--medium {
+    max-width: 600px;
+}
+
+.modal--large {
+    max-width: 800px;
+}
+
+/* === HEADER === */
+.modal__header {
+    padding: 24px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.modal__title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+    font-family: "Montserrat", sans-serif;
+}
+
+.modal__close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #718096;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+
+    &:hover {
+        background: #f7fafc;
+        color: #2d3748;
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+}
+
+/* === CONTENT === */
+.modal__content {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+
+    /* Кастомный скроллбар */
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f7fafc;
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 4px;
+
+        &:hover {
+            background: #a0aec0;
+        }
+    }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .modal-overlay {
+        padding: 16px;
+        align-items: flex-end;
+    }
+
+    .modal {
+        max-height: 85vh;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        animation: slideUpMobile 0.3s ease;
+    }
+
+    @keyframes slideUpMobile {
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
+    }
+
+    .modal--small,
+    .modal--medium,
+    .modal--large {
+        max-width: 100%;
+    }
+
+    .modal__header {
+        padding: 20px;
+    }
+
+    .modal__title {
+        font-size: 20px;
+    }
+
+    .modal__content {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-overlay {
+        padding: 0;
+    }
+
+    .modal {
+        max-height: 90vh;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .modal__header {
+        padding: 16px;
+    }
+
+    .modal__title {
+        font-size: 18px;
+    }
+
+    .modal__content {
+        padding: 16px;
+    }
+}

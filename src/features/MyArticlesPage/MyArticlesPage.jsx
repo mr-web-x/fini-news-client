@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getMyArticles, deleteArticle, submitArticleForReview } from "@/actions/articles.actions";
+import ArticleCard from "@/components/ArticleCard/ArticleCard";
 import "./MyArticlesPage.scss";
 
 const MyArticlesPage = ({ user }) => {
@@ -90,35 +91,6 @@ const MyArticlesPage = ({ user }) => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const getStatusLabel = (status) => {
-        switch (status) {
-            case 'draft': return 'Koncept';
-            case 'pending': return 'Na moderácii';
-            case 'published': return 'Publikované';
-            case 'rejected': return 'Zamietnuté';
-            default: return status;
-        }
-    };
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'draft': return 'status--draft';
-            case 'pending': return 'status--pending';
-            case 'published': return 'status--published';
-            case 'rejected': return 'status--rejected';
-            default: return '';
-        }
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('sk-SK', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
     };
 
     const handleDelete = async (articleId) => {
@@ -215,10 +187,10 @@ const MyArticlesPage = ({ user }) => {
                     Všetky ({statsLoading ? '...' : stats.total})
                 </button>
                 <button
-                    onClick={() => setFilter('published')}
-                    className={`articles__filter-btn ${filter === 'published' ? 'articles__filter-btn--active' : ''}`}
+                    onClick={() => setFilter('draft')}
+                    className={`articles__filter-btn ${filter === 'draft' ? 'articles__filter-btn--active' : ''}`}
                 >
-                    Publikované ({statsLoading ? '...' : stats.published})
+                    Koncepty ({statsLoading ? '...' : stats.draft})
                 </button>
                 <button
                     onClick={() => setFilter('pending')}
@@ -227,10 +199,10 @@ const MyArticlesPage = ({ user }) => {
                     Na moderácii ({statsLoading ? '...' : stats.pending})
                 </button>
                 <button
-                    onClick={() => setFilter('draft')}
-                    className={`articles__filter-btn ${filter === 'draft' ? 'articles__filter-btn--active' : ''}`}
+                    onClick={() => setFilter('published')}
+                    className={`articles__filter-btn ${filter === 'published' ? 'articles__filter-btn--active' : ''}`}
                 >
-                    Koncepty ({statsLoading ? '...' : stats.draft})
+                    Publikované ({statsLoading ? '...' : stats.published})
                 </button>
                 <button
                     onClick={() => setFilter('rejected')}
@@ -258,102 +230,13 @@ const MyArticlesPage = ({ user }) => {
                     </div>
                 ) : (
                     articles.map(article => (
-                        <div key={article._id} className="article-card">
-                            <div className="article-card__header">
-                                <span className={`article-card__status ${getStatusColor(article.status)}`}>
-                                    {getStatusLabel(article.status)}
-                                </span>
-                                <span className="article-card__date">
-                                    {formatDate(article.createdAt)}
-                                </span>
-                            </div>
-
-                            <div className="article-card__content">
-                                <h3 className="article-card__title">{article.title}</h3>
-                                <p className="article-card__excerpt">{article.excerpt}</p>
-
-                                {/* Причина отклонения */}
-                                {article.status === 'rejected' && article.moderationNote && (
-                                    <div className="article-card__moderation-note">
-                                        <strong>Dôvod zamietnutia:</strong> {article.moderationNote}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="article-card__footer">
-                                <div className="article-card__stats">
-                                    <span className="article-card__stat">👁️ {article.views || 0}</span>
-                                    <span className="article-card__stat">💬 {article.commentsCount || 0}</span>
-                                </div>
-
-                                <div className="article-card__actions">
-                                    {/* Опубликованные статьи - только просмотр */}
-                                    {article.status === 'published' && (
-                                        <a
-                                            href={`/clanky/${article.slug}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="article-card__action-btn article-card__view-btn"
-                                        >
-                                            👁️ Zobraziť
-                                        </a>
-                                    )}
-
-                                    {/* Черновики - редактировать и отправить на модерацию */}
-                                    {article.status === 'draft' && (
-                                        <>
-                                            <Link
-                                                href={`/profil/upravit-clanok/${article._id}`}
-                                                className="article-card__action-btn article-card__edit-btn"
-                                            >
-                                                ✏️ Upraviť
-                                            </Link>
-                                            <button
-                                                onClick={() => handleSubmitForReview(article._id)}
-                                                className="article-card__action-btn article-card__submit-btn"
-                                            >
-                                                📤 Odoslať na moderáciu
-                                            </button>
-                                        </>
-                                    )}
-
-                                    {/* На модерации - только просмотр */}
-                                    {article.status === 'pending' && (
-                                        <span className="article-card__info">
-                                            ⏳ Čaká sa na schválenie administrátorom
-                                        </span>
-                                    )}
-
-                                    {/* Отклоненные - редактировать и отправить снова */}
-                                    {article.status === 'rejected' && (
-                                        <>
-                                            <Link
-                                                href={`/profil/upravit-clanok/${article._id}`}
-                                                className="article-card__action-btn article-card__edit-btn"
-                                            >
-                                                ✏️ Upraviť
-                                            </Link>
-                                            <button
-                                                onClick={() => handleSubmitForReview(article._id)}
-                                                className="article-card__action-btn article-card__submit-btn"
-                                            >
-                                                📤 Odoslať znova
-                                            </button>
-                                        </>
-                                    )}
-
-                                    {/* Удаление (для всех кроме published) */}
-                                    {article.status !== 'published' && article.status !== 'pending' && (
-                                        <button
-                                            onClick={() => handleDelete(article._id)}
-                                            className="article-card__action-btn article-card__delete-btn"
-                                        >
-                                            🗑️ Vymazať
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                        <ArticleCard
+                            key={article._id}
+                            article={article}
+                            variant="author"
+                            onDelete={handleDelete}
+                            onSubmitForReview={handleSubmitForReview}
+                        />
                     ))
                 )}
             </div>

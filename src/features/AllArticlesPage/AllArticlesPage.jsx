@@ -3,7 +3,7 @@
 import "./AllArticlesPage.scss";
 import { useState, useEffect } from "react";
 import { getAllArticlesForAdmin, getPendingArticles, getMyArticles, approveArticle, rejectArticle, deleteArticle } from "@/actions/articles.actions";
-import CommentModal from "@/components/Modal/CommentModal"; // ✅ добавлено
+import CommentModal from "@/components/Modal/Modal"; // ✅ добавлено
 
 const AllArticlesPage = ({ user }) => {
     const [articles, setArticles] = useState([]);

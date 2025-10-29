@@ -1,0 +1,311 @@
+/* ============================================
+   ARTICLE CARD - Универсальный компонент карточки статьи
+   ============================================ */
+
+.article-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+}
+
+/* === HEADER === */
+.article-card__header {
+    background: #f8f9fa;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.article-card__status {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status--draft {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.status--pending {
+    background: #fef5e7;
+    color: #d69e2e;
+}
+
+.status--published {
+    background: #f0fff4;
+    color: #38a169;
+}
+
+.status--rejected {
+    background: #fed7d7;
+    color: #e53e3e;
+}
+
+.article-card__date {
+    font-size: 13px;
+    color: #718096;
+}
+
+.article-card__author {
+    font-size: 13px;
+    color: #718096;
+    font-weight: 500;
+}
+
+/* === CONTENT === */
+.article-card__content {
+    padding: 24px;
+}
+
+.article-card__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 12px 0;
+    line-height: 1.3;
+    font-family: "Montserrat", sans-serif;
+}
+
+.article-card__excerpt {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #718096;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.article-card__moderation-note {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: #fed7d7;
+    border: 1px solid #feb2b2;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #742a2a;
+
+    strong {
+        font-weight: 600;
+    }
+}
+
+/* === FOOTER === */
+.article-card__footer {
+    background: #f8f9fa;
+    padding: 16px 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.article-card__stats {
+    display: flex;
+    gap: 16px;
+}
+
+.article-card__stat {
+    font-size: 14px;
+    color: #718096;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* === ACTIONS === */
+.article-card__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.article-card__action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+
+    &:hover {
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+/* Кнопка редактирования */
+.article-card__action-btn--edit {
+    background: #e6fffa;
+    color: #319795;
+
+    &:hover {
+        background: #b2f5ea;
+    }
+}
+
+/* Кнопка предпросмотра */
+.article-card__action-btn--preview {
+    background: #ebf8ff;
+    color: #3182ce;
+
+    &:hover {
+        background: #bee3f8;
+    }
+}
+
+/* Кнопка просмотра опубликованной статьи */
+.article-card__action-btn--view {
+    background: #ebf8ff;
+    color: #3182ce;
+
+    &:hover {
+        background: #bee3f8;
+    }
+}
+
+/* Кнопка отправки на модерацию */
+.article-card__action-btn--submit {
+    background: #fef5e7;
+    color: #d69e2e;
+
+    &:hover {
+        background: #fbd38d;
+    }
+}
+
+/* Кнопка одобрения (admin) */
+.article-card__action-btn--approve {
+    background: #f0fff4;
+    color: #38a169;
+
+    &:hover {
+        background: #c6f6d5;
+    }
+}
+
+/* Кнопка отклонения (admin) */
+.article-card__action-btn--reject {
+    background: #fed7d7;
+    color: #e53e3e;
+
+    &:hover {
+        background: #feb2b2;
+    }
+}
+
+/* Кнопка добавления комментария (admin) */
+.article-card__action-btn--comment {
+    background: #e6fffa;
+    color: #319795;
+
+    &:hover {
+        background: #b2f5ea;
+    }
+}
+
+/* Кнопка удаления */
+.article-card__action-btn--delete {
+    background: #fed7d7;
+    color: #e53e3e;
+
+    &:hover {
+        background: #feb2b2;
+    }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .article-card__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .article-card__content {
+        padding: 20px;
+    }
+
+    .article-card__title {
+        font-size: 18px;
+    }
+
+    .article-card__excerpt {
+        font-size: 15px;
+    }
+
+    .article-card__footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .article-card__actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .article-card__content {
+        padding: 16px;
+    }
+
+    .article-card__title {
+        font-size: 16px;
+    }
+
+    .article-card__excerpt {
+        font-size: 14px;
+        -webkit-line-clamp: 2;
+    }
+
+    .article-card__footer {
+        padding: 12px 16px;
+    }
+
+    .article-card__actions {
+        gap: 6px;
+    }
+
+    .article-card__action-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .article-card__stats {
+        gap: 12px;
+    }
+
+    .article-card__stat {
+        font-size: 13px;
+    }
+}
