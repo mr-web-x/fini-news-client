@@ -74,7 +74,7 @@ const NewArticlePage = ({ user }) => {
         }
     };
 
-    // ✅ НОВОЕ: Загрузка статьи для редактирования
+    // ✅ ИСПРАВЛЕНО: Загрузка статьи для редактирования с правильной проверкой прав
     const loadArticle = async (id) => {
         setLoadingArticle(true);
         try {
@@ -91,9 +91,23 @@ const NewArticlePage = ({ user }) => {
 
             const article = result.data;
 
-            // Проверяем права доступа
-            const isAuthor = article.author?._id === user._id;
+            // ✅ ИСПРАВЛЕНО: Проверяем права доступа с правильным сравнением
+            // article.author может быть либо объектом с _id, либо строкой
+            const authorId = article.author?._id || article.author;
+            const userId = user._id;
+
+            // Сравниваем как строки (важно для MongoDB ObjectId)
+            const isAuthor = String(authorId) === String(userId);
             const isAdmin = user.role === 'admin';
+
+            console.log('🔍 [NewArticlePage] Проверка прав доступа:', {
+                articleId: id,
+                authorId: String(authorId),
+                userId: String(userId),
+                isAuthor,
+                isAdmin,
+                userRole: user.role
+            });
 
             if (!isAuthor && !isAdmin) {
                 setMessage({ type: 'error', text: 'Nemáte oprávnenie upravovať tento článok' });
@@ -129,8 +143,10 @@ const NewArticlePage = ({ user }) => {
                 tags: article.tags?.join(', ') || ''
             });
 
+            console.log('✅ [NewArticlePage] Статья успешно загружена для редактирования');
+
         } catch (error) {
-            console.error('Error loading article:', error);
+            console.error('❌ [NewArticlePage] Error loading article:', error);
             setMessage({ type: 'error', text: 'Chyba pri načítavaní článku' });
         } finally {
             setLoadingArticle(false);
@@ -205,6 +221,7 @@ const NewArticlePage = ({ user }) => {
 
             // ✅ НОВОЕ: Редактирование или создание статьи
             if (isEditMode) {
+                console.log('🔵 [NewArticlePage] Обновление статьи:', { articleId, articleData });
                 result = await updateArticle(articleId, articleData);
             } else {
                 result = await createArticle(articleData);
@@ -238,7 +255,7 @@ const NewArticlePage = ({ user }) => {
                 });
             }
         } catch (error) {
-            console.error('Error saving article:', error);
+            console.error('❌ [NewArticlePage] Error saving article:', error);
             setMessage({
                 type: 'error',
                 text: 'Neočakávaná chyba. Skúste to znova.'

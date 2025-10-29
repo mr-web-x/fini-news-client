@@ -12,7 +12,6 @@ import "./ArticleCard.scss"
  * @param {function} onApprove - функция одобрения статьи (только admin)
  * @param {function} onReject - функция отклонения статьи (только admin)
  * @param {function} onSubmitForReview - функция отправки на модерацию (только author)
- * @param {function} onOpenComments - функция открытия модалки комментариев (только admin)
  */
 const ArticleCard = ({
     article,
@@ -20,8 +19,7 @@ const ArticleCard = ({
     onDelete,
     onApprove,
     onReject,
-    onSubmitForReview,
-    onOpenComments
+    onSubmitForReview
 }) => {
 
     const getStatusLabel = (status) => {
@@ -77,9 +75,9 @@ const ArticleCard = ({
                 <p className="article-card__excerpt">{article.excerpt}</p>
 
                 {/* Причина отклонения (для rejected статей) */}
-                {article.status === 'rejected' && article.moderationNote && (
+                {article.status === 'rejected' && article.rejectionReason && (
                     <div className="article-card__moderation-note">
-                        <strong>Dôvod zamietnutia:</strong> {article.moderationNote}
+                        <strong>Dôvod zamietnutia:</strong> {article.rejectionReason}
                     </div>
                 )}
             </div>
@@ -184,13 +182,15 @@ const ArticleCard = ({
                                 👁️ Zobraziť
                             </Link>
 
-                            {/* Добавить комментарий (для всех статусов) */}
-                            <button
-                                onClick={() => onOpenComments(article._id)}
-                                className="article-card__action-btn article-card__action-btn--comment"
-                            >
-                                💬 Pridať komentár
-                            </button>
+                            {/* Перейти к комментариям статьи (только для published) */}
+                            {article.status === 'published' && (
+                                <Link
+                                    href={`/clanky/${article.slug}#comments`}
+                                    className="article-card__action-btn article-card__action-btn--comment"
+                                >
+                                    💬 Pridať komentár
+                                </Link>
+                            )}
 
                             {/* Удаление (для всех статусов) */}
                             <button

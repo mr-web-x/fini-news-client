@@ -247,6 +247,13 @@ export async function updateArticle(id, data) {
     try {
         const token = await getAuthToken();
 
+        // ✅ ДОБАВЬ ЛОГИРОВАНИЕ:
+        console.log('🟢 [Server Action] updateArticle вызван:', {
+            id,
+            hasToken: !!token,
+            dataKeys: Object.keys(data)
+        });
+
         if (!token) {
             return {
                 success: false,
@@ -263,13 +270,20 @@ export async function updateArticle(id, data) {
 
         const article = await articlesService.updateArticle(id, data, token);
 
+        // ✅ ДОБАВЬ ЛОГИРОВАНИЕ ОТВЕТА:
+        console.log('🟢 [Server Action] updateArticle успешно:', article._id);
+
         return {
             success: true,
             data: article,
             message: 'Статья успешно обновлена'
         };
     } catch (error) {
-        console.error('[Server Action] updateArticle error:', error);
+        // ✅ ДОБАВЬ ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ ОШИБКИ:
+        console.error('❌ [Server Action] updateArticle error:', {
+            message: error.message,
+            stack: error.stack
+        });
         return {
             success: false,
             message: error.message || 'Ошибка обновления статьи'

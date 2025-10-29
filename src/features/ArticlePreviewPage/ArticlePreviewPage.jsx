@@ -298,10 +298,10 @@ const ArticlePreviewPage = ({ user, articleId }) => {
                     </div>
                 </div>
 
-                {/* Moderation Note (если отклонено) */}
-                {article.status === 'rejected' && article.moderationNote && (
+                {/* ✅ ИСПРАВЛЕНО: moderationNote → rejectionReason */}
+                {article.status === 'rejected' && article.rejectionReason && (
                     <div className="article-preview__moderation-note">
-                        <strong>Dôvod zamietnutia:</strong> {article.moderationNote}
+                        <strong>Dôvod zamietnutia:</strong> {article.rejectionReason}
                     </div>
                 )}
             </article>
