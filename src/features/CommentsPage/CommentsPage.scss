@@ -192,6 +192,43 @@
     padding: 20px;
 }
 
+/* === AUTHOR INFO (для админа во Všetky komentáre) === */
+.comment-card__author-info {
+    padding: 12px 20px;
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.comment-card__author-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.comment-card__author-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.comment-card__author-badge {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #e6fffa;
+    color: #319795;
+    margin-left: 4px;
+}
+
 .comment-card__text {
     font-size: 16px;
     line-height: 1.6;

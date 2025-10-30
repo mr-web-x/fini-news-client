@@ -172,15 +172,15 @@ const ArticleCard = ({
                                 </>
                             )}
 
-                            {/* Просмотр статьи с комментариями */}
+                            {/* ✅ ИСПРАВЛЕНО: Просмотр статьи БЕЗ скролла к комментариям */}
                             <Link
-                                href={`/profil/vsetky-clanky/${article._id}#comments`}
+                                href={`/profil/vsetky-clanky/${article._id}`}
                                 className="article-card__action-btn article-card__action-btn--view"
                             >
                                 👁️ Zobraziť článok
                             </Link>
 
-                            {/* Иконка комментариев - скролл к комментариям */}
+                            {/* ✅ Иконка комментариев - скролл к комментариям (с #comments) */}
                             <Link
                                 href={`/profil/vsetky-clanky/${article._id}#comments`}
                                 className="article-card__action-btn article-card__action-btn--comment"

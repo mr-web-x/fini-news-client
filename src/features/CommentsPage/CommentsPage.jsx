@@ -97,7 +97,7 @@ const CommentsPage = ({ user }) => {
     };
 
     const handleDelete = async (comment) => {
-        const isMyComment = comment.author?._id === user?.id || comment.author?._id === user?._id;
+        const isMyComment = comment.user?._id === user?.id || comment.user?._id === user?._id;
 
         if (!confirm('Ste si istí, že chcete vymazať tento komentár?')) {
             return;
@@ -144,7 +144,29 @@ const CommentsPage = ({ user }) => {
     };
 
     const isMyComment = (comment) => {
-        return comment.author?._id === user?.id || comment.author?._id === user?._id;
+        return comment.user?._id === user?.id || comment.user?._id === user?._id;
+    };
+
+    // ✅ НОВАЯ ФУНКЦИЯ: Получение правильной ссылки на статью
+    const getArticleLink = (comment) => {
+        // Если нет информации о статье
+        if (!comment.article?._id) {
+            return '#';
+        }
+
+        // Для админа - ссылка на предпросмотр в приватной зоне
+        if (isAdmin) {
+            return `/profil/moje-clanky/${comment.article._id}/ukazka`;
+        }
+
+        // Для обычных пользователей и авторов:
+        // Если статья опубликована - публичная ссылка
+        if (comment.article?.status === 'published' && comment.article?.slug) {
+            return `/clanky/${comment.article.slug}`;
+        }
+
+        // Если статья не опубликована - ссылка на предпросмотр в приватной зоне
+        return `/profil/moje-clanky/${comment.article._id}/ukazka`;
     };
 
     if (loading) {
@@ -211,8 +233,9 @@ const CommentsPage = ({ user }) => {
                         <div key={comment._id} className="comment-card">
                             <div className="comment-card__header">
                                 <div className="comment-card__article">
+                                    {/* ✅ ИСПРАВЛЕНО: Используем функцию getArticleLink */}
                                     <a
-                                        href={`/clanky/${comment.article?.slug || ''}`}
+                                        href={getArticleLink(comment)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="comment-card__article-link"
@@ -233,10 +256,32 @@ const CommentsPage = ({ user }) => {
                                 <div className="comment-card__author-info">
                                     <span className="comment-card__author-label">Autor:</span>
                                     <span className="comment-card__author-name">
-                                        {comment.author?.displayName || comment.author?.email || 'Neznámy autor'}
+                                        {(() => {
+                                            // Пытаемся получить полное имя
+                                            if (comment.user?.firstName && comment.user?.lastName) {
+                                                return `${comment.user.firstName} ${comment.user.lastName}`;
+                                            }
+                                            // Если есть только firstName
+                                            if (comment.user?.firstName) {
+                                                return comment.user.firstName;
+                                            }
+                                            // Если есть только lastName
+                                            if (comment.user?.lastName) {
+                                                return comment.user.lastName;
+                                            }
+                                            // Fallback на email
+                                            if (comment.user?.email) {
+                                                return comment.user.email;
+                                            }
+                                            // Последний fallback
+                                            return 'Neznámy autor';
+                                        })()}
                                     </span>
                                     {isMyComment(comment) && (
-                                        <span className="comment-card__author-badge">Vy</span>
+                                        <>
+                                            {' '}
+                                            <span className="comment-card__author-badge">Vy</span>
+                                        </>
                                     )}
                                 </div>
                             )}
@@ -276,12 +321,8 @@ const CommentsPage = ({ user }) => {
                             </div>
 
                             <div className="comment-card__footer">
-                                <div className="comment-card__info">
-                                    <span className="comment-card__info-item">
-                                        ID: {comment._id.substring(0, 8)}...
-                                    </span>
-                                </div>
-
+                                {/* ✅ ИСПРАВЛЕНО: Удалена секция с ID комментария */}
+                                
                                 <div className="comment-card__actions">
                                     {/* Редактировать можно только свои комментарии */}
                                     {isMyComment(comment) && editingComment !== comment._id && (
