@@ -1,22 +1,18 @@
-import { getArticleById } from '@/actions/articles.actions';
 import { getMe } from '@/actions/auth.actions';
 import { redirect } from 'next/navigation';
-import ArticleViewPage from '@/features/ArticleViewPage/ArticleViewPage';
+import ArticlePreviewPage from '@/features/ArticlePreviewPage/ArticlePreviewPage';
 
 /**
- * Серверная страница просмотра статьи в приватной зоне
- * Route: /profil/vsetky-clanky/[vsetky-clankyId]
+ * Серверная страница предпросмотра статьи
+ * Route: /profil/moje-clanky/[moje-clankyId]/ukazka
  * @param {Object} props
  * @param {Promise<Object>} props.params - параметры маршрута (async в Next.js 15)
  */
-export default async function VsetkyClankyDetailPage({ params }) {
+export default async function UkazkaPage({ params, searchParams }) {
     // ✅ ИСПРАВЛЕНО: await params для Next.js 15
     const resolvedParams = await params;
 
-    // Получаем ID статьи из параметров маршрута
-    const articleId = resolvedParams['vsetky-clankyId'];
-
-    // Получаем данные пользователя (обязательно для приватной зоны)
+    // SSR: Получаем данные пользователя на сервере
     const user = await getMe();
 
     // Если пользователь не авторизован - редирект на логин
@@ -24,26 +20,21 @@ export default async function VsetkyClankyDetailPage({ params }) {
         redirect('/prihlasenie');
     }
 
-    // Проверяем роль - доступ только для админа
-    if (user.role !== 'admin') {
+    // ✅ ИСПРАВЛЕНО: Проверяем роль - доступ для author и admin
+    if (user.role !== 'author' && user.role !== 'admin') {
         redirect('/profil');
     }
 
-    // Если нет ID - редирект на список всех статей
+    // Получаем ID статьи из динамического параметра
+    const articleId = resolvedParams['moje-clankyId'];
+
+    // Если нет ID - редирект на список статей
     if (!articleId) {
-        redirect('/profil/vsetky-clanky');
+        redirect('/profil/moje-clanky');
     }
 
-    // Получаем статью по ID
-    const result = await getArticleById(articleId);
-
-    // Если статья не найдена - редирект на список
-    if (!result.success || !result.data) {
-        redirect('/profil/vsetky-clanky');
-    }
-
-    const article = result.data;
-
-    // Передаем данные в клиентский компонент
-    return <ArticleViewPage article={article} user={user} />;
+    // ArticlePreviewPage сам проверит права доступа:
+    // - Author может просматривать только СВОИ статьи
+    // - Admin может просматривать любые статьи
+    return <ArticlePreviewPage user={user} articleId={articleId} />;
 }

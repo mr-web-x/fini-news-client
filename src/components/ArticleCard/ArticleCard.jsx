@@ -95,16 +95,14 @@ const ArticleCard = ({
                     {/* ==================== AUTHOR VARIANT ==================== */}
                     {variant === 'author' && (
                         <>
-                            {/* Для опубликованных статей - только просмотр */}
+                            {/* Для опубликованных статей - просмотр в приватной зоне */}
                             {article.status === 'published' && (
-                                <a
-                                    href={`/clanky/${article.slug}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                <Link
+                                    href={`/profil/moje-clanky/${article._id}/ukazka`}
                                     className="article-card__action-btn article-card__action-btn--view"
                                 >
                                     👁️ Zobraziť
-                                </a>
+                                </Link>
                             )}
 
                             {/* Для черновиков и отклоненных - редактирование и предпросмотр */}

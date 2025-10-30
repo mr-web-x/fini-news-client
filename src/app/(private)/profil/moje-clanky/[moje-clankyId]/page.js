@@ -1,8 +1,12 @@
 import { getMe } from '@/actions/auth.actions';
+import { getArticleById } from '@/actions/articles.actions';
 import { redirect } from 'next/navigation';
 
 /**
- * Редирект страница для редактирования статьи
+ * Умный редирект для статьи:
+ * - published/pending → просмотр (/ukazka)
+ * - draft/rejected → редактирование (/novy-clanok)
+ * 
  * Route: /profil/moje-clanky/[moje-clankyId]
  * @param {Object} props
  * @param {Promise<Object>} props.params - параметры маршрута (async в Next.js 15)
@@ -19,7 +23,7 @@ export default async function EditArticleRedirectPage({ params }) {
         redirect('/prihlasenie');
     }
 
-    // Проверяем роль - только author и admin могут редактировать статьи
+    // Проверяем роль - только author и admin могут просматривать статьи
     if (user.role !== 'author' && user.role !== 'admin') {
         redirect('/profil');
     }
@@ -32,7 +36,33 @@ export default async function EditArticleRedirectPage({ params }) {
         redirect('/profil/moje-clanky');
     }
 
-    // Редирект на страницу редактирования с ID в query параметре
-    // NewArticlePage уже умеет работать с query параметром ?id=...
-    redirect(`/profil/novy-clanok?id=${articleId}`);
+    // ✅ НОВОЕ: Получаем статью, чтобы проверить её статус
+    const result = await getArticleById(articleId);
+
+    // Если статья не найдена - редирект на список
+    if (!result.success || !result.data) {
+        redirect('/profil/moje-clanky');
+    }
+
+    const article = result.data;
+
+    // ✅ КРИТИЧНО: Проверяем права доступа
+    const authorId = article.author?.id || article.author;
+    const userId = user.id;
+    const isAuthor = String(authorId) === String(userId);
+    const isAdmin = user.role === 'admin';
+
+    // Если не автор и не админ - редирект
+    if (!isAuthor && !isAdmin) {
+        redirect('/profil/moje-clanky');
+    }
+
+    // ✅ УМНЫЙ РЕДИРЕКТ в зависимости от статуса статьи:
+    if (article.status === 'published' || article.status === 'pending') {
+        // Опубликованные и на модерации - только просмотр
+        redirect(`/profil/moje-clanky/${articleId}/ukazka`);
+    } else {
+        // draft, rejected - можно редактировать
+        redirect(`/profil/novy-clanok?id=${articleId}`);
+    }
 }
