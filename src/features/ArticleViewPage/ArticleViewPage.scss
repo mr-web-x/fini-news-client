@@ -1,0 +1,468 @@
+/* ============================================
+   ARTICLE VIEW PAGE - Страница просмотра статьи
+   ============================================ */
+
+.article-view-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 120px 24px;
+    /* Нижний padding для fixed формы комментариев */
+    background: #ffffff;
+}
+
+/* === HEADER === */
+.article-view__header {
+    margin-bottom: 24px;
+}
+
+.article-view__back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #5a67d8;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: #4c51bf;
+    }
+}
+
+/* === MESSAGE === */
+.article-view__message {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-weight: 500;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.article-view__message--success {
+    background: #f0fff4;
+    color: #38a169;
+    border: 1px solid #c6f6d5;
+}
+
+.article-view__message--error {
+    background: #fed7d7;
+    color: #e53e3e;
+    border: 1px solid #feb2b2;
+}
+
+/* === ARTICLE CONTENT === */
+.article-view__content {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 32px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Meta информация */
+.article-view__meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.article-view__status {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.article-view__status--draft {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.article-view__status--pending {
+    background: #fef5e7;
+    color: #d69e2e;
+}
+
+.article-view__status--published {
+    background: #f0fff4;
+    color: #38a169;
+}
+
+.article-view__status--rejected {
+    background: #fed7d7;
+    color: #e53e3e;
+}
+
+.article-view__date {
+    font-size: 14px;
+    color: #718096;
+}
+
+.article-view__category {
+    font-size: 14px;
+    color: #718096;
+    font-weight: 500;
+}
+
+/* Заголовок */
+.article-view__title {
+    font-size: 36px;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 24px 0;
+    line-height: 1.2;
+    font-family: "Montserrat", sans-serif;
+}
+
+/* Автор */
+.article-view__author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.article-view__author-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.article-view__author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.article-view__author-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.article-view__author-position {
+    font-size: 14px;
+    color: #718096;
+}
+
+/* Краткое описание */
+.article-view__excerpt {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #4a5568;
+    margin-bottom: 32px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-left: 4px solid #5a67d8;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+/* Основной контент */
+.article-view__body {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #2d3748;
+    margin-bottom: 32px;
+
+    p {
+        margin-bottom: 16px;
+    }
+
+    h2 {
+        font-size: 28px;
+        font-weight: 600;
+        color: #2d3748;
+        margin: 32px 0 16px 0;
+    }
+
+    h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #2d3748;
+        margin: 24px 0 12px 0;
+    }
+
+    ul,
+    ol {
+        margin-bottom: 16px;
+        padding-left: 24px;
+    }
+
+    li {
+        margin-bottom: 8px;
+    }
+
+    blockquote {
+        margin: 24px 0;
+        padding: 16px 20px;
+        background: #f8f9fa;
+        border-left: 4px solid #5a67d8;
+        font-style: italic;
+        color: #4a5568;
+    }
+
+    code {
+        background: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 14px;
+    }
+
+    pre {
+        background: #2d3748;
+        color: #f7fafc;
+        padding: 16px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin-bottom: 16px;
+
+        code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 24px 0;
+    }
+
+    a {
+        color: #5a67d8;
+        text-decoration: underline;
+
+        &:hover {
+            color: #4c51bf;
+        }
+    }
+}
+
+/* Теги */
+.article-view__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.article-view__tag {
+    padding: 6px 12px;
+    background: #ebf8ff;
+    color: #3182ce;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Статистика */
+.article-view__stats {
+    display: flex;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.article-view__stat {
+    font-size: 14px;
+    color: #718096;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* === COMMENTS SECTION === */
+.article-view__comments-section {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 32px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    scroll-margin-top: 80px;
+    /* Отступ при скролле к комментариям */
+}
+
+.article-view__comments-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 24px 0;
+    font-family: "Montserrat", sans-serif;
+}
+
+/* === LOGIN PROMPT === */
+.article-view__login-prompt {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 2px solid #e2e8f0;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+
+    p {
+        margin: 0;
+        font-size: 16px;
+        color: #4a5568;
+        font-weight: 500;
+    }
+}
+
+.article-view__login-button {
+    padding: 10px 24px;
+    background: #5a67d8;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #4c51bf;
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .article-view-page {
+        padding: 20px 16px 120px 16px;
+    }
+
+    .article-view__content {
+        padding: 24px 20px;
+    }
+
+    .article-view__title {
+        font-size: 28px;
+    }
+
+    .article-view__excerpt {
+        font-size: 16px;
+        padding: 16px;
+    }
+
+    .article-view__body {
+        font-size: 15px;
+
+        h2 {
+            font-size: 24px;
+        }
+
+        h3 {
+            font-size: 20px;
+        }
+    }
+
+    .article-view__comments-section {
+        padding: 24px 20px;
+    }
+
+    .article-view__comments-title {
+        font-size: 20px;
+    }
+
+    .article-view__meta {
+        gap: 12px;
+    }
+
+    .article-view__author {
+        padding: 12px;
+    }
+
+    .article-view__author-avatar {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .article-view-page {
+        padding: 16px 12px 120px 12px;
+    }
+
+    .article-view__content {
+        padding: 20px 16px;
+    }
+
+    .article-view__title {
+        font-size: 24px;
+    }
+
+    .article-view__excerpt {
+        font-size: 15px;
+        padding: 12px;
+    }
+
+    .article-view__body {
+        font-size: 14px;
+    }
+
+    .article-view__comments-section {
+        padding: 20px 16px;
+    }
+
+    .article-view__meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .article-view__stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .article-view__login-prompt {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+
+        p {
+            font-size: 14px;
+        }
+    }
+}

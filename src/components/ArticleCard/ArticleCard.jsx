@@ -64,7 +64,7 @@ const ArticleCard = ({
                 {/* Показываем автора только для admin */}
                 {variant === 'admin' && article.author && (
                     <span className="article-card__author">
-                        👤 {article.author.displayName || article.author.email || 'Neznámy'}
+                        👤 {article.author.firstName} {article.author.lastName}
                     </span>
                 )}
             </div>
@@ -174,23 +174,21 @@ const ArticleCard = ({
                                 </>
                             )}
 
-                            {/* Предпросмотр (для всех статусов) */}
+                            {/* Просмотр статьи с комментариями */}
                             <Link
-                                href={`/profil/moje-clanky/${article._id}/ukazka`}
-                                className="article-card__action-btn article-card__action-btn--preview"
+                                href={`/profil/vsetky-clanky/${article._id}#comments`}
+                                className="article-card__action-btn article-card__action-btn--view"
                             >
-                                👁️ Zobraziť
+                                👁️ Zobraziť článok
                             </Link>
 
-                            {/* Перейти к комментариям статьи (только для published) */}
-                            {article.status === 'published' && (
-                                <Link
-                                    href={`/clanky/${article.slug}#comments`}
-                                    className="article-card__action-btn article-card__action-btn--comment"
-                                >
-                                    💬 Pridať komentár
-                                </Link>
-                            )}
+                            {/* Иконка комментариев - скролл к комментариям */}
+                            <Link
+                                href={`/profil/vsetky-clanky/${article._id}#comments`}
+                                className="article-card__action-btn article-card__action-btn--comment"
+                            >
+                                💬 Komentáre
+                            </Link>
 
                             {/* Удаление (для всех статусов) */}
                             <button
