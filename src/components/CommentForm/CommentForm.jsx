@@ -22,9 +22,16 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Валидация
-        if (!content.trim()) {
+        // ✅ ИСПРАВЛЕНО: Проверка на минимум 3 символа (после trim)
+        const trimmedContent = content.trim();
+
+        if (!trimmedContent) {
             setError('Komentár nemôže byť prázdny');
+            return;
+        }
+
+        if (trimmedContent.length < 3) {
+            setError('Komentár musí obsahovať minimálne 3 znaky');
             return;
         }
 
@@ -39,7 +46,7 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
         try {
             const result = await createComment({
                 article: articleId,
-                content: content.trim()
+                content: trimmedContent
             });
 
             if (result.success) {
@@ -97,14 +104,10 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
                 {/* Аватар пользователя */}
                 <div className="comment-form__avatar">
                     {user.avatar ? (
-                        <img
-                            src={user.avatar}
-                            alt={`${user.firstName} ${user.lastName}`}
-                            className="comment-form__avatar-img"
-                        />
+                        <img src={user.avatar} alt={user.firstName} />
                     ) : (
                         <div className="comment-form__avatar-placeholder">
-                            {user.firstName?.charAt(0).toUpperCase() || '?'}
+                            {user.firstName?.charAt(0).toUpperCase() || ''}
                             {user.lastName?.charAt(0).toUpperCase() || ''}
                         </div>
                     )}
@@ -154,7 +157,7 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
                                     <button
                                         type="submit"
                                         className="comment-form__btn comment-form__btn--submit"
-                                        disabled={loading || !content.trim() || content.length > 2000}
+                                        disabled={loading || content.trim().length < 3 || content.length > 2000}
                                     >
                                         {loading ? 'Odosielam...' : 'Pridať komentár'}
                                     </button>

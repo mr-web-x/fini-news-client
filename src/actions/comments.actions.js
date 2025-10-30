@@ -107,13 +107,17 @@ export async function getCommentById(id) {
 // ========================================
 
 /**
- * Создать комментарий
- * @param {string} articleId - ID статьи
- * @param {string} content - Текст комментария
- * @returns {Promise<Object>} - Результат операции
+ * ✅ ИСПРАВЛЕННАЯ функция createComment
+ * 
+ * ИЗМЕНЕНИЯ:
+ * 1. Принимает ОБЪЕКТ data вместо двух параметров
+ * 2. Извлекает article и content из объекта
+ * 3. Добавлены логи для отладки
  */
-export async function createComment(articleId, content) {
+export async function createComment(data) {
     try {
+        console.log('🔍 [createComment] Received data:', data);
+
         const token = await getAuthToken();
 
         if (!token) {
@@ -123,33 +127,54 @@ export async function createComment(articleId, content) {
             };
         }
 
+        // ✅ Извлекаем article и content из объекта data
+        const { article: articleId, content } = data;
+
         if (!articleId) {
+            console.log('❌ [createComment] Missing articleId');
             return {
                 success: false,
                 message: 'ID článku nie je zadané'
             };
         }
 
-        if (!content || content.trim().length < 3) {
+        if (!content || typeof content !== 'string') {
+            console.log('❌ [createComment] Invalid content:', content);
+            return {
+                success: false,
+                message: 'Komentár je povinný'
+            };
+        }
+
+        const trimmedContent = content.trim();
+        console.log('🔍 [createComment] Trimmed content length:', trimmedContent.length);
+
+        if (trimmedContent.length < 3) {
+            console.log('❌ [createComment] Content too short:', trimmedContent.length);
             return {
                 success: false,
                 message: 'Komentár musí obsahovať minimálne 3 znaky'
             };
         }
 
-        if (content.trim().length > 1000) {
+        if (trimmedContent.length > 2000) {
+            console.log('❌ [createComment] Content too long:', trimmedContent.length);
             return {
                 success: false,
-                message: 'Komentár nesmie presiahnuť 1000 znakov'
+                message: 'Komentár nesmie presiahnuť 2000 znakov'
             };
         }
 
         const commentData = {
             article: articleId,
-            content: content.trim()
+            content: trimmedContent
         };
 
+        console.log('✅ [createComment] Sending to backend:', commentData);
+
         const comment = await commentsService.createComment(commentData, token);
+
+        console.log('✅ [createComment] Success! Comment created:', comment._id);
 
         return {
             success: true,
@@ -157,7 +182,7 @@ export async function createComment(articleId, content) {
             message: 'Komentár bol úspešne pridaný'
         };
     } catch (error) {
-        console.error('[Server Action] createComment error:', error);
+        console.error('❌ [createComment] Error:', error);
         return {
             success: false,
             message: error.message || 'Chyba pri vytváraní komentára'

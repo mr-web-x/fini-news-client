@@ -1,7 +1,16 @@
 import { getMe } from '@/actions/auth.actions';
 import { redirect } from 'next/navigation';
 
+/**
+ * Редирект страница для редактирования статьи
+ * Route: /profil/moje-clanky/[moje-clankyId]
+ * @param {Object} props
+ * @param {Promise<Object>} props.params - параметры маршрута (async в Next.js 15)
+ */
 export default async function EditArticleRedirectPage({ params }) {
+    // ✅ ИСПРАВЛЕНО: await params для Next.js 15
+    const resolvedParams = await params;
+
     // SSR: Получаем данные пользователя на сервере
     const user = await getMe();
 
@@ -16,7 +25,7 @@ export default async function EditArticleRedirectPage({ params }) {
     }
 
     // Получаем ID статьи из параметров
-    const articleId = params['moje-clankyId'];
+    const articleId = resolvedParams['moje-clankyId'];
 
     // Если нет ID - редирект на список статей
     if (!articleId) {
