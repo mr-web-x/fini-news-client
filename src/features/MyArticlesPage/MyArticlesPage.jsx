@@ -112,16 +112,22 @@ const MyArticlesPage = ({ user }) => {
         }
     };
 
+    // ✅ ИСПРАВЛЕНО: После отправки на модерацию переключаем фильтр на 'pending'
     const handleSubmitForReview = async (articleId) => {
-        if (!confirm('Odoslať článok na moderáciu?')) return;
+        if (!confirm('Odoslať článok na moderáciu?'))
+            return;
 
         try {
             const result = await submitArticleForReview(articleId);
 
             if (result.success) {
-                setMessage({ type: 'success', text: result.message });
-                loadUserArticles(); // Перезагружаем список
-                loadAllStats(); // Обновляем статистику
+                setMessage({ type: 'success', text: result.message || 'Článok bol odoslaný na moderáciu' });
+
+                // ✅ ИСПРАВЛЕНО: Переключаем фильтр на 'pending', чтобы показать статью в правильной вкладке
+                setFilter('pending');
+
+                // Обновляем статистику
+                loadAllStats();
             } else {
                 setMessage({ type: 'error', text: result.message });
             }

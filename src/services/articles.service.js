@@ -1,5 +1,4 @@
 import api from '@/lib/serverApiClient';
-import { jwtDecode } from 'jwt-decode'; // Установи: npm install jwt-decode
 
 /**
  * ArticlesService - сервис для работы со статьями
@@ -158,20 +157,21 @@ class ArticlesService {
     }
 
     /**
-     * Отклонить статью (admin)
+     * ✅ ИСПРАВЛЕНО: Отклонить статью (admin)
      * @param {string} id - ID статьи
-     * @param {string} moderationNote - Причина отклонения
+     * @param {string} reason - Причина отклонения
      * @param {string} token - JWT токен (для SSR)
      * @returns {Promise<Object>} - Отклонённая статья
      */
-    async rejectArticle(id, moderationNote, token = null) {
+    async rejectArticle(id, reason, token = null) {
         const config = token ? {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         } : {};
 
-        const response = await api.post(`/api/articles/${id}/reject`, { moderationNote }, config);
+        // ✅ ИСПРАВЛЕНО: Отправляем { reason } вместо { moderationNote }
+        const response = await api.post(`/api/articles/${id}/reject`, { reason }, config);
         return response.data;
     }
 
@@ -202,9 +202,7 @@ class ArticlesService {
     }
 
     /**
-     * ИСПРАВЛЕНО: Получить статьи ТЕКУЩЕГО пользователя
-     * Использует приватный endpoint /api/articles/me
-     * Который возвращает ВСЕ статьи пользователя (draft, pending, published, rejected)
+     * Получить статьи ТЕКУЩЕГО пользователя
      * @param {string} status - Статус статей (draft, pending, published, rejected, all)
      * @param {string} token - JWT токен (для SSR)
      * @returns {Promise<Object>} - Статьи текущего пользователя
@@ -260,7 +258,6 @@ class ArticlesService {
 
     /**
      * Получить все статьи в системе с фильтрами (admin)
-     * ИСПРАВЛЕНО: использует админский endpoint /admin/all
      * @param {Object} filters - Фильтры (status, author, search, page, limit, sort)
      * @param {string} token - JWT токен (для SSR)
      * @returns {Promise<Object>} - Список статей с пагинацией
@@ -281,7 +278,6 @@ class ArticlesService {
         if (filters.limit) params.append('limit', filters.limit);
         if (filters.sort) params.append('sort', filters.sort);
 
-        // ИСПРАВЛЕНО: используем админский endpoint
         const response = await api.get(`/api/articles/admin/all?${params.toString()}`, config);
         return response.data;
     }

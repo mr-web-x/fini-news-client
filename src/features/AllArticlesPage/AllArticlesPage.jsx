@@ -28,6 +28,7 @@ const AllArticlesPage = ({ user }) => {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectingArticleId, setRejectingArticleId] = useState(null);
     const [rejectReason, setRejectReason] = useState('');
+    const [rejectError, setRejectError] = useState(''); // ← НОВОЕ: ошибка внутри модалки
 
     // Загружаем общую статистику при монтировании компонента
     useEffect(() => {
@@ -90,7 +91,7 @@ const AllArticlesPage = ({ user }) => {
     };
 
     /**
-     * Загрузка статей по текущему фильтру
+     * Загрузка статей в зависимости от фильтра
      */
     const loadArticles = async () => {
         setLoading(true);
@@ -100,21 +101,36 @@ const AllArticlesPage = ({ user }) => {
             let result;
 
             if (filter === 'moderation') {
-                result = await getPendingArticles({ sort: sortBy, search: searchTerm });
+                result = await getPendingArticles();
+            } else if (user?.role === 'admin') {
+                result = await getAllArticlesForAdmin({ status: filter === 'all' ? undefined : filter });
             } else {
-                result = await getAllArticlesForAdmin({
-                    status: filter === 'all' ? undefined : filter,
-                    sort: sortBy,
-                    search: searchTerm
-                });
+                result = await getMyArticles(filter);
             }
 
             if (result.success) {
-                const articlesData = result.data.articles || result.data || [];
+                let articlesData = result.data.articles || result.data || [];
+
+                // Фильтрация по поиску
+                if (searchTerm) {
+                    articlesData = articlesData.filter(article =>
+                        article.title.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                }
+
+                // Сортировка
+                if (sortBy === 'newest') {
+                    articlesData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                } else if (sortBy === 'oldest') {
+                    articlesData.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                } else if (sortBy === 'views') {
+                    articlesData.sort((a, b) => (b.views || 0) - (a.views || 0));
+                }
+
                 setArticles(articlesData);
             } else {
-                setMessage({ type: 'error', text: result.message });
                 setArticles([]);
+                setMessage({ type: 'error', text: result.message });
             }
         } catch (error) {
             console.error('Error loading articles:', error);
@@ -126,7 +142,8 @@ const AllArticlesPage = ({ user }) => {
     };
 
     const handleApprove = async (articleId) => {
-        if (!confirm('Naozaj chcete schváliť a publikovať tento článok?')) return;
+        if (!confirm('Naozaj chcete schváliť tento článok?'))
+            return;
 
         try {
             const result = await approveArticle(articleId);
@@ -144,17 +161,19 @@ const AllArticlesPage = ({ user }) => {
         }
     };
 
-    // ✅ Открыть модалку отклонения
+    // ✅ ИСПРАВЛЕНО: Открыть модалку отклонения
     const handleRejectClick = (articleId) => {
         setRejectingArticleId(articleId);
         setRejectReason('');
+        setRejectError(''); // ← Сбрасываем ошибку
         setShowRejectModal(true);
     };
 
-    // ✅ Отклонить статью
+    // ✅ ИСПРАВЛЕНО: Отклонить статью с правильной обработкой ошибок
     const handleRejectSubmit = async () => {
+        // Валидация внутри модалки
         if (!rejectReason || rejectReason.trim().length < 10) {
-            alert('Zadajte dôvod zamietnutia (minimálne 10 znakov)');
+            setRejectError('Dôvod zamietnutia musí mať minimálne 10 znakov'); // ← Ошибка внутри модалки
             return;
         }
 
@@ -162,23 +181,29 @@ const AllArticlesPage = ({ user }) => {
             const result = await rejectArticle(rejectingArticleId, rejectReason);
 
             if (result.success) {
-                setMessage({ type: 'success', text: result.message });
-                setShowRejectModal(false);
+                // ✅ Успех - закрываем модалку и показываем сообщение
+                setMessage({ type: 'success', text: result.message || 'Článok bol úspešne zamietnutý' });
+                setShowRejectModal(false); // ← ВАЖНО: закрываем модалку
                 setRejectingArticleId(null);
                 setRejectReason('');
+                setRejectError('');
+
+                // Обновляем данные
                 loadArticles();
                 loadAllStats();
             } else {
-                setMessage({ type: 'error', text: result.message });
+                // ❌ Ошибка от backend - показываем внутри модалки
+                setRejectError(result.message || 'Chyba pri zamietaní článku');
             }
         } catch (error) {
             console.error('Error rejecting article:', error);
-            setMessage({ type: 'error', text: 'Chyba pri zamietaní článku' });
+            setRejectError('Chyba pri zamietaní článku');
         }
     };
 
     const handleDelete = async (articleId) => {
-        if (!confirm('Naozaj chcete vymazať tento článok? Táto akcia sa nedá vrátiť späť.')) return;
+        if (!confirm('Naozaj chcete vymazať tento článok? Táto akcia sa nedá vrátiť späť.'))
+            return;
 
         try {
             const result = await deleteArticle(articleId);
@@ -198,53 +223,60 @@ const AllArticlesPage = ({ user }) => {
 
     return (
         <div className="all-articles-page">
+            {/* HEADER */}
             <div className="all-articles__header">
-                <h1>Všetky články v systéme</h1>
-                <p>Spravujte všetky články v systéme, ich stavy a moderáciu</p>
+                <h1 className="all-articles__title">📚 Všetky články</h1>
+                <p className="all-articles__subtitle">
+                    Správa všetkých článkov na webe
+                </p>
             </div>
 
+            {/* STATS */}
+            <div className="all-articles__stats">
+                <div className="stat-card">
+                    <div className="stat-card__value">
+                        {statsLoading ? '...' : stats.total}
+                    </div>
+                    <div className="stat-card__label">CELKOM ČLÁNKOV</div>
+                </div>
+                <div className="stat-card stat-card--warning">
+                    <div className="stat-card__value">
+                        {statsLoading ? '...' : stats.pending}
+                    </div>
+                    <div className="stat-card__label">NA MODERÁCII</div>
+                </div>
+                <div className="stat-card stat-card--success">
+                    <div className="stat-card__value">
+                        {statsLoading ? '...' : stats.published}
+                    </div>
+                    <div className="stat-card__label">PUBLIKOVANÉ</div>
+                </div>
+                <div className="stat-card stat-card--danger">
+                    <div className="stat-card__value">
+                        {statsLoading ? '...' : stats.rejected}
+                    </div>
+                    <div className="stat-card__label">ZAMIETNUTÉ</div>
+                </div>
+            </div>
+
+            {/* MESSAGE */}
             {message.text && (
                 <div className={`all-articles__message all-articles__message--${message.type}`}>
                     {message.text}
                 </div>
             )}
 
-            <div className="all-articles__stats">
-                <div className="all-articles__stat-card">
-                    <div className="all-articles__stat-number">
-                        {statsLoading ? '...' : stats.total}
-                    </div>
-                    <div className="all-articles__stat-label">Celkom článkov</div>
-                </div>
-                <div className="all-articles__stat-card">
-                    <div className="all-articles__stat-number all-articles__stat-number--pending">
-                        {statsLoading ? '...' : stats.pending}
-                    </div>
-                    <div className="all-articles__stat-label">Na moderácii</div>
-                </div>
-                <div className="all-articles__stat-card">
-                    <div className="all-articles__stat-number all-articles__stat-number--published">
-                        {statsLoading ? '...' : stats.published}
-                    </div>
-                    <div className="all-articles__stat-label">Publikované</div>
-                </div>
-                <div className="all-articles__stat-card">
-                    <div className="all-articles__stat-number all-articles__stat-number--rejected">
-                        {statsLoading ? '...' : stats.rejected}
-                    </div>
-                    <div className="all-articles__stat-label">Zamietnuté</div>
-                </div>
-            </div>
-
-            {/* Controls */}
+            {/* FILTERS & SEARCH */}
             <div className="all-articles__controls">
-                <input
-                    type="text"
-                    placeholder="🔍 Hľadať článok..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="all-articles__search"
-                />
+                <div className="all-articles__search">
+                    <input
+                        type="text"
+                        placeholder="🔍 Hľadať článok..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="all-articles__search-input"
+                    />
+                </div>
 
                 <div className="all-articles__sort">
                     <label htmlFor="sort">Zoradiť:</label>
@@ -257,18 +289,17 @@ const AllArticlesPage = ({ user }) => {
                         <option value="newest">Najnovšie</option>
                         <option value="oldest">Najstaršie</option>
                         <option value="views">Najčítanejšie</option>
-                        <option value="popular">Najpopulárnejšie</option>
                     </select>
                 </div>
             </div>
 
-            {/* Filters */}
+            {/* FILTER TABS */}
             <div className="all-articles__filters">
                 <button
                     onClick={() => setFilter('moderation')}
                     className={`all-articles__filter-btn ${filter === 'moderation' ? 'all-articles__filter-btn--active' : ''}`}
                 >
-                    🔔 Na moderácii ({statsLoading ? '...' : stats.pending})
+                    ⚠️ Na moderácii ({statsLoading ? '...' : stats.pending})
                 </button>
                 <button
                     onClick={() => setFilter('all')}
@@ -323,13 +354,14 @@ const AllArticlesPage = ({ user }) => {
                 )}
             </div>
 
-            {/* ✅ Модальное окно для отклонения статьи */}
+            {/* ✅ ИСПРАВЛЕНО: Модальное окно для отклонения статьи */}
             <Modal
                 isOpen={showRejectModal}
                 onClose={() => {
                     setShowRejectModal(false);
                     setRejectingArticleId(null);
                     setRejectReason('');
+                    setRejectError(''); // ← Сбрасываем ошибку при закрытии
                 }}
                 title="Zamietnuť článok"
                 size="medium"
@@ -339,9 +371,19 @@ const AllArticlesPage = ({ user }) => {
                         Uveďte dôvod zamietnutia článku. Autor dostane túto správu.
                     </p>
 
+                    {/* ✅ НОВОЕ: Показываем ошибку внутри модалки */}
+                    {rejectError && (
+                        <div className="reject-modal__error">
+                            ⚠️ {rejectError}
+                        </div>
+                    )}
+
                     <textarea
                         value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
+                        onChange={(e) => {
+                            setRejectReason(e.target.value);
+                            setRejectError(''); // ← Сбрасываем ошибку при вводе
+                        }}
                         placeholder="Napríklad: Článok neobsahuje dostatočné zdroje, je potrebné doplniť obrázky..."
                         className="reject-modal__textarea"
                         rows="5"
@@ -357,6 +399,7 @@ const AllArticlesPage = ({ user }) => {
                                 setShowRejectModal(false);
                                 setRejectingArticleId(null);
                                 setRejectReason('');
+                                setRejectError('');
                             }}
                             className="reject-modal__btn reject-modal__btn--cancel"
                         >

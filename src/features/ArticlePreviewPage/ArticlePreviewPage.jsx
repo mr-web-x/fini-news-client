@@ -40,8 +40,8 @@ const ArticlePreviewPage = ({ user, articleId }) => {
             // Проверка прав доступа
             if (user.role === 'author') {
                 // Author может просматривать только свои статьи
-                const authorId = articleData.author?._id || articleData.author;
-                const userId = user._id;
+                const authorId = articleData.author?.id || articleData.author;
+                const userId = user.id;
 
                 // Сравниваем как строки
                 if (String(authorId) !== String(userId)) {

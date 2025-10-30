@@ -93,8 +93,8 @@ const NewArticlePage = ({ user }) => {
 
             // ✅ ИСПРАВЛЕНО: Проверяем права доступа с правильным сравнением
             // article.author может быть либо объектом с _id, либо строкой
-            const authorId = article.author?._id || article.author;
-            const userId = user._id;
+            const authorId = article.author?.id || article.author;
+            const userId = user.id;
 
             // Сравниваем как строки (важно для MongoDB ObjectId)
             const isAuthor = String(authorId) === String(userId);
