@@ -403,7 +403,12 @@
 }
 
 
-// Добавь в конец файла UsersManagementPage.scss
+.users__search-info {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 4px;
+    font-style: italic;
+}
 
 // Добавь в конец файла UsersManagementPage.scss
 
@@ -531,29 +536,10 @@
     }
 }
 
-// Адаптивность для мобильных
-@media (max-width: 768px) {
-    .user-card__action-buttons {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .user-card__block-btn,
-    .user-card__delete-btn {
-        width: 100%;
-        text-align: center;
-    }
-
-    .user-card__block-info {
-        margin: 0 16px 12px;
-        padding: 10px 12px;
-    }
-}
-
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
     .users-management-page {
-        padding: 0 16px;
+        padding: 0px 0px;
     }
 
     .users__header {
@@ -607,7 +593,8 @@
 
 @media (max-width: 480px) {
     .users-management-page {
-        padding: 0 12px;
+        padding: 0px 0px;
+
     }
 
     .users__header {

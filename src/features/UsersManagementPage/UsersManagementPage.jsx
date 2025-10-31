@@ -22,24 +22,38 @@ const UsersManagementPage = ({ user }) => {
         authors: 0,
         admins: 0,
         blocked: 0,
-        newThisMonth: 0
+        active: 0
     });
 
+    // ✅ Загрузка при монтировании и изменении фильтра
     useEffect(() => {
         loadUsers();
+    }, [filter]);
+
+    // ✅ Загрузка статистики при монтировании
+    useEffect(() => {
         loadStatistics();
-    }, [filter, searchTerm]);
+    }, []);
+
+    // ✅ DEBOUNCE для поиска (как в компоненте статей)
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (searchTerm || searchTerm === '') {
+                loadUsers();
+            }
+        }, 700); // 500ms debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
 
     const loadUsers = async () => {
         setLoading(true);
         try {
-            // Параметры для фильтрации
             const params = {
                 page: 1,
                 limit: 50
             };
 
-            // Добавляем фильтры если они выбраны
             if (filter !== 'all') {
                 if (filter === 'blocked') {
                     params.isBlocked = true;
@@ -48,25 +62,33 @@ const UsersManagementPage = ({ user }) => {
                 }
             }
 
-            // Добавляем поиск если есть
-            if (searchTerm) {
-                params.search = searchTerm;
+            if (searchTerm && searchTerm.trim()) {
+                params.search = searchTerm.trim();
             }
+
+            console.log('🔍 Поиск с параметрами:', params);
 
             const result = await getAllUsers(params);
 
             if (result.success) {
-                // Обрабатываем разные форматы ответа
                 const usersData = result.data.users || result.data || [];
+                console.log('✅ Найдено пользователей:', usersData.length);
                 setUsers(usersData);
             } else {
-                console.error('Error loading users:', result.message);
-                alert(result.message || 'Chyba pri načítavaní používateľov');
+                console.error('❌ Error loading users:', result.message);
+                // Не показываем alert при пустом результате поиска
+                if (!searchTerm) {
+                    alert(result.message || 'Chyba pri načítavaní používateľov');
+                }
+                setUsers([]);
             }
 
         } catch (error) {
-            console.error('Error loading users:', error);
-            alert('Chyba pri načítavaní používateľov');
+            console.error('❌ Error loading users:', error);
+            if (!searchTerm) {
+                alert('Chyba pri načítavaní používateľov');
+            }
+            setUsers([]);
         } finally {
             setLoading(false);
         }
@@ -77,7 +99,16 @@ const UsersManagementPage = ({ user }) => {
             const result = await getUserStatistics();
 
             if (result.success) {
-                setStats(result.data);
+                const statsData = result.data;
+
+                setStats({
+                    total: statsData.total || 0,
+                    users: statsData.roles?.user || 0,
+                    authors: statsData.roles?.author || 0,
+                    admins: statsData.roles?.admin || 0,
+                    blocked: statsData.blocked || 0,
+                    active: statsData.active || 0
+                });
             }
         } catch (error) {
             console.error('Error loading statistics:', error);
@@ -85,19 +116,16 @@ const UsersManagementPage = ({ user }) => {
     };
 
     const handleRoleChange = async (userId, newRole) => {
-        // Только admin может менять роли
         if (user.role !== 'admin') {
             alert('Nemáte oprávnenie na zmenu rolí používateľov.');
             return;
         }
 
-        // Можно менять только между user и author
         if (newRole !== 'user' && newRole !== 'author') {
             alert('Môžete meniť iba medzi rolami "Používateľ" a "Autor".');
             return;
         }
 
-        // Нельзя менять роль самому себе
         if (userId === user.id) {
             alert('Nemôžete zmeniť svoju vlastnú rolu.');
             return;
@@ -114,14 +142,11 @@ const UsersManagementPage = ({ user }) => {
             const result = await changeUserRole(userId, { role: newRole });
 
             if (result.success) {
-                // Обновляем локальное состояние
                 setUsers(prev => prev.map(u =>
                     u.id === userId ? { ...u, role: newRole } : u
                 ));
 
-                // Перезагружаем статистику
                 await loadStatistics();
-
                 alert(result.message || 'Rola bola úspešne zmenená');
             } else {
                 alert(result.message || 'Chyba pri zmene role používateľa');
@@ -133,13 +158,11 @@ const UsersManagementPage = ({ user }) => {
     };
 
     const handleBlockUser = async (userId, shouldBlock) => {
-        // Только admin может блокировать пользователей
         if (user.role !== 'admin') {
             alert('Nemáte oprávnenie na blokovanie používateľov.');
             return;
         }
 
-        // Нельзя блокировать самого себя
         if (userId === user.id) {
             alert('Nemôžete zablokovať seba.');
             return;
@@ -167,20 +190,20 @@ const UsersManagementPage = ({ user }) => {
             }
 
             if (result.success) {
-                // Обновляем локальное состояние
                 setUsers(prev => prev.map(u =>
                     u.id === userId ? {
                         ...u,
-                        isBlocked: shouldBlock,
-                        blockReason: shouldBlock ? reason : null,
-                        blockedUntil: shouldBlock ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null // 30 дней
+                        isBlocked: {
+                            status: shouldBlock,
+                            reason: shouldBlock ? reason : null,
+                            until: null,
+                            blockedBy: shouldBlock ? user.id : null
+                        }
                     } : u
                 ));
 
-                // Перезагружаем статистику
                 await loadStatistics();
-
-                alert(result.message || `Používateľ bol úspešne ${action}`);
+                alert(result.message || `Používateľ bol úspešne ${shouldBlock ? 'zablokovaný' : 'odblokovaný'}`);
             } else {
                 alert(result.message || `Chyba pri ${action} používateľa`);
             }
@@ -191,13 +214,11 @@ const UsersManagementPage = ({ user }) => {
     };
 
     const handleDeleteUser = async (userId) => {
-        // Только admin может удалять пользователей
         if (user.role !== 'admin') {
             alert('Nemáte oprávnenie na mazanie používateľov.');
             return;
         }
 
-        // Нельзя удалять самого себя
         if (userId === user.id) {
             alert('Nemôžete vymazať svoj vlastný účet.');
             return;
@@ -214,12 +235,8 @@ const UsersManagementPage = ({ user }) => {
             const result = await deleteUser(userId);
 
             if (result.success) {
-                // Удаляем пользователя из списка
                 setUsers(prev => prev.filter(u => u.id !== userId));
-
-                // Перезагружаем статистику
                 await loadStatistics();
-
                 alert(result.message || 'Používateľ bol úspešne vymazaný');
             } else {
                 alert(result.message || 'Chyba pri mazaní používateľa');
@@ -290,44 +307,47 @@ const UsersManagementPage = ({ user }) => {
                 <p>Spravujte používateľov, ich role a oprávnenia</p>
             </div>
 
-            {/* Statistics */}
             <div className="users__stats">
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.total || 0}</div>
+                    <div className="users__stat-number">{stats.total}</div>
                     <div className="users__stat-label">Celkovo používateľov</div>
                 </div>
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.users || 0}</div>
+                    <div className="users__stat-number">{stats.users}</div>
                     <div className="users__stat-label">Používatelia</div>
                 </div>
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.authors || 0}</div>
+                    <div className="users__stat-number">{stats.authors}</div>
                     <div className="users__stat-label">Autori</div>
                 </div>
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.admins || 0}</div>
+                    <div className="users__stat-number">{stats.admins}</div>
                     <div className="users__stat-label">Admini</div>
                 </div>
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.blocked || 0}</div>
+                    <div className="users__stat-number">{stats.blocked}</div>
                     <div className="users__stat-label">Blokovaní</div>
                 </div>
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.newThisMonth || 0}</div>
-                    <div className="users__stat-label">Noví tento mesiac</div>
+                    <div className="users__stat-number">{stats.active}</div>
+                    <div className="users__stat-label">Aktívni</div>
                 </div>
             </div>
 
-            {/* Search and Filters */}
             <div className="users__controls">
                 <div className="users__search">
                     <input
                         type="text"
-                        placeholder="Hľadať podľa mena alebo emailu..."
+                        placeholder="🔍 Hľadať podľa mena alebo emailu..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="users__search-input"
                     />
+                    {searchTerm && (
+                        <div className="users__search-info">
+                            Hľadám: "{searchTerm}"
+                        </div>
+                    )}
                 </div>
 
                 <div className="users__filters">
@@ -335,167 +355,162 @@ const UsersManagementPage = ({ user }) => {
                         onClick={() => setFilter('all')}
                         className={`users__filter-btn ${filter === 'all' ? 'active' : ''}`}
                     >
-                        Všetci ({stats.total || 0})
+                        Všetci ({stats.total})
                     </button>
                     <button
                         onClick={() => setFilter('user')}
                         className={`users__filter-btn ${filter === 'user' ? 'active' : ''}`}
                     >
-                        Používatelia ({stats.users || 0})
+                        Používatelia ({stats.users})
                     </button>
                     <button
                         onClick={() => setFilter('author')}
                         className={`users__filter-btn ${filter === 'author' ? 'active' : ''}`}
                     >
-                        Autori ({stats.authors || 0})
+                        Autori ({stats.authors})
                     </button>
                     <button
                         onClick={() => setFilter('admin')}
                         className={`users__filter-btn ${filter === 'admin' ? 'active' : ''}`}
                     >
-                        Admini ({stats.admins || 0})
+                        Admini ({stats.admins})
                     </button>
                     <button
                         onClick={() => setFilter('blocked')}
                         className={`users__filter-btn ${filter === 'blocked' ? 'active' : ''}`}
                     >
-                        Blokovaní ({stats.blocked || 0})
+                        Blokovaní ({stats.blocked})
                     </button>
                 </div>
             </div>
 
-            {/* Users List */}
             <div className="users__list">
                 {users.length === 0 ? (
                     <div className="users__empty">
                         <div className="users__empty-icon">👥</div>
                         <h3>Žiadni používatelia</h3>
-                        <p>Podľa zadaných kritérií sa nenašli žiadni používatelia.</p>
-                        <button
-                            onClick={() => { setFilter('all'); setSearchTerm(''); }}
-                            className="users__filter-btn"
-                        >
-                            Zobraziť všetkých používateľov
-                        </button>
+                        <p>
+                            {searchTerm
+                                ? `Pre vyhľadávanie "${searchTerm}" sa nenašli žiadni používatelia.`
+                                : 'Podľa zadaných kritérií sa nenašli žiadni používatelia.'
+                            }
+                        </p>
+                        {(searchTerm || filter !== 'all') && (
+                            <button
+                                onClick={() => { setFilter('all'); setSearchTerm(''); }}
+                                className="users__filter-btn"
+                            >
+                                Zobraziť všetkých používateľov
+                            </button>
+                        )}
                     </div>
                 ) : (
-                    users.map((userData) => (
-                        <div key={userData.id} className={`user-card ${userData.isBlocked ? 'user-card--blocked' : ''}`}>
-                            <div className="user-card__header">
-                                <div className="user-card__info">
-                                    <div className="user-card__avatar">
-                                        <img
-                                            src={userData.avatar || "/icons/user-placeholder.svg"}
-                                            alt="User avatar"
-                                            onError={(e) => {
-                                                e.target.src = "/icons/user-placeholder.svg";
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="user-card__details">
-                                        <h3 className="user-card__name">{userData.displayName || userData.email}</h3>
-                                        <p className="user-card__email">{userData.email}</p>
-                                        <div className="user-card__meta">
-                                            <span className={`user-card__role-badge ${getRoleColor(userData.role)}`}>
-                                                {getRoleLabel(userData.role)}
-                                            </span>
-                                            {userData.id === user.id && (
-                                                <span className="user-card__current-user">(vy)</span>
-                                            )}
-                                            <span className="user-card__activity">
+                    users.map((userData) => {
+                        const isUserBlocked = userData.isBlocked?.status || false;
+
+                        return (
+                            <div key={userData.id} className={`user-card ${isUserBlocked ? 'user-card--blocked' : ''}`}>
+                                <div className="user-card__header">
+                                    <div className="user-card__info">
+                                        <div className="user-card__avatar">
+                                            <img
+                                                src={userData.avatar || "/icons/user-placeholder.svg"}
+                                                alt="User avatar"
+                                                onError={(e) => {
+                                                    e.target.src = "/icons/user-placeholder.svg";
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="user-card__details">
+                                            <h3 className="user-card__name">{userData.displayName || userData.email}</h3>
+                                            <p className="user-card__email">{userData.email}</p>
+                                            <div className="user-card__meta">
+                                                <span className={`user-card__role-badge ${getRoleColor(userData.role)}`}>
+                                                    {getRoleLabel(userData.role)}
+                                                </span>
+                                                {userData.id === user.id && (
+                                                    <span className="user-card__current-user">(vy)</span>
+                                                )}
+                                                {isUserBlocked && (
+                                                    <span className="user-card__blocked-badge">🚫 Blokovaný</span>
+                                                )}
+                                            </div>
+                                            <div className="user-card__activity">
                                                 {getActivityStatus(userData.lastLogin)}
-                                            </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="user-card__status">
-                                    {userData.isBlocked && (
-                                        <span className="user-card__blocked-badge">🚫 Blokovaný</span>
-                                    )}
+                                <div className="user-card__stats">
+                                    <div className="user-card__stat">
+                                        <span className="user-card__stat-label">Registrácia:</span>
+                                        <span className="user-card__stat-value">{formatDate(userData.createdAt)}</span>
+                                    </div>
+                                    <div className="user-card__stat">
+                                        <span className="user-card__stat-label">Posledné prihlásenie:</span>
+                                        <span className="user-card__stat-value">{formatDate(userData.lastLogin)}</span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="user-card__stats">
-                                <div className="user-card__stat">
-                                    <span className="user-card__stat-label">Články:</span>
-                                    <span className="user-card__stat-value">{userData.articlesCount || 0}</span>
-                                </div>
-                                <div className="user-card__stat">
-                                    <span className="user-card__stat-label">Komentáre:</span>
-                                    <span className="user-card__stat-value">{userData.commentsCount || 0}</span>
-                                </div>
-                                <div className="user-card__stat">
-                                    <span className="user-card__stat-label">Registrovaný:</span>
-                                    <span className="user-card__stat-value">{formatDate(userData.createdAt)}</span>
-                                </div>
-                                <div className="user-card__stat">
-                                    <span className="user-card__stat-label">Posledné prihlásenie:</span>
-                                    <span className="user-card__stat-value">{formatDate(userData.lastLogin)}</span>
-                                </div>
-                            </div>
-
-                            {userData.isBlocked && userData.blockReason && (
-                                <div className="user-card__block-info">
-                                    <strong>Dôvod blokovania:</strong> {userData.blockReason}
-                                    {userData.blockedUntil && (
-                                        <span> (do {formatDate(userData.blockedUntil)})</span>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="user-card__actions">
-                                {/* Role Change - только admin может менять роли других пользователей */}
-                                {user.role === 'admin' && userData.id !== user.id && (
-                                    <div className="user-card__role-select">
-                                        <label>Rola:</label>
-                                        <select
-                                            value={userData.role}
-                                            onChange={(e) => handleRoleChange(userData.id, e.target.value)}
-                                            disabled={userData.isBlocked}
-                                        >
-                                            <option value="user">Používateľ</option>
-                                            <option value="author">Autor</option>
-                                            <option value="admin" disabled>Administrátor</option>
-                                        </select>
+                                {isUserBlocked && userData.isBlocked?.reason && (
+                                    <div className="user-card__block-info">
+                                        <strong>Dôvod blokovania:</strong> {userData.isBlocked.reason}
+                                        {userData.isBlocked.until && (
+                                            <span> (do {formatDate(userData.isBlocked.until)})</span>
+                                        )}
                                     </div>
                                 )}
 
-                                {/* Показываем что свою роль нельзя менять */}
-                                {user.role === 'admin' && userData.id === user.id && (
-                                    <div className="user-card__role-info">
-                                        <label>Rola:</label>
-                                        <span className="user-card__current-role">
-                                            {getRoleLabel(userData.role)} (vaša rola)
-                                        </span>
+                                <div className="user-card__actions">
+                                    {user.role === 'admin' && userData.id !== user.id && userData.role !== 'admin' && (
+                                        <div className="user-card__role-select">
+                                            <label>Rola:</label>
+                                            <select
+                                                value={userData.role}
+                                                onChange={(e) => handleRoleChange(userData.id, e.target.value)}
+                                                disabled={isUserBlocked}
+                                            >
+                                                <option value="user">Používateľ</option>
+                                                <option value="author">Autor</option>
+                                                <option value="admin" disabled>Administrátor</option>
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {user.role === 'admin' && userData.id === user.id && (
+                                        <div className="user-card__role-info">
+                                            <label>Rola:</label>
+                                            <span className="user-card__current-role">
+                                                {getRoleLabel(userData.role)} (vaša rola)
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className="user-card__action-buttons">
+                                        {user.role === 'admin' && userData.id !== user.id && userData.role !== 'admin' && (
+                                            <button
+                                                onClick={() => handleBlockUser(userData.id, !isUserBlocked)}
+                                                className={`user-card__block-btn ${isUserBlocked ? 'user-card__unblock-btn' : ''}`}
+                                            >
+                                                {isUserBlocked ? '✅ Odblokovať' : '🚫 Blokovať'}
+                                            </button>
+                                        )}
+
+                                        {user.role === 'admin' && userData.id !== user.id && userData.role !== 'admin' && (
+                                            <button
+                                                onClick={() => handleDeleteUser(userData.id)}
+                                                className="user-card__delete-btn"
+                                                title="Natrvalo vymazať používateľa"
+                                            >
+                                                🗑️ Vymazať
+                                            </button>
+                                        )}
                                     </div>
-                                )}
-
-                                <div className="user-card__action-buttons">
-                                    {/* Block/Unblock - только admin может блокировать других пользователей */}
-                                    {user.role === 'admin' && userData.id !== user.id && (
-                                        <button
-                                            onClick={() => handleBlockUser(userData.id, !userData.isBlocked)}
-                                            className={`user-card__block-btn ${userData.isBlocked ? 'user-card__unblock-btn' : ''}`}
-                                        >
-                                            {userData.isBlocked ? '✅ Odblokovať' : '🚫 Blokovať'}
-                                        </button>
-                                    )}
-
-                                    {/* Delete user - только admin может удалять других пользователей */}
-                                    {user.role === 'admin' && userData.id !== user.id && (
-                                        <button
-                                            onClick={() => handleDeleteUser(userData.id)}
-                                            className="user-card__delete-btn"
-                                            title="Natrvalo vymazať používateľa"
-                                        >
-                                            🗑️ Vymazať
-                                        </button>
-                                    )}
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
         </div>
