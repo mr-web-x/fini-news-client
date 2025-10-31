@@ -1,15 +1,15 @@
 import { getMe } from '@/actions/auth.actions';
 import { getArticleById } from '@/actions/articles.actions';
 import { redirect } from 'next/navigation';
-import ArticleViewPage from '@/features/ArticleViewPage/ArticleViewPage';
+import NewArticlePage from '@/features/NewArticlePage/NewArticlePage';
 
 /**
- * Страница просмотра опубликованной статьи автора
- * Route: /profil/moje-clanky/[moje-clankyId]
+ * Страница редактирования статьи
+ * Route: /profil/moje-clanky/[moje-clankyId]/upravit
  * @param {Object} props
  * @param {Promise<Object>} props.params - параметры маршрута (async в Next.js 15)
  */
-export default async function MojeClankyDetailPage({ params }) {
+export default async function UpravitArticlePage({ params }) {
     // ✅ ИСПРАВЛЕНО: await params для Next.js 15
     const resolvedParams = await params;
 
@@ -21,7 +21,7 @@ export default async function MojeClankyDetailPage({ params }) {
         redirect('/prihlasenie');
     }
 
-    // Проверяем роль - только author и admin могут просматривать статьи
+    // Проверяем роль - только author и admin могут редактировать статьи
     if (user.role !== 'author' && user.role !== 'admin') {
         redirect('/profil');
     }
@@ -55,11 +55,10 @@ export default async function MojeClankyDetailPage({ params }) {
         redirect('/profil/moje-clanky');
     }
 
-    // ✅ НОВАЯ ЛОГИКА: Разрешаем просмотр только для published статей
-    // Для других статусов - редирект на соответствующие страницы
-    if (article.status === 'draft' || article.status === 'rejected') {
-        // Черновики и отклонённые - редирект на редактирование
-        redirect(`/profil/moje-clanky/${articleId}/upravit`);
+    // ✅ НОВАЯ ЛОГИКА: Разрешаем редактирование только для draft и rejected
+    if (article.status === 'published') {
+        // Опубликованные статьи - редирект на просмотр
+        redirect(`/profil/moje-clanky/${articleId}`);
     }
 
     if (article.status === 'pending') {
@@ -67,6 +66,7 @@ export default async function MojeClankyDetailPage({ params }) {
         redirect(`/profil/moje-clanky/${articleId}/ukazka`);
     }
 
-    // ✅ Для published статей - показываем ArticleViewPage с комментариями
-    return <ArticleViewPage article={article} user={user} />;
+    // ✅ Для draft и rejected - показываем форму редактирования
+    // Передаём articleId через пропсы в NewArticlePage
+    return <NewArticlePage user={user} articleId={articleId} />;
 }

@@ -91,10 +91,10 @@ const ArticlePreviewPage = ({ user, articleId }) => {
         });
     };
 
-    // ==================== ДЕЙСТВИЯ ДЛЯ ADMIN ====================
-
     const handleApprove = async () => {
-        if (!confirm('Schváliť a publikovať tento článok?')) return;
+        if (!window.confirm('Naozaj chcete schváliť tento článok?')) {
+            return;
+        }
 
         setIsProcessing(true);
         setMessage({ type: '', text: '' });
@@ -103,24 +103,24 @@ const ArticlePreviewPage = ({ user, articleId }) => {
             const result = await approveArticle(articleId);
 
             if (result.success) {
-                setMessage({ type: 'success', text: 'Článok bol schválený a publikovaný' });
+                setMessage({ type: 'success', text: 'Článok bol úspešne schválený' });
                 setTimeout(() => {
                     router.push('/profil/vsetky-clanky');
                 }, 1500);
             } else {
-                setMessage({ type: 'error', text: result.message });
+                setMessage({ type: 'error', text: result.message || 'Chyba pri schvaľovaní článku' });
             }
         } catch (error) {
             console.error('Error approving article:', error);
-            setMessage({ type: 'error', text: 'Chyba pri schvaľovaní článku' });
+            setMessage({ type: 'error', text: 'Neočakávaná chyba' });
         } finally {
             setIsProcessing(false);
         }
     };
 
-    const handleRejectSubmit = async () => {
-        if (!rejectReason || rejectReason.trim().length < 10) {
-            setMessage({ type: 'error', text: 'Dôvod zamietnutia musí mať minimálne 10 znakov' });
+    const handleReject = async () => {
+        if (!rejectReason.trim()) {
+            setMessage({ type: 'error', text: 'Prosím, uveďte dôvod zamietnutia' });
             return;
         }
 
@@ -128,26 +128,25 @@ const ArticlePreviewPage = ({ user, articleId }) => {
         setMessage({ type: '', text: '' });
 
         try {
-            const result = await rejectArticle(articleId, rejectReason);
+            const result = await rejectArticle(articleId, rejectReason.trim());
 
             if (result.success) {
                 setMessage({ type: 'success', text: 'Článok bol zamietnutý' });
                 setShowRejectModal(false);
+                setRejectReason('');
                 setTimeout(() => {
                     router.push('/profil/vsetky-clanky');
                 }, 1500);
             } else {
-                setMessage({ type: 'error', text: result.message });
+                setMessage({ type: 'error', text: result.message || 'Chyba pri zamietaní článku' });
             }
         } catch (error) {
             console.error('Error rejecting article:', error);
-            setMessage({ type: 'error', text: 'Chyba pri zamietaní článku' });
+            setMessage({ type: 'error', text: 'Neočakávaná chyba' });
         } finally {
             setIsProcessing(false);
         }
     };
-
-    // ==================== РЕНДЕР ====================
 
     if (loading) {
         return (
@@ -164,9 +163,7 @@ const ArticlePreviewPage = ({ user, articleId }) => {
         return (
             <div className="article-preview">
                 <div className="article-preview__error">
-                    <div className="article-preview__error-icon">⚠️</div>
-                    <h2>Chyba</h2>
-                    <p>{error}</p>
+                    <h2>❌ {error}</h2>
                     <Link
                         href={user.role === 'admin' ? '/profil/vsetky-clanky' : '/profil/moje-clanky'}
                         className="article-preview__back-btn"
@@ -194,17 +191,27 @@ const ArticlePreviewPage = ({ user, articleId }) => {
                 </Link>
 
                 <div className="article-preview__actions">
-                    {/* Действия для Author */}
-                    {user.role === 'author' && article.status !== 'published' && (
+                    {/* ✅ ИСПРАВЛЕНО: Кнопка "Upraviť" для Author */}
+                    {user.role === 'author' && (article.status === 'draft' || article.status === 'rejected') && (
                         <Link
-                            href={`/profil/novy-clanok?id=${articleId}`}
+                            href={`/profil/moje-clanky/${articleId}/upravit`}
                             className="article-preview__action-btn article-preview__action-btn--edit"
                         >
                             ✏️ Upraviť
                         </Link>
                     )}
 
-                    {/* Действия для Admin */}
+                    {/* ✅ НОВОЕ: Кнопка "Upraviť" для Admin (для всех неопубликованных статей) */}
+                    {user.role === 'admin' && article.status !== 'published' && (
+                        <Link
+                            href={`/profil/moje-clanky/${articleId}/upravit`}
+                            className="article-preview__action-btn article-preview__action-btn--edit"
+                        >
+                            ✏️ Upraviť
+                        </Link>
+                    )}
+
+                    {/* Действия для Admin - модерация */}
                     {user.role === 'admin' && article.status === 'pending' && (
                         <>
                             <button
@@ -306,43 +313,50 @@ const ArticlePreviewPage = ({ user, articleId }) => {
                 )}
             </article>
 
-            {/* Modal для отклонения статьи (Admin) */}
-            <Modal
-                isOpen={showRejectModal}
-                onClose={() => setShowRejectModal(false)}
-                title="Zamietnuť článok"
-                size="medium"
-            >
-                <div className="reject-modal">
-                    <p className="reject-modal__description">
-                        Uveďte dôvod zamietnutia článku (minimálne 10 znakov):
-                    </p>
-                    <textarea
-                        className="reject-modal__textarea"
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        placeholder="Napr: Článok neobsahuje dostatočné informácie..."
-                        rows={5}
-                        disabled={isProcessing}
-                    />
-                    <div className="reject-modal__actions">
-                        <button
-                            onClick={() => setShowRejectModal(false)}
-                            className="reject-modal__btn reject-modal__btn--cancel"
+            {/* ✅ Модальное окно для отклонения (только для admin) */}
+            {user.role === 'admin' && (
+                <Modal
+                    isOpen={showRejectModal}
+                    onClose={() => {
+                        setShowRejectModal(false);
+                        setRejectReason('');
+                    }}
+                    title="Zamietnuť článok"
+                >
+                    <div className="reject-modal">
+                        <p className="reject-modal__description">
+                            Uveďte dôvod zamietnutia článku. Autor dostane túto správu.
+                        </p>
+                        <textarea
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            placeholder="Napríklad: Článok neobsahuje dostatočné zdroje..."
+                            className="reject-modal__textarea"
+                            rows={5}
                             disabled={isProcessing}
-                        >
-                            Zrušiť
-                        </button>
-                        <button
-                            onClick={handleRejectSubmit}
-                            className="reject-modal__btn reject-modal__btn--submit"
-                            disabled={!rejectReason || rejectReason.trim().length < 10 || isProcessing}
-                        >
-                            {isProcessing ? 'Spracúvam...' : 'Zamietnuť článok'}
-                        </button>
+                        />
+                        <div className="reject-modal__actions">
+                            <button
+                                onClick={() => {
+                                    setShowRejectModal(false);
+                                    setRejectReason('');
+                                }}
+                                className="reject-modal__btn reject-modal__btn--cancel"
+                                disabled={isProcessing}
+                            >
+                                Zrušiť
+                            </button>
+                            <button
+                                onClick={handleReject}
+                                className="reject-modal__btn reject-modal__btn--submit"
+                                disabled={isProcessing || !rejectReason.trim()}
+                            >
+                                {isProcessing ? 'Odosiela sa...' : 'Zamietnuť článok'}
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </Modal>
+                </Modal>
+            )}
         </div>
     );
 };

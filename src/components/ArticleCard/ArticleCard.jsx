@@ -95,21 +95,31 @@ const ArticleCard = ({
                     {/* ==================== AUTHOR VARIANT ==================== */}
                     {variant === 'author' && (
                         <>
-                            {/* Для опубликованных статей - просмотр в приватной зоне */}
+                            {/* ✅ НОВОЕ: Для опубликованных статей - просмотр с комментариями */}
                             {article.status === 'published' && (
                                 <Link
-                                    href={`/profil/moje-clanky/${article._id}/ukazka`}
+                                    href={`/profil/moje-clanky/${article._id}`}
                                     className="article-card__action-btn article-card__action-btn--view"
                                 >
                                     👁️ Zobraziť
                                 </Link>
                             )}
 
-                            {/* Для черновиков и отклоненных - редактирование и предпросмотр */}
+                            {/* Для статей на модерации - только предпросмотр */}
+                            {article.status === 'pending' && (
+                                <Link
+                                    href={`/profil/moje-clanky/${article._id}/ukazka`}
+                                    className="article-card__action-btn article-card__action-btn--preview"
+                                >
+                                    👁️ Náhľad
+                                </Link>
+                            )}
+
+                            {/* ✅ НОВОЕ: Для черновиков и отклоненных - редактирование и предпросмотр */}
                             {(article.status === 'draft' || article.status === 'rejected') && (
                                 <>
                                     <Link
-                                        href={`/profil/novy-clanok?id=${article._id}`}
+                                        href={`/profil/moje-clanky/${article._id}/upravit`}
                                         className="article-card__action-btn article-card__action-btn--edit"
                                     >
                                         ✏️ Upraviť
@@ -127,16 +137,6 @@ const ArticleCard = ({
                                         📤 Odoslať na moderáciu
                                     </button>
                                 </>
-                            )}
-
-                            {/* Для статей на модерации - только предпросмотр */}
-                            {article.status === 'pending' && (
-                                <Link
-                                    href={`/profil/moje-clanky/${article._id}/ukazka`}
-                                    className="article-card__action-btn article-card__action-btn--preview"
-                                >
-                                    👁️ Náhľad
-                                </Link>
                             )}
 
                             {/* Удаление (для всех кроме published и pending) */}
@@ -172,7 +172,7 @@ const ArticleCard = ({
                                 </>
                             )}
 
-                            {/* ✅ ИСПРАВЛЕНО: Просмотр статьи БЕЗ скролла к комментариям */}
+                            {/* Просмотр статьи БЕЗ скролла к комментариям */}
                             <Link
                                 href={`/profil/vsetky-clanky/${article._id}`}
                                 className="article-card__action-btn article-card__action-btn--view"
@@ -180,7 +180,7 @@ const ArticleCard = ({
                                 👁️ Zobraziť článok
                             </Link>
 
-                            {/* ✅ Иконка комментариев - скролл к комментариям (с #comments) */}
+                            {/* Иконка комментариев - скролл к комментариям (с #comments) */}
                             <Link
                                 href={`/profil/vsetky-clanky/${article._id}#comments`}
                                 className="article-card__action-btn article-card__action-btn--comment"

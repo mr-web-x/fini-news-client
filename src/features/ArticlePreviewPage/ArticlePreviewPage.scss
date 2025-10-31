@@ -538,7 +538,7 @@
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
     .article-preview {
-        padding: 24px 16px;
+        padding: 0;
     }
 
     .article-preview__header {
@@ -576,7 +576,7 @@
 
 @media (max-width: 480px) {
     .article-preview {
-        padding: 20px 12px;
+        padding: 0;
     }
 
     .article-preview__content {

@@ -83,7 +83,8 @@
     gap: 24px;
 }
 
-.new-article__field {
+/* ✅ ДОБАВЛЕНО: form-group */
+.new-article__form-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -94,15 +95,6 @@
     font-weight: 600;
     color: #2d3748;
     margin: 0;
-
-    &::after {
-        content: ' *';
-        color: #e53e3e;
-    }
-
-    &:not([for*="required"])::after {
-        display: none;
-    }
 }
 
 .new-article__input,
@@ -144,10 +136,12 @@
     cursor: pointer;
 }
 
-.new-article__help-text {
-    font-size: 14px;
+/* ✅ ДОБАВЛЕНО: hint */
+.new-article__hint {
+    font-size: 13px;
     color: #718096;
     margin: 0;
+    font-style: italic;
 }
 
 /* === CHARACTER COUNT === */
@@ -342,11 +336,6 @@
         width: 100%;
         min-width: auto;
     }
-
-    .new-article__content-textarea {
-        min-height: 300px;
-        padding: 12px;
-    }
 }
 
 @media (max-width: 480px) {
@@ -375,11 +364,6 @@
 
     .new-article__btn {
         padding: 12px 20px;
-        font-size: 14px;
-    }
-
-    .new-article__content-textarea {
-        min-height: 250px;
         font-size: 14px;
     }
 }

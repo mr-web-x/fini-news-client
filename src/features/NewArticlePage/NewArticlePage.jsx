@@ -7,13 +7,14 @@ import { getAllCategories } from "@/actions/categories.actions";
 import { Editor } from '@tinymce/tinymce-react';
 import "./NewArticlePage.scss";
 
-const NewArticlePage = ({ user }) => {
+const NewArticlePage = ({ user, articleId: propsArticleId }) => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const editorRef = useRef(null);
 
-    // ✅ НОВОЕ: получаем articleId из query параметра
-    const articleId = searchParams.get('id');
+    // ✅ НОВОЕ: получаем articleId либо из пропсов, либо из query параметра
+    const queryArticleId = searchParams.get('id');
+    const articleId = propsArticleId || queryArticleId;
     const isEditMode = !!articleId;
 
     const [formData, setFormData] = useState({
@@ -237,16 +238,20 @@ const NewArticlePage = ({ user }) => {
                         : 'Článok bol úspešne vytvorený ako koncept'
                 });
 
-                // Если это создание новой статьи, обновляем URL с articleId
-                if (!isEditMode) {
-                    router.push(`/profil/novy-clanok?id=${savedArticle._id}`);
-                }
-
-                // Если нужно отправить на модерацию
+                // ✅ НОВОЕ: После успешного сохранения - редирект в зависимости от действия
                 if (submitForReview) {
+                    // Если отправляем на модерацию - редирект на список статей
                     setTimeout(() => {
                         router.push('/profil/moje-clanky');
                     }, 1000);
+                } else if (isEditMode) {
+                    // ✅ НОВОЕ: Если редактируем - редирект на предпросмотр (Вариант Б)
+                    setTimeout(() => {
+                        router.push(`/profil/moje-clanky/${savedArticle._id}/ukazka`);
+                    }, 1000);
+                } else {
+                    // Если создаём новую статью - обновляем URL с articleId
+                    router.push(`/profil/novy-clanok?id=${savedArticle._id}`);
                 }
             } else {
                 setMessage({
@@ -312,8 +317,8 @@ const NewArticlePage = ({ user }) => {
                 <h1>{isEditMode ? 'Upraviť článok' : 'Nový článok'}</h1>
                 <p>
                     {isEditMode
-                        ? 'Upravte existujúci článok'
-                        : 'Vytvorte nový článok pre publikáciu na portáli'}
+                        ? 'Upravte svoj článok a uložte zmeny'
+                        : 'Vytvorte nový článok a pošlite ho na moderáciu'}
                 </p>
             </div>
 
@@ -325,10 +330,9 @@ const NewArticlePage = ({ user }) => {
                     </div>
                 )}
 
-                <form className="new-article__form" onSubmit={(e) => e.preventDefault()}>
-
+                <form className="new-article__form">
                     {/* Title */}
-                    <div className="new-article__field">
+                    <div className="new-article__form-group">
                         <label htmlFor="title" className="new-article__label">
                             Nadpis článku *
                         </label>
@@ -339,38 +343,18 @@ const NewArticlePage = ({ user }) => {
                             value={formData.title}
                             onChange={handleInputChange}
                             className="new-article__input"
-                            placeholder="Napíšte výstižný nadpis článku..."
-                            maxLength="200"
+                            placeholder="Zadajte nadpis článku..."
+                            maxLength={200}
                             disabled={loading}
                         />
                         <div className={`character-count ${titleCount.className}`}>
-                            {titleCount.count}/200 znakov
-                        </div>
-                    </div>
-
-                    {/* Excerpt */}
-                    <div className="new-article__field">
-                        <label htmlFor="excerpt" className="new-article__label">
-                            Perex (krátky popis) *
-                        </label>
-                        <textarea
-                            id="excerpt"
-                            name="excerpt"
-                            value={formData.excerpt}
-                            onChange={handleInputChange}
-                            className="new-article__textarea"
-                            placeholder="Napíšte krátky popis článku, ktorý sa zobrazí v náhľade... (minimálne 150 znakov)"
-                            rows="3"
-                            maxLength="320"
-                            disabled={loading}
-                        />
-                        <div className={`character-count ${excerptCount.className}`}>
-                            {excerptCount.count}/320 znakov (min. 150)
+                            {titleCount.count} / 200 znakov
+                            {titleCount.remaining < 0 && ` (${Math.abs(titleCount.remaining)} príliš veľa)`}
                         </div>
                     </div>
 
                     {/* Category */}
-                    <div className="new-article__field">
+                    <div className="new-article__form-group">
                         <label htmlFor="category" className="new-article__label">
                             Kategória *
                         </label>
@@ -382,7 +366,7 @@ const NewArticlePage = ({ user }) => {
                             className="new-article__select"
                             disabled={loading || loadingCategories}
                         >
-                            <option value="">Vyberte kategóriu</option>
+                            <option value="">-- Vyberte kategóriu --</option>
                             {categories.map(cat => (
                                 <option key={cat._id} value={cat._id}>
                                     {cat.name}
@@ -391,10 +375,65 @@ const NewArticlePage = ({ user }) => {
                         </select>
                     </div>
 
+                    {/* Excerpt */}
+                    <div className="new-article__form-group">
+                        <label htmlFor="excerpt" className="new-article__label">
+                            Perex (krátky popis) *
+                        </label>
+                        <textarea
+                            id="excerpt"
+                            name="excerpt"
+                            value={formData.excerpt}
+                            onChange={handleInputChange}
+                            className="new-article__textarea"
+                            placeholder="Zadajte krátky popis článku (min. 150 znakov)..."
+                            rows={4}
+                            maxLength={320}
+                            disabled={loading}
+                        />
+                        <div className={`character-count ${excerptCount.className}`}>
+                            {excerptCount.count} / 320 znakov
+                            {excerptCount.remaining < 0 && ` (${Math.abs(excerptCount.remaining)} príliš veľa)`}
+                            {excerptCount.count < 150 && ` (ešte ${150 - excerptCount.count} znakov do minima)`}
+                        </div>
+                    </div>
+
+                    {/* Content Editor */}
+                    <div className="new-article__form-group">
+                        <label htmlFor="content" className="new-article__label">
+                            Obsah článku *
+                        </label>
+                        <Editor
+                            apiKey={process.env.NEXT_PUBLIC_TINYMCE}
+                            onInit={(evt, editor) => editorRef.current = editor}
+                            value={formData.content}
+                            onEditorChange={handleEditorChange}
+                            init={{
+                                height: 500,
+                                menubar: true,
+                                plugins: [
+                                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                                ],
+                                toolbar: 'undo redo | blocks | ' +
+                                    'bold italic forecolor | alignleft aligncenter ' +
+                                    'alignright alignjustify | bullist numlist outdent indent | ' +
+                                    'removeformat | help',
+                                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                            }}
+                            disabled={loading}
+                        />
+                        <div className={`character-count ${contentCount.className}`}>
+                            {contentCount.count} / 10000 znakov
+                            {contentCount.count < 500 && ` (ešte ${500 - contentCount.count} znakov do minima)`}
+                        </div>
+                    </div>
+
                     {/* Tags */}
-                    <div className="new-article__field">
+                    <div className="new-article__form-group">
                         <label htmlFor="tags" className="new-article__label">
-                            Tagy (voliteľné)
+                            Tagy (oddelené čiarkou)
                         </label>
                         <input
                             type="text"
@@ -403,47 +442,12 @@ const NewArticlePage = ({ user }) => {
                             value={formData.tags}
                             onChange={handleInputChange}
                             className="new-article__input"
-                            placeholder="React, JavaScript, Web Development (oddeľte čiarkou)"
+                            placeholder="napr: technológie, inovácie, AI"
                             disabled={loading}
                         />
-                        <small className="new-article__help-text">
-                            Pridajte tagy oddelené čiarkou (napr. React, JavaScript)
+                        <small className="new-article__hint">
+                            Zadajte tagy oddelené čiarkou (max. 5 tagov)
                         </small>
-                    </div>
-
-                    {/* Content (TinyMCE) */}
-                    <div className="new-article__field">
-                        <label htmlFor="content" className="new-article__label">
-                            Obsah článku *
-                        </label>
-                        <div className="new-article__content-editor">
-                            <Editor
-                                apiKey={process.env.NEXT_PUBLIC_TINYMCE}
-                                onInit={(evt, editor) => editorRef.current = editor}
-                                value={formData.content}
-                                onEditorChange={handleEditorChange}
-                                init={{
-                                    height: 600,
-                                    menubar: true,
-                                    plugins: [
-                                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                                        'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                                    ],
-                                    toolbar: 'undo redo | blocks | ' +
-                                        'bold italic forecolor | alignleft aligncenter ' +
-                                        'alignright alignjustify | bullist numlist outdent indent | ' +
-                                        'removeformat | help',
-                                    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; line-height: 1.6; }',
-                                    language: 'sk',
-                                    placeholder: 'Začnite písať obsah článku...',
-                                }}
-                                disabled={loading}
-                            />
-                        </div>
-                        <div className={`character-count ${contentCount.className}`}>
-                            {contentCount.count}/10000 znakov (min. 500)
-                        </div>
                     </div>
 
                     {/* Action Buttons */}
