@@ -5,7 +5,7 @@ import { createComment } from '@/actions/comments.actions';
 import "./CommentForm.scss";
 
 /**
- * Форма для добавления комментария (position: fixed внизу экрана)
+ * Форма для добавления комментария (inline внутри страницы)
  * @param {string} articleId - ID статьи
  * @param {Object} user - текущий пользователь
  * @param {Function} onCommentAdded - callback при успешном добавлении комментария
@@ -14,7 +14,7 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
     /**
      * Обработчик отправки формы
@@ -22,7 +22,6 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // ✅ ИСПРАВЛЕНО: Проверка на минимум 3 символа (после trim)
         const trimmedContent = content.trim();
 
         if (!trimmedContent) {
@@ -50,9 +49,9 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
             });
 
             if (result.success) {
-                // Успешно добавлен
+                // Успешно добавлен - закрываем форму
                 setContent('');
-                setIsExpanded(false);
+                setIsOpen(false);
                 onCommentAdded && onCommentAdded();
             } else {
                 setError(result.message || 'Chyba pri pridávaní komentára');
@@ -74,10 +73,10 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
     };
 
     /**
-     * Обработчик фокуса - расширяем форму
+     * Обработчик клика по компактной кнопке - открываем форму
      */
-    const handleFocus = () => {
-        setIsExpanded(true);
+    const handleOpenForm = () => {
+        setIsOpen(true);
     };
 
     /**
@@ -86,7 +85,7 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
     const handleCancel = () => {
         setContent('');
         setError('');
-        setIsExpanded(false);
+        setIsOpen(false);
     };
 
     /**
@@ -99,12 +98,16 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
     };
 
     return (
-        <div className={`comment-form ${isExpanded ? 'comment-form--expanded' : ''}`}>
+        <div className={`comment-form ${isOpen ? 'comment-form--open' : ''}`}>
             <div className="comment-form__container">
                 {/* Аватар пользователя */}
                 <div className="comment-form__avatar">
                     {user.avatar ? (
-                        <img src={user.avatar} alt={user.firstName} />
+                        <img
+                            src={user.avatar}
+                            alt={user.firstName}
+                            className="comment-form__avatar-img"
+                        />
                     ) : (
                         <div className="comment-form__avatar-placeholder">
                             {user.firstName?.charAt(0).toUpperCase() || ''}
@@ -113,22 +116,33 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
                     )}
                 </div>
 
-                {/* Форма */}
-                <form onSubmit={handleSubmit} className="comment-form__form">
-                    {/* Поле ввода */}
-                    <textarea
-                        value={content}
-                        onChange={handleChange}
-                        onFocus={handleFocus}
-                        placeholder="Napíšte komentár..."
-                        className="comment-form__textarea"
-                        rows={isExpanded ? 4 : 1}
-                        maxLength={2001} // +1 для показа ошибки
-                        disabled={loading}
-                    />
+                {/* Компактная кнопка (когда форма закрыта) */}
+                {!isOpen && (
+                    <button
+                        type="button"
+                        onClick={handleOpenForm}
+                        className="comment-form__compact-button"
+                    >
+                        Napíšte komentár...
+                    </button>
+                )}
 
-                    {/* Расширенная часть формы */}
-                    {isExpanded && (
+                {/* Полная форма (когда форма открыта) */}
+                {isOpen && (
+                    <form onSubmit={handleSubmit} className="comment-form__form">
+                        {/* Поле ввода */}
+                        <textarea
+                            value={content}
+                            onChange={handleChange}
+                            placeholder="Napíšte komentár..."
+                            className="comment-form__textarea"
+                            rows={4}
+                            maxLength={2001}
+                            disabled={loading}
+                            autoFocus
+                        />
+
+                        {/* Расширенная часть формы */}
                         <div className="comment-form__footer">
                             {/* Ошибка */}
                             {error && (
@@ -164,8 +178,8 @@ const CommentForm = ({ articleId, user, onCommentAdded }) => {
                                 </div>
                             </div>
                         </div>
-                    )}
-                </form>
+                    </form>
+                )}
             </div>
         </div>
     );
