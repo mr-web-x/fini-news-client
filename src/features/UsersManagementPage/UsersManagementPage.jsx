@@ -1,12 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+    getAllUsers,
+    getUserStatistics,
+    blockUser,
+    unblockUser,
+    changeUserRole,
+    deleteUser
+} from '@/actions/adminUsers.actions';
 import "./UsersManagementPage.scss";
 
 const UsersManagementPage = ({ user }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all'); // all, user, author, admin, blocked
+    const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [stats, setStats] = useState({
         total: 0,
@@ -19,104 +27,60 @@ const UsersManagementPage = ({ user }) => {
 
     useEffect(() => {
         loadUsers();
+        loadStatistics();
     }, [filter, searchTerm]);
 
     const loadUsers = async () => {
         setLoading(true);
         try {
-            // TODO: заменить на реальный API вызов
-            // const result = await getAllUsers(filter, searchTerm);
+            // Параметры для фильтрации
+            const params = {
+                page: 1,
+                limit: 50
+            };
 
-            // Моковые данные
-            const mockUsers = [
-                {
-                    id: 1,
-                    displayName: "Ján Novák",
-                    email: "jan.novak@gmail.com",
-                    role: "user",
-                    avatar: null,
-                    createdAt: "2025-01-15T10:30:00Z",
-                    lastLogin: "2025-01-20T14:20:00Z",
-                    articlesCount: 0,
-                    commentsCount: 12,
-                    isBlocked: false
-                },
-                {
-                    id: 2,
-                    displayName: "Mária Svobodová",
-                    email: "maria.svobodova@gmail.com",
-                    role: "author",
-                    avatar: null,
-                    createdAt: "2024-12-20T09:15:00Z",
-                    lastLogin: "2025-01-19T16:45:00Z",
-                    articlesCount: 8,
-                    commentsCount: 24,
-                    isBlocked: false
-                },
-                {
-                    id: 3,
-                    displayName: "Peter Kováč",
-                    email: "peter.kovac@gmail.com",
-                    role: "admin",
-                    avatar: null,
-                    createdAt: "2024-11-10T12:00:00Z",
-                    lastLogin: "2025-01-20T18:30:00Z",
-                    articlesCount: 15,
-                    commentsCount: 45,
-                    isBlocked: false
-                },
-                {
-                    id: 4,
-                    displayName: "Anna Horváthová",
-                    email: "anna.horvathova@gmail.com",
-                    role: "user",
-                    avatar: null,
-                    createdAt: "2025-01-18T16:45:00Z",
-                    lastLogin: "2025-01-20T10:15:00Z",
-                    articlesCount: 0,
-                    commentsCount: 3,
-                    isBlocked: true
-                }
-            ];
-
-            // Фильтруем пользователей
-            let filteredUsers = mockUsers;
+            // Добавляем фильтры если они выбраны
             if (filter !== 'all') {
                 if (filter === 'blocked') {
-                    filteredUsers = mockUsers.filter(u => u.isBlocked);
+                    params.isBlocked = true;
                 } else {
-                    filteredUsers = mockUsers.filter(u => u.role === filter && !u.isBlocked);
+                    params.role = filter;
                 }
             }
 
-            // Поиск по имени/email
+            // Добавляем поиск если есть
             if (searchTerm) {
-                filteredUsers = filteredUsers.filter(u =>
-                    u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    u.email.toLowerCase().includes(searchTerm.toLowerCase())
-                );
+                params.search = searchTerm;
             }
 
-            setUsers(filteredUsers);
+            const result = await getAllUsers(params);
 
-            // Калkulácia štatistík
-            setStats({
-                total: mockUsers.length,
-                users: mockUsers.filter(u => u.role === 'user').length,
-                authors: mockUsers.filter(u => u.role === 'author').length,
-                admins: mockUsers.filter(u => u.role === 'admin').length,
-                blocked: mockUsers.filter(u => u.isBlocked).length,
-                newThisMonth: mockUsers.filter(u => {
-                    const created = new Date(u.createdAt);
-                    const now = new Date();
-                    return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
-                }).length
-            });
+            if (result.success) {
+                // Обрабатываем разные форматы ответа
+                const usersData = result.data.users || result.data || [];
+                setUsers(usersData);
+            } else {
+                console.error('Error loading users:', result.message);
+                alert(result.message || 'Chyba pri načítavaní používateľov');
+            }
 
         } catch (error) {
             console.error('Error loading users:', error);
+            alert('Chyba pri načítavaní používateľov');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadStatistics = async () => {
+        try {
+            const result = await getUserStatistics();
+
+            if (result.success) {
+                setStats(result.data);
+            }
+        } catch (error) {
+            console.error('Error loading statistics:', error);
         }
     };
 
@@ -139,17 +103,29 @@ const UsersManagementPage = ({ user }) => {
             return;
         }
 
-        if (!confirm(`Ste si istí, že chcete zmeniť rolu tohto používateľa na "${getRoleLabel(newRole)}"?`)) {
+        const userToChange = users.find(u => u.id === userId);
+        if (!userToChange) return;
+
+        if (!confirm(`Ste si istí, že chcete zmeniť rolu používateľa "${userToChange.displayName}" na "${getRoleLabel(newRole)}"?`)) {
             return;
         }
 
         try {
-            // TODO: API call to change user role
-            // await updateUserRole(userId, newRole);
+            const result = await changeUserRole(userId, { role: newRole });
 
-            setUsers(prev => prev.map(u =>
-                u.id === userId ? { ...u, role: newRole } : u
-            ));
+            if (result.success) {
+                // Обновляем локальное состояние
+                setUsers(prev => prev.map(u =>
+                    u.id === userId ? { ...u, role: newRole } : u
+                ));
+
+                // Перезагружаем статистику
+                await loadStatistics();
+
+                alert(result.message || 'Rola bola úspešne zmenená');
+            } else {
+                alert(result.message || 'Chyba pri zmene role používateľa');
+            }
         } catch (error) {
             console.error('Error changing user role:', error);
             alert('Chyba pri zmene role používateľa.');
@@ -170,20 +146,87 @@ const UsersManagementPage = ({ user }) => {
         }
 
         const action = shouldBlock ? 'zablokovať' : 'odblokovať';
+        const reason = shouldBlock ? prompt('Zadajte dôvod blokovania (minimálne 5 znakov):') : null;
+
+        if (shouldBlock && (!reason || reason.trim().length < 5)) {
+            alert('Dôvod blokovania musí obsahovať minimálne 5 znakov.');
+            return;
+        }
+
         if (!confirm(`Ste si istí, že chcete ${action} tohto používateľa?`)) {
             return;
         }
 
         try {
-            // TODO: API call to block/unblock user
-            // await updateUserBlockStatus(userId, shouldBlock);
+            let result;
 
-            setUsers(prev => prev.map(u =>
-                u.id === userId ? { ...u, isBlocked: shouldBlock } : u
-            ));
+            if (shouldBlock) {
+                result = await blockUser(userId, { reason: reason.trim() });
+            } else {
+                result = await unblockUser(userId);
+            }
+
+            if (result.success) {
+                // Обновляем локальное состояние
+                setUsers(prev => prev.map(u =>
+                    u.id === userId ? {
+                        ...u,
+                        isBlocked: shouldBlock,
+                        blockReason: shouldBlock ? reason : null,
+                        blockedUntil: shouldBlock ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null // 30 дней
+                    } : u
+                ));
+
+                // Перезагружаем статистику
+                await loadStatistics();
+
+                alert(result.message || `Používateľ bol úspešne ${action}`);
+            } else {
+                alert(result.message || `Chyba pri ${action} používateľa`);
+            }
         } catch (error) {
             console.error('Error updating user block status:', error);
-            alert('Chyba pri zmene stavu blokovania.');
+            alert(`Chyba pri ${action} používateľa.`);
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        // Только admin может удалять пользователей
+        if (user.role !== 'admin') {
+            alert('Nemáte oprávnenie na mazanie používateľov.');
+            return;
+        }
+
+        // Нельзя удалять самого себя
+        if (userId === user.id) {
+            alert('Nemôžete vymazať svoj vlastný účet.');
+            return;
+        }
+
+        const userToDelete = users.find(u => u.id === userId);
+        if (!userToDelete) return;
+
+        if (!confirm(`Ste si istí, že chcete natrvalo vymazať používateľa "${userToDelete.displayName}"?\n\nTáto akcia je nevratná!`)) {
+            return;
+        }
+
+        try {
+            const result = await deleteUser(userId);
+
+            if (result.success) {
+                // Удаляем пользователя из списка
+                setUsers(prev => prev.filter(u => u.id !== userId));
+
+                // Перезагружаем статистику
+                await loadStatistics();
+
+                alert(result.message || 'Používateľ bol úspešne vymazaný');
+            } else {
+                alert(result.message || 'Chyba pri mazaní používateľa');
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            alert('Chyba pri mazaní používateľa.');
         }
     };
 
@@ -206,11 +249,29 @@ const UsersManagementPage = ({ user }) => {
     };
 
     const formatDate = (dateString) => {
+        if (!dateString) return 'Nikdy';
+
         return new Date(dateString).toLocaleDateString('sk-SK', {
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
+    };
+
+    const getActivityStatus = (lastLogin) => {
+        if (!lastLogin) return 'Neaktívny';
+
+        const lastLoginDate = new Date(lastLogin);
+        const now = new Date();
+        const diffDays = Math.floor((now - lastLoginDate) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) return 'Dnes';
+        if (diffDays === 1) return 'Včera';
+        if (diffDays < 7) return `Pred ${diffDays} dňami`;
+        if (diffDays < 30) return `Pred ${Math.floor(diffDays / 7)} týždňami`;
+        return `Pred ${Math.floor(diffDays / 30)} mesiacmi`;
     };
 
     if (loading) {
@@ -232,19 +293,27 @@ const UsersManagementPage = ({ user }) => {
             {/* Statistics */}
             <div className="users__stats">
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.total}</div>
+                    <div className="users__stat-number">{stats.total || 0}</div>
                     <div className="users__stat-label">Celkovo používateľov</div>
                 </div>
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.users}</div>
+                    <div className="users__stat-number">{stats.users || 0}</div>
                     <div className="users__stat-label">Používatelia</div>
                 </div>
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.authors}</div>
+                    <div className="users__stat-number">{stats.authors || 0}</div>
                     <div className="users__stat-label">Autori</div>
                 </div>
                 <div className="users__stat-card">
-                    <div className="users__stat-number">{stats.newThisMonth}</div>
+                    <div className="users__stat-number">{stats.admins || 0}</div>
+                    <div className="users__stat-label">Admini</div>
+                </div>
+                <div className="users__stat-card">
+                    <div className="users__stat-number">{stats.blocked || 0}</div>
+                    <div className="users__stat-label">Blokovaní</div>
+                </div>
+                <div className="users__stat-card">
+                    <div className="users__stat-number">{stats.newThisMonth || 0}</div>
                     <div className="users__stat-label">Noví tento mesiac</div>
                 </div>
             </div>
@@ -266,31 +335,31 @@ const UsersManagementPage = ({ user }) => {
                         onClick={() => setFilter('all')}
                         className={`users__filter-btn ${filter === 'all' ? 'active' : ''}`}
                     >
-                        Všetci ({stats.total})
+                        Všetci ({stats.total || 0})
                     </button>
                     <button
                         onClick={() => setFilter('user')}
                         className={`users__filter-btn ${filter === 'user' ? 'active' : ''}`}
                     >
-                        Používatelia ({stats.users})
+                        Používatelia ({stats.users || 0})
                     </button>
                     <button
                         onClick={() => setFilter('author')}
                         className={`users__filter-btn ${filter === 'author' ? 'active' : ''}`}
                     >
-                        Autori ({stats.authors})
+                        Autori ({stats.authors || 0})
                     </button>
                     <button
                         onClick={() => setFilter('admin')}
                         className={`users__filter-btn ${filter === 'admin' ? 'active' : ''}`}
                     >
-                        Admini ({stats.admins})
+                        Admini ({stats.admins || 0})
                     </button>
                     <button
                         onClick={() => setFilter('blocked')}
                         className={`users__filter-btn ${filter === 'blocked' ? 'active' : ''}`}
                     >
-                        Blokovaní ({stats.blocked})
+                        Blokovaní ({stats.blocked || 0})
                     </button>
                 </div>
             </div>
@@ -302,6 +371,12 @@ const UsersManagementPage = ({ user }) => {
                         <div className="users__empty-icon">👥</div>
                         <h3>Žiadni používatelia</h3>
                         <p>Podľa zadaných kritérií sa nenašli žiadni používatelia.</p>
+                        <button
+                            onClick={() => { setFilter('all'); setSearchTerm(''); }}
+                            className="users__filter-btn"
+                        >
+                            Zobraziť všetkých používateľov
+                        </button>
                     </div>
                 ) : (
                     users.map((userData) => (
@@ -312,14 +387,25 @@ const UsersManagementPage = ({ user }) => {
                                         <img
                                             src={userData.avatar || "/icons/user-placeholder.svg"}
                                             alt="User avatar"
+                                            onError={(e) => {
+                                                e.target.src = "/icons/user-placeholder.svg";
+                                            }}
                                         />
                                     </div>
                                     <div className="user-card__details">
-                                        <h3 className="user-card__name">{userData.displayName}</h3>
+                                        <h3 className="user-card__name">{userData.displayName || userData.email}</h3>
                                         <p className="user-card__email">{userData.email}</p>
-                                        <span className={`user-card__role-badge ${getRoleColor(userData.role)}`}>
-                                            {getRoleLabel(userData.role)}
-                                        </span>
+                                        <div className="user-card__meta">
+                                            <span className={`user-card__role-badge ${getRoleColor(userData.role)}`}>
+                                                {getRoleLabel(userData.role)}
+                                            </span>
+                                            {userData.id === user.id && (
+                                                <span className="user-card__current-user">(vy)</span>
+                                            )}
+                                            <span className="user-card__activity">
+                                                {getActivityStatus(userData.lastLogin)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -333,11 +419,11 @@ const UsersManagementPage = ({ user }) => {
                             <div className="user-card__stats">
                                 <div className="user-card__stat">
                                     <span className="user-card__stat-label">Články:</span>
-                                    <span className="user-card__stat-value">{userData.articlesCount}</span>
+                                    <span className="user-card__stat-value">{userData.articlesCount || 0}</span>
                                 </div>
                                 <div className="user-card__stat">
                                     <span className="user-card__stat-label">Komentáre:</span>
-                                    <span className="user-card__stat-value">{userData.commentsCount}</span>
+                                    <span className="user-card__stat-value">{userData.commentsCount || 0}</span>
                                 </div>
                                 <div className="user-card__stat">
                                     <span className="user-card__stat-label">Registrovaný:</span>
@@ -349,31 +435,64 @@ const UsersManagementPage = ({ user }) => {
                                 </div>
                             </div>
 
+                            {userData.isBlocked && userData.blockReason && (
+                                <div className="user-card__block-info">
+                                    <strong>Dôvod blokovania:</strong> {userData.blockReason}
+                                    {userData.blockedUntil && (
+                                        <span> (do {formatDate(userData.blockedUntil)})</span>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="user-card__actions">
-                                {/* Role Change - только admin может менять роли */}
+                                {/* Role Change - только admin может менять роли других пользователей */}
                                 {user.role === 'admin' && userData.id !== user.id && (
                                     <div className="user-card__role-select">
                                         <label>Rola:</label>
                                         <select
                                             value={userData.role}
                                             onChange={(e) => handleRoleChange(userData.id, e.target.value)}
+                                            disabled={userData.isBlocked}
                                         >
                                             <option value="user">Používateľ</option>
                                             <option value="author">Autor</option>
-                                            {/* Admin роль нельзя назначать */}
+                                            <option value="admin" disabled>Administrátor</option>
                                         </select>
                                     </div>
                                 )}
 
-                                {/* Block/Unblock - только admin может блокировать */}
-                                {user.role === 'admin' && userData.id !== user.id && (
-                                    <button
-                                        onClick={() => handleBlockUser(userData.id, !userData.isBlocked)}
-                                        className={`user-card__block-btn ${userData.isBlocked ? 'user-card__unblock-btn' : ''}`}
-                                    >
-                                        {userData.isBlocked ? '✅ Odblokovať' : '🚫 Blokovať'}
-                                    </button>
+                                {/* Показываем что свою роль нельзя менять */}
+                                {user.role === 'admin' && userData.id === user.id && (
+                                    <div className="user-card__role-info">
+                                        <label>Rola:</label>
+                                        <span className="user-card__current-role">
+                                            {getRoleLabel(userData.role)} (vaša rola)
+                                        </span>
+                                    </div>
                                 )}
+
+                                <div className="user-card__action-buttons">
+                                    {/* Block/Unblock - только admin может блокировать других пользователей */}
+                                    {user.role === 'admin' && userData.id !== user.id && (
+                                        <button
+                                            onClick={() => handleBlockUser(userData.id, !userData.isBlocked)}
+                                            className={`user-card__block-btn ${userData.isBlocked ? 'user-card__unblock-btn' : ''}`}
+                                        >
+                                            {userData.isBlocked ? '✅ Odblokovať' : '🚫 Blokovať'}
+                                        </button>
+                                    )}
+
+                                    {/* Delete user - только admin может удалять других пользователей */}
+                                    {user.role === 'admin' && userData.id !== user.id && (
+                                        <button
+                                            onClick={() => handleDeleteUser(userData.id)}
+                                            className="user-card__delete-btn"
+                                            title="Natrvalo vymazať používateľa"
+                                        >
+                                            🗑️ Vymazať
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ))

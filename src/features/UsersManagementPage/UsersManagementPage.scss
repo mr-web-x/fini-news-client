@@ -402,6 +402,154 @@
     }
 }
 
+
+// Добавь в конец файла UsersManagementPage.scss
+
+// Добавь в конец файла UsersManagementPage.scss
+
+.user-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+.user-card__activity {
+    font-size: 12px;
+    color: #718096;
+    font-style: italic;
+}
+
+.user-card__current-user {
+    font-size: 12px;
+    color: #5a67d8;
+    background: #edf2f7;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.user-card__block-info {
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 0 24px 16px;
+    font-size: 14px;
+    color: #c53030;
+
+    strong {
+        color: #e53e3e;
+    }
+}
+
+.user-card__action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.user-card__delete-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fed7d7;
+    color: #c53030;
+
+    &:hover {
+        background: #feb2b2;
+        transform: translateY(-1px);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+.user-card__role-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #4a5568;
+    }
+
+    .user-card__current-role {
+        padding: 6px 12px;
+        background: #f7fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #718096;
+        font-style: italic;
+    }
+}
+
+// Адаптивность для мобильных
+@media (max-width: 768px) {
+    .user-card__action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .user-card__block-btn,
+    .user-card__delete-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .user-card__block-info {
+        margin: 0 16px 12px;
+        padding: 10px 12px;
+    }
+
+    .user-card__meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .user-card__actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .user-card__role-select,
+    .user-card__role-info {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+// Адаптивность для мобильных
+@media (max-width: 768px) {
+    .user-card__action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .user-card__block-btn,
+    .user-card__delete-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .user-card__block-info {
+        margin: 0 16px 12px;
+        padding: 10px 12px;
+    }
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
     .users-management-page {
