@@ -441,10 +441,10 @@ export async function getUserCommentsStats(userRole) {
 
         // Для админа получаем ВСЕ комментарии в системе
         if (userRole === 'admin') {
-            result = await commentsService.getAllComments({ limit: 1000 }, token);
+            result = await commentsService.getAllComments({ limit: 100 }, token);
         } else {
             // Для обычных пользователей - только свои комментарии
-            result = await commentsService.getUserComments('me', { limit: 1000 }, token);
+            result = await commentsService.getUserComments('me', { limit: 100 }, token);
         }
 
         // Подсчитываем общее количество

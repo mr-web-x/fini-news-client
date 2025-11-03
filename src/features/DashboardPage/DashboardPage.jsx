@@ -23,22 +23,37 @@ const DashboardPage = ({ user }) => {
         try {
             setLoading(true);
 
+            console.log('🔍 [Dashboard] Starting data load...');
+            console.log('🔍 [Dashboard] User role:', user?.role);
+
             // Загружаем статистику комментариев с учетом роли
             const commentsResult = await getUserCommentsStats(user?.role);
+            console.log('🔍 [Dashboard] Comments result:', commentsResult);
 
             // Загружаем статистику статей и последние 5 статей
             const articlesResult = await getDashboardStats();
+            console.log('🔍 [Dashboard] Articles result:', articlesResult);
 
             if (commentsResult.success && articlesResult.success) {
-                setStats({
+                const newStats = {
                     comments: commentsResult.data.totalComments || 0,
                     publishedArticles: articlesResult.data.publishedCount || 0
-                });
+                };
+                console.log('✅ [Dashboard] Setting stats:', newStats);
+                setStats(newStats);
 
+                console.log('✅ [Dashboard] Setting recent articles:', articlesResult.data.recentArticles);
                 setRecentArticles(articlesResult.data.recentArticles || []);
+            } else {
+                console.error('❌ [Dashboard] Failed to load data:', {
+                    commentsSuccess: commentsResult.success,
+                    articlesSuccess: articlesResult.success,
+                    commentsMessage: commentsResult.message,
+                    articlesMessage: articlesResult.message
+                });
             }
         } catch (error) {
-            console.error("Error loading dashboard data:", error);
+            console.error("❌ [Dashboard] Error loading dashboard data:", error);
         } finally {
             setLoading(false);
         }
