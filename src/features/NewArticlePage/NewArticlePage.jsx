@@ -448,23 +448,81 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         </label>
                         <div ref={contentRef} className="new-article__editor-wrapper">
                             <Editor
+                                apiKey={process.env.NEXT_PUBLIC_TINYMCE}
                                 ref={editorRef}
                                 value={formData.content}
                                 onEditorChange={handleEditorChange}
                                 init={{
                                     height: 500,
-                                    menubar: false,
+                                    menubar: true,
                                     plugins: [
-                                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+                                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                                         'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                                        'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
+                                        'insertdatetime', 'media', 'table', 'help', 'wordcount',
+                                        'emoticons', 'codesample'
                                     ],
-                                    toolbar: 'undo redo | blocks | ' +
-                                        'bold italic forecolor | alignleft aligncenter ' +
-                                        'alignright alignjustify | bullist numlist outdent indent | ' +
-                                        'removeformat | help',
-                                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                                    toolbar: 'undo redo | blocks fontfamily fontsize | ' +
+                                        'bold italic underline strikethrough | forecolor backcolor | ' +
+                                        'alignleft aligncenter alignright alignjustify | ' +
+                                        'bullist numlist outdent indent | ' +
+                                        'table tabledelete | tableprops tablerowprops tablecellprops | ' +
+                                        'tableinsertrowbefore tableinsertrowafter tabledeleterow | ' +
+                                        'tableinsertcolbefore tableinsertcolafter tabledeletecol | ' +
+                                        'link image media emoticons codesample | ' +
+                                        'removeformat code fullscreen preview help',
+
+                                    toolbar_mode: 'sliding',
+
+                                    // Настройки таблиц
+                                    table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+                                    table_appearance_options: true,
+                                    table_grid: true,
+                                    table_resize_bars: true,
+                                    table_default_attributes: {
+                                        border: '1'
+                                    },
+                                    table_default_styles: {
+                                        width: '100%',
+                                        'border-collapse': 'collapse'
+                                    },
+
+                                    // Настройки изображений
+                                    image_advtab: true,
+                                    image_title: true,
+                                    image_description: true,
+                                    automatic_uploads: true,
+                                    file_picker_types: 'image',
+
+                                    // Настройки медиа
+                                    media_live_embeds: true,
+
+                                    // Стили контента
+                                    content_style: `
+                                        body { 
+                                            font-family: 'Montserrat', Arial, sans-serif; 
+                                            font-size: 16px;
+                                            line-height: 1.6;
+                                            color: #2d3748;
+                                            padding: 20px;
+                                        }
+                                        table {
+                                            border-collapse: collapse;
+                                            width: 100%;
+                                            margin: 20px 0;
+                                        }
+                                        table td, table th {
+                                            border: 1px solid #e2e8f0;
+                                            padding: 12px;
+                                            text-align: left;
+                                        }
+                                        table th {
+                                            background-color: #f7fafc;
+                                            font-weight: 600;
+                                        }
+                                    `,
+
                                     placeholder: 'Začnite písať obsah vášho článku...',
+
                                     setup: (editor) => {
                                         editor.on('change', () => {
                                             const content = editor.getContent();
