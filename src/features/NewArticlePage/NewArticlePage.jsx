@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createArticle, getArticleById, updateArticle } from "@/actions/articles.actions";
+import {
+    createArticle,
+    getArticleById,
+    updateArticle,
+    submitArticleForReview
+} from "@/actions/articles.actions";
 import { getAllCategories } from "@/actions/categories.actions";
 import { Editor } from '@tinymce/tinymce-react';
 import "./NewArticlePage.scss";
@@ -12,7 +17,12 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
     const searchParams = useSearchParams();
     const editorRef = useRef(null);
 
-    // ✅ НОВОЕ: получаем articleId либо из пропсов, либо из query параметра
+    // ✅ REFS для автофокуса на ошибки
+    const titleRef = useRef(null);
+    const excerptRef = useRef(null);
+    const categoryRef = useRef(null);
+    const contentRef = useRef(null);
+
     const queryArticleId = searchParams.get('id');
     const articleId = propsArticleId || queryArticleId;
     const isEditMode = !!articleId;
@@ -28,17 +38,13 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
     const [loading, setLoading] = useState(false);
     const [loadingArticle, setLoadingArticle] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
-
-    // Состояние для категорий
     const [categories, setCategories] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
 
-    // ✅ Загрузка категорий при монтировании компонента
     useEffect(() => {
         loadCategories();
     }, []);
 
-    // ✅ НОВОЕ: Загрузка статьи при монтировании (если есть articleId)
     useEffect(() => {
         if (articleId) {
             loadArticle(articleId);
@@ -62,80 +68,42 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                 }
 
                 setCategories(categoriesData);
-                console.log('Loaded categories:', categoriesData);
             } else {
-                console.error('Error loading categories:', result.message);
-                setCategories([]);
+                setMessage({ type: 'error', text: result.message || 'Chyba pri načítavaní kategórií' });
             }
         } catch (error) {
             console.error('Error loading categories:', error);
-            setCategories([]);
+            setMessage({ type: 'error', text: 'Chyba pri načítavaní kategórií' });
         } finally {
             setLoadingCategories(false);
         }
     };
 
-    // ✅ ИСПРАВЛЕНО: Загрузка статьи для редактирования с правильной проверкой прав
     const loadArticle = async (id) => {
         setLoadingArticle(true);
+        setMessage({ type: '', text: '' });
+
         try {
             const result = await getArticleById(id);
 
             if (!result.success) {
-                setMessage({ type: 'error', text: result.message || 'Статья не найдена' });
-                // Редирект на страницу со списком статей
-                setTimeout(() => {
-                    router.push('/profil/moje-clanky');
-                }, 2000);
+                setMessage({ type: 'error', text: result.message || 'Chyba pri načítavaní článku' });
                 return;
             }
 
             const article = result.data;
 
-            // ✅ ИСПРАВЛЕНО: Проверяем права доступа с правильным сравнением
-            // article.author может быть либо объектом с _id, либо строкой
-            const authorId = article.author?.id || article.author;
-            const userId = user.id;
-
-            // Сравниваем как строки (важно для MongoDB ObjectId)
-            const isAuthor = String(authorId) === String(userId);
-            const isAdmin = user.role === 'admin';
-
-            console.log('🔍 [NewArticlePage] Проверка прав доступа:', {
-                articleId: id,
-                authorId: String(authorId),
-                userId: String(userId),
-                isAuthor,
-                isAdmin,
-                userRole: user.role
-            });
-
-            if (!isAuthor && !isAdmin) {
-                setMessage({ type: 'error', text: 'Nemáte oprávnenie upravovať tento článok' });
+            if (article.status === 'pending') {
+                setMessage({
+                    type: 'error',
+                    text: 'Článok je na moderácii a nemožno ho upravovať. Počkajte na rozhodnutie administrátora.'
+                });
                 setTimeout(() => {
                     router.push('/profil/moje-clanky');
                 }, 2000);
                 return;
             }
 
-            // Проверяем статус статьи
-            if (article.status === 'published') {
-                setMessage({ type: 'error', text: 'Publikované články nie je možné upravovať' });
-                setTimeout(() => {
-                    router.push('/profil/moje-clanky');
-                }, 2000);
-                return;
-            }
-
-            if (article.status === 'pending' && !isAdmin) {
-                setMessage({ type: 'error', text: 'Článok je na moderácii. Počkajte na rozhodnutie administrátora.' });
-                setTimeout(() => {
-                    router.push('/profil/moje-clanky');
-                }, 2000);
-                return;
-            }
-
-            // Заполняем форму данными статьи
             setFormData({
                 title: article.title || '',
                 excerpt: article.excerpt || '',
@@ -144,10 +112,8 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                 tags: article.tags?.join(', ') || ''
             });
 
-            console.log('✅ [NewArticlePage] Статья успешно загружена для редактирования');
-
         } catch (error) {
-            console.error('❌ [NewArticlePage] Error loading article:', error);
+            console.error('Error loading article:', error);
             setMessage({ type: 'error', text: 'Chyba pri načítavaní článku' });
         } finally {
             setLoadingArticle(false);
@@ -162,7 +128,6 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         }));
     };
 
-    // Обработка изменений в TinyMCE
     const handleEditorChange = (content) => {
         setFormData(prev => ({
             ...prev,
@@ -170,37 +135,87 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         }));
     };
 
+    // ✅ ФУНКЦИЯ АВТОФОКУСА НА ОШИБКУ
+    const focusOnError = (fieldName) => {
+        let targetRef = null;
+        let fieldElement = null;
+
+        switch (fieldName) {
+            case 'title':
+                targetRef = titleRef;
+                break;
+            case 'excerpt':
+                targetRef = excerptRef;
+                break;
+            case 'category':
+                targetRef = categoryRef;
+                break;
+            case 'content':
+                targetRef = contentRef;
+                break;
+        }
+
+        if (targetRef?.current) {
+            fieldElement = targetRef.current.closest('.new-article__field');
+
+            // Добавляем класс ошибки с анимацией
+            if (fieldElement) {
+                fieldElement.classList.add('new-article__field--error');
+
+                // Убираем класс через 2 секунды
+                setTimeout(() => {
+                    fieldElement.classList.remove('new-article__field--error');
+                }, 2000);
+            }
+
+            // Фокусируемся на поле
+            targetRef.current.focus();
+
+            // Скроллим к полю
+            targetRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    };
+
     const handleSave = async (submitForReview = false) => {
         setMessage({ type: '', text: '' });
 
-        // Базовая валидация
+        // Валидация с автофокусом
         if (!formData.title.trim()) {
             setMessage({ type: 'error', text: 'Nadpis článku je povinný' });
+            focusOnError('title');
             return;
         }
 
         if (!formData.excerpt.trim()) {
             setMessage({ type: 'error', text: 'Perex je povinný' });
+            focusOnError('excerpt');
             return;
         }
 
         if (formData.excerpt.trim().length < 150) {
             setMessage({ type: 'error', text: 'Perex musí obsahovať minimálne 150 znakov' });
+            focusOnError('excerpt');
             return;
         }
 
         if (!formData.content.trim()) {
             setMessage({ type: 'error', text: 'Obsah článku je povinný' });
+            focusOnError('content');
             return;
         }
 
         if (formData.content.trim().length < 500) {
             setMessage({ type: 'error', text: 'Obsah musí obsahovať minimálne 500 znakov' });
+            focusOnError('content');
             return;
         }
 
         if (!formData.category) {
             setMessage({ type: 'error', text: 'Kategória je povinná' });
+            focusOnError('category');
             return;
         }
 
@@ -220,17 +235,42 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
 
             let result;
 
-            // ✅ НОВОЕ: Редактирование или создание статьи
             if (isEditMode) {
-                console.log('🔵 [NewArticlePage] Обновление статьи:', { articleId, articleData });
                 result = await updateArticle(articleId, articleData);
             } else {
                 result = await createArticle(articleData);
             }
 
-            if (result.success) {
-                const savedArticle = result.data;
+            if (!result.success) {
+                setMessage({
+                    type: 'error',
+                    text: result.message || 'Chyba pri ukladaní článku'
+                });
+                return;
+            }
 
+            const savedArticle = result.data;
+            const currentArticleId = savedArticle._id || articleId;
+
+            if (submitForReview) {
+                const submitResult = await submitArticleForReview(currentArticleId);
+
+                if (submitResult.success) {
+                    setMessage({
+                        type: 'success',
+                        text: 'Článok bol úspešne odoslaný na moderáciu. Počkajte na rozhodnutie administrátora.'
+                    });
+
+                    setTimeout(() => {
+                        router.push('/profil/moje-clanky');
+                    }, 2000);
+                } else {
+                    setMessage({
+                        type: 'error',
+                        text: submitResult.message || 'Chyba pri odosielaní na moderáciu'
+                    });
+                }
+            } else {
                 setMessage({
                     type: 'success',
                     text: isEditMode
@@ -238,29 +278,17 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         : 'Článok bol úspešne vytvorený ako koncept'
                 });
 
-                // ✅ НОВОЕ: После успешного сохранения - редирект в зависимости от действия
-                if (submitForReview) {
-                    // Если отправляем на модерацию - редирект на список статей
-                    setTimeout(() => {
-                        router.push('/profil/moje-clanky');
-                    }, 1000);
-                } else if (isEditMode) {
-                    // ✅ НОВОЕ: Если редактируем - редирект на предпросмотр (Вариант Б)
+                if (isEditMode) {
                     setTimeout(() => {
                         router.push(`/profil/moje-clanky/${savedArticle._id}/ukazka`);
                     }, 1000);
                 } else {
-                    // Если создаём новую статью - обновляем URL с articleId
                     router.push(`/profil/novy-clanok?id=${savedArticle._id}`);
                 }
-            } else {
-                setMessage({
-                    type: 'error',
-                    text: result.message || 'Chyba pri ukladaní článku'
-                });
             }
+
         } catch (error) {
-            console.error('❌ [NewArticlePage] Error saving article:', error);
+            console.error('Error saving article:', error);
             setMessage({
                 type: 'error',
                 text: 'Neočakávaná chyba. Skúste to znova.'
@@ -270,60 +298,51 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         }
     };
 
-    // ✅ НОВОЕ: Обработчик клика на кнопку "Náhľad"
     const handlePreview = () => {
         if (articleId) {
             router.push(`/profil/moje-clanky/${articleId}/ukazka`);
         }
     };
 
-    // Подсчет символов
     const getCharacterCount = (text, max) => {
         const count = text.length;
         const remaining = max - count;
         return {
             count,
             remaining,
-            className: remaining < 0 ? 'character-count--error' :
-                remaining < 20 ? 'character-count--warning' :
-                    'character-count--normal'
+            className: remaining < 0 ? 'text-danger' : remaining < 50 ? 'text-warning' : ''
         };
     };
 
-    const titleCount = getCharacterCount(formData.title, 200);
-    const excerptCount = getCharacterCount(formData.excerpt, 320);
-    const contentCount = getCharacterCount(formData.content, 10000);
+    const excerptCount = getCharacterCount(formData.excerpt, 200);
+    const contentCount = getCharacterCount(formData.content, 5000);
 
-    // ✅ Показываем загрузку, если загружается статья
     if (loadingArticle) {
         return (
-            <div className="new-article-page">
-                <div className="new-article__header">
-                    <h1>Načítavam článok...</h1>
-                </div>
-                <div className="new-article__content">
-                    <div className="new-article__loading">
-                        <div className="spinner"></div>
-                        <p>Načítavam...</p>
-                    </div>
+            <div className="new-article">
+                <div className="new-article__loading">
+                    <div className="spinner"></div>
+                    <p>Načítavam článok...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="new-article-page">
-            <div className="new-article__header">
-                <h1>{isEditMode ? 'Upraviť článok' : 'Nový článok'}</h1>
-                <p>
-                    {isEditMode
-                        ? 'Upravte svoj článok a uložte zmeny'
-                        : 'Vytvorte nový článok a pošlite ho na moderáciu'}
-                </p>
-            </div>
+        <div className="new-article">
+            <div className="new-article__container">
+                <div className="new-article__header">
+                    <h1>
+                        {isEditMode ? 'Upraviť článok' : 'Nový článok'}
+                    </h1>
+                    <p>
+                        {isEditMode
+                            ? 'Upravte svoj článok a uložte zmeny'
+                            : 'Vytvorte nový článok pre váš blog'
+                        }
+                    </p>
+                </div>
 
-            <div className="new-article__content">
-                {/* Message */}
                 {message.text && (
                     <div className={`new-article__message new-article__message--${message.type}`}>
                         {message.text}
@@ -331,34 +350,58 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                 )}
 
                 <form className="new-article__form">
-                    {/* Title */}
-                    <div className="new-article__form-group">
+                    {/* Nadpis článku */}
+                    <div className="new-article__field">
                         <label htmlFor="title" className="new-article__label">
                             Nadpis článku *
                         </label>
                         <input
+                            ref={titleRef}
                             type="text"
                             id="title"
                             name="title"
                             value={formData.title}
                             onChange={handleInputChange}
                             className="new-article__input"
-                            placeholder="Zadajte nadpis článku..."
+                            placeholder="Zadajte nadpis vášho článku..."
                             maxLength={200}
                             disabled={loading}
                         />
-                        <div className={`character-count ${titleCount.className}`}>
-                            {titleCount.count} / 200 znakov
-                            {titleCount.remaining < 0 && ` (${Math.abs(titleCount.remaining)} príliš veľa)`}
+                        <div className="new-article__char-count">
+                            {formData.title.length} / 200 znakov
                         </div>
                     </div>
 
-                    {/* Category */}
-                    <div className="new-article__form-group">
+                    {/* Perex */}
+                    <div className="new-article__field">
+                        <label htmlFor="excerpt" className="new-article__label">
+                            Perex (krátky popis) *
+                        </label>
+                        <textarea
+                            ref={excerptRef}
+                            id="excerpt"
+                            name="excerpt"
+                            value={formData.excerpt}
+                            onChange={handleInputChange}
+                            className="new-article__textarea"
+                            placeholder="Napíšte krátky popis článku (min. 150 znakov)..."
+                            rows={4}
+                            disabled={loading}
+                        />
+                        <div className={`new-article__char-count ${excerptCount.className}`}>
+                            {excerptCount.count} / 200 znakov
+                            {excerptCount.remaining < 0 && ` (${Math.abs(excerptCount.remaining)} nad limit)`}
+                            {excerptCount.count < 150 && ` (ešte ${150 - excerptCount.count} znakov do minima)`}
+                        </div>
+                    </div>
+
+                    {/* Kategória */}
+                    <div className="new-article__field">
                         <label htmlFor="category" className="new-article__label">
                             Kategória *
                         </label>
                         <select
+                            ref={categoryRef}
                             id="category"
                             name="category"
                             value={formData.category}
@@ -366,74 +409,22 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                             className="new-article__select"
                             disabled={loading || loadingCategories}
                         >
-                            <option value="">-- Vyberte kategóriu --</option>
-                            {categories.map(cat => (
-                                <option key={cat._id} value={cat._id}>
-                                    {cat.name}
+                            <option value="">Vyberte kategóriu</option>
+                            {categories.map(category => (
+                                <option key={category._id} value={category._id}>
+                                    {category.name}
                                 </option>
                             ))}
                         </select>
+                        {loadingCategories && (
+                            <div className="new-article__loading-text">Načítavam kategórie...</div>
+                        )}
                     </div>
 
-                    {/* Excerpt */}
-                    <div className="new-article__form-group">
-                        <label htmlFor="excerpt" className="new-article__label">
-                            Perex (krátky popis) *
-                        </label>
-                        <textarea
-                            id="excerpt"
-                            name="excerpt"
-                            value={formData.excerpt}
-                            onChange={handleInputChange}
-                            className="new-article__textarea"
-                            placeholder="Zadajte krátky popis článku (min. 150 znakov)..."
-                            rows={4}
-                            maxLength={320}
-                            disabled={loading}
-                        />
-                        <div className={`character-count ${excerptCount.className}`}>
-                            {excerptCount.count} / 320 znakov
-                            {excerptCount.remaining < 0 && ` (${Math.abs(excerptCount.remaining)} príliš veľa)`}
-                            {excerptCount.count < 150 && ` (ešte ${150 - excerptCount.count} znakov do minima)`}
-                        </div>
-                    </div>
-
-                    {/* Content Editor */}
-                    <div className="new-article__form-group">
-                        <label htmlFor="content" className="new-article__label">
-                            Obsah článku *
-                        </label>
-                        <Editor
-                            apiKey={process.env.NEXT_PUBLIC_TINYMCE}
-                            onInit={(evt, editor) => editorRef.current = editor}
-                            value={formData.content}
-                            onEditorChange={handleEditorChange}
-                            init={{
-                                height: 500,
-                                menubar: true,
-                                plugins: [
-                                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                                ],
-                                toolbar: 'undo redo | blocks | ' +
-                                    'bold italic forecolor | alignleft aligncenter ' +
-                                    'alignright alignjustify | bullist numlist outdent indent | ' +
-                                    'removeformat | help',
-                                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                            }}
-                            disabled={loading}
-                        />
-                        <div className={`character-count ${contentCount.className}`}>
-                            {contentCount.count} / 10000 znakov
-                            {contentCount.count < 500 && ` (ešte ${500 - contentCount.count} znakov do minima)`}
-                        </div>
-                    </div>
-
-                    {/* Tags */}
-                    <div className="new-article__form-group">
+                    {/* Tagy */}
+                    <div className="new-article__field">
                         <label htmlFor="tags" className="new-article__label">
-                            Tagy (oddelené čiarkou)
+                            Tagy (voliteľné)
                         </label>
                         <input
                             type="text"
@@ -442,30 +433,62 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                             value={formData.tags}
                             onChange={handleInputChange}
                             className="new-article__input"
-                            placeholder="napr: technológie, inovácie, AI"
+                            placeholder="Zadajte tagy oddelené čiarkami (napr. technológie, programovanie, AI)"
                             disabled={loading}
                         />
-                        <small className="new-article__hint">
-                            Zadajte tagy oddelené čiarkou (max. 5 tagov)
-                        </small>
+                        <div className="new-article__field-hint">
+                            Tagy pomáhajú čitateľom nájsť váš článok
+                        </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="new-article__actions">
-                        <button
-                            type="button"
-                            className="new-article__btn new-article__btn--secondary"
-                            onClick={() => router.push('/profil/moje-clanky')}
-                            disabled={loading}
-                        >
-                            Zrušiť
-                        </button>
+                    {/* TinyMCE Editor */}
+                    <div className="new-article__field">
+                        <label className="new-article__label">
+                            Obsah článku *
+                        </label>
+                        <div ref={contentRef} className="new-article__editor-wrapper">
+                            <Editor
+                                ref={editorRef}
+                                value={formData.content}
+                                onEditorChange={handleEditorChange}
+                                init={{
+                                    height: 500,
+                                    menubar: false,
+                                    plugins: [
+                                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+                                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                                        'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
+                                    ],
+                                    toolbar: 'undo redo | blocks | ' +
+                                        'bold italic forecolor | alignleft aligncenter ' +
+                                        'alignright alignjustify | bullist numlist outdent indent | ' +
+                                        'removeformat | help',
+                                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                                    placeholder: 'Začnite písať obsah vášho článku...',
+                                    setup: (editor) => {
+                                        editor.on('change', () => {
+                                            const content = editor.getContent();
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                content: content
+                                            }));
+                                        });
+                                    }
+                                }}
+                                disabled={loading}
+                            />
+                        </div>
+                        <div className={`new-article__char-count ${contentCount.className}`}>
+                            {contentCount.count} znakov
+                            {contentCount.count < 500 && ` (ešte ${500 - contentCount.count} znakov do minima)`}
+                        </div>
+                    </div>
 
-                        {/* ✅ НОВОЕ: Кнопка "Náhľad" - только если статья уже сохранена */}
+                    <div className="new-article__actions">
                         {isEditMode && (
                             <button
                                 type="button"
-                                className="new-article__btn new-article__btn--preview"
+                                className="new-article__btn new-article__btn--secondary"
                                 onClick={handlePreview}
                                 disabled={loading}
                             >

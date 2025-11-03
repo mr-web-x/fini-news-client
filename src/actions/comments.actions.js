@@ -174,15 +174,15 @@ export async function createComment(data) {
 
         const comment = await commentsService.createComment(commentData, token);
 
-        console.log('✅ [createComment] Success! Comment created:', comment._id);
+        console.log('✅ [createComment] Success! Comment created:', comment);
 
         return {
             success: true,
             data: comment,
-            message: 'Komentár bol úspešne pridaný'
+            message: 'Komentár bol pridaný'
         };
     } catch (error) {
-        console.error('❌ [createComment] Error:', error);
+        console.error('[Server Action] createComment error:', error);
         return {
             success: false,
             message: error.message || 'Chyba pri vytváraní komentára'
@@ -193,10 +193,10 @@ export async function createComment(data) {
 /**
  * Обновить комментарий
  * @param {string} id - ID комментария
- * @param {string} content - Новый текст комментария
+ * @param {Object} data - Обновлённые данные
  * @returns {Promise<Object>} - Результат операции
  */
-export async function updateComment(id, content) {
+export async function updateComment(id, data) {
     try {
         const token = await getAuthToken();
 
@@ -214,30 +214,19 @@ export async function updateComment(id, content) {
             };
         }
 
-        if (!content || content.trim().length < 3) {
+        if (!data.content || data.content.trim().length < 3) {
             return {
                 success: false,
                 message: 'Komentár musí obsahovať minimálne 3 znaky'
             };
         }
 
-        if (content.trim().length > 1000) {
-            return {
-                success: false,
-                message: 'Komentár nesmie presiahnuť 1000 znakov'
-            };
-        }
-
-        const commentData = {
-            content: content.trim()
-        };
-
-        const comment = await commentsService.updateComment(id, commentData, token);
+        const comment = await commentsService.updateComment(id, data, token);
 
         return {
             success: true,
             data: comment,
-            message: 'Komentár bol úspešne upravený'
+            message: 'Komentár bol upravený'
         };
     } catch (error) {
         console.error('[Server Action] updateComment error:', error);
@@ -426,6 +415,52 @@ export async function getMyComments(options = {}) {
         return {
             success: false,
             message: error.message || 'Chyba pri načítavaní vašich komentárov'
+        };
+    }
+}
+
+/**
+ * ✅ НОВАЯ ФУНКЦИЯ: Получить статистику комментариев
+ * - Для admin: общее количество ВСЕХ комментариев в системе
+ * - Для author/user: количество СВОИХ комментариев
+ * @param {string} userRole - Роль пользователя (admin, author, user)
+ * @returns {Promise<Object>} - Результат операции с количеством комментариев
+ */
+export async function getUserCommentsStats(userRole) {
+    try {
+        const token = await getAuthToken();
+
+        if (!token) {
+            return {
+                success: false,
+                message: 'Nie ste prihlásený'
+            };
+        }
+
+        let result;
+
+        // Для админа получаем ВСЕ комментарии в системе
+        if (userRole === 'admin') {
+            result = await commentsService.getAllComments({ limit: 1000 }, token);
+        } else {
+            // Для обычных пользователей - только свои комментарии
+            result = await commentsService.getUserComments('me', { limit: 1000 }, token);
+        }
+
+        // Подсчитываем общее количество
+        const totalComments = result.pagination?.total || result.data?.length || result.comments?.length || 0;
+
+        return {
+            success: true,
+            data: {
+                totalComments
+            }
+        };
+    } catch (error) {
+        console.error('[Server Action] getUserCommentsStats error:', error);
+        return {
+            success: false,
+            message: error.message || 'Chyba pri načítavaní statistiky komentárov'
         };
     }
 }

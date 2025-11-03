@@ -11,6 +11,7 @@ const CommentsPage = ({ user }) => {
     const [editingComment, setEditingComment] = useState(null);
     const [editText, setEditText] = useState('');
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [counts, setCounts] = useState({ my: 0, all: 0 }); // ✅ ДОБАВЛЕНО: отдельные счетчики
 
     const isAdmin = user?.role === 'admin';
 
@@ -28,9 +29,37 @@ const CommentsPage = ({ user }) => {
             // Админ может переключаться между своими и всеми комментариями
             if (isAdmin && filter === 'all') {
                 result = await getAllCommentsForAdmin({ sort: '-createdAt', limit: 100 });
+
+                if (result.success) {
+                    const commentsData = result.data.comments || result.data || [];
+                    setComments(commentsData);
+                    setCounts(prev => ({ ...prev, all: commentsData.length })); // ✅ Устанавливаем счетчик для всех комментариев
+
+                    // ✅ ДОБАВЛЕНО: Загружаем отдельно счетчик для моих комментариев
+                    const myCommentsResult = await getMyComments({ sort: '-createdAt', limit: 100 });
+                    if (myCommentsResult.success) {
+                        const myCommentsData = myCommentsResult.data.comments || myCommentsResult.data || [];
+                        setCounts(prev => ({ ...prev, my: myCommentsData.length }));
+                    }
+                }
             } else {
                 // Обычные пользователи и админ в режиме "мои комментарии"
                 result = await getMyComments({ sort: '-createdAt', limit: 100 });
+
+                if (result.success) {
+                    const commentsData = result.data.comments || result.data || [];
+                    setComments(commentsData);
+                    setCounts(prev => ({ ...prev, my: commentsData.length })); // ✅ Устанавливаем счетчик для моих комментариев
+
+                    // ✅ ДОБАВЛЕНО: Если админ, загружаем счетчик для всех комментариев
+                    if (isAdmin) {
+                        const allCommentsResult = await getAllCommentsForAdmin({ sort: '-createdAt', limit: 100 });
+                        if (allCommentsResult.success) {
+                            const allCommentsData = allCommentsResult.data.comments || allCommentsResult.data || [];
+                            setCounts(prev => ({ ...prev, all: allCommentsData.length }));
+                        }
+                    }
+                }
             }
 
             if (!result.success) {
@@ -39,9 +68,6 @@ const CommentsPage = ({ user }) => {
                 setLoading(false);
                 return;
             }
-
-            const commentsData = result.data.comments || result.data || [];
-            setComments(commentsData);
 
         } catch (error) {
             console.error('Error loading comments:', error);
@@ -119,6 +145,12 @@ const CommentsPage = ({ user }) => {
 
                 // Убираем комментарий из списка
                 setComments(prev => prev.filter(c => c._id !== comment._id));
+
+                // ✅ ОБНОВЛЯЕМ счетчики после удаления
+                setCounts(prev => ({
+                    my: isMyComment ? prev.my - 1 : prev.my,
+                    all: prev.all - 1
+                }));
 
                 setTimeout(() => setMessage({ type: '', text: '' }), 3000);
             } else {
@@ -204,13 +236,15 @@ const CommentsPage = ({ user }) => {
                         onClick={() => setFilter('my')}
                         className={`comments__filter-btn ${filter === 'my' ? 'active' : ''}`}
                     >
-                        Moje komentáre ({comments.filter(c => isMyComment(c)).length})
+                        {/* ✅ ИСПРАВЛЕНО: Используем отдельные счетчики */}
+                        Moje komentáre ({counts.my})
                     </button>
                     <button
                         onClick={() => setFilter('all')}
                         className={`comments__filter-btn ${filter === 'all' ? 'active' : ''}`}
                     >
-                        Všetky komentáre ({comments.length})
+                        {/* ✅ ИСПРАВЛЕНО: Используем отдельные счетчики */}
+                        Všetky komentáre ({counts.all})
                     </button>
                 </div>
             )}
@@ -322,7 +356,7 @@ const CommentsPage = ({ user }) => {
 
                             <div className="comment-card__footer">
                                 {/* ✅ ИСПРАВЛЕНО: Удалена секция с ID комментария */}
-                                
+
                                 <div className="comment-card__actions">
                                     {/* Редактировать можно только свои комментарии */}
                                     {isMyComment(comment) && editingComment !== comment._id && (
