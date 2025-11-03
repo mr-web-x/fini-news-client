@@ -2,10 +2,11 @@
    ARTICLE PREVIEW PAGE - Страница предпросмотра статьи
    ============================================ */
 
+/* === ОБЩИЕ СТИЛИ === */
 .article-preview {
     max-width: 900px;
     margin: 0 auto;
-    padding: 32px 24px;
+    padding: 32px 10px;
 }
 
 /* === HEADER === */
@@ -35,6 +36,7 @@
     gap: 12px;
 }
 
+/* === ACTION BUTTONS === */
 .article-preview__action-btn {
     padding: 10px 20px;
     border: none;
@@ -52,35 +54,36 @@
         opacity: 0.5;
         cursor: not-allowed;
     }
-}
-
-.article-preview__action-btn--edit {
-    background: #e6fffa;
-    color: #319795;
 
     &:hover:not(:disabled) {
-        background: #b2f5ea;
         transform: translateY(-1px);
     }
-}
 
-.article-preview__action-btn--approve {
-    background: #f0fff4;
-    color: #38a169;
+    &--edit {
+        background: #e6fffa;
+        color: #319795;
 
-    &:hover:not(:disabled) {
-        background: #c6f6d5;
-        transform: translateY(-1px);
+        &:hover:not(:disabled) {
+            background: #b2f5ea;
+        }
     }
-}
 
-.article-preview__action-btn--reject {
-    background: #fed7d7;
-    color: #e53e3e;
+    &--approve {
+        background: #f0fff4;
+        color: #38a169;
 
-    &:hover:not(:disabled) {
-        background: #feb2b2;
-        transform: translateY(-1px);
+        &:hover:not(:disabled) {
+            background: #c6f6d5;
+        }
+    }
+
+    &--reject {
+        background: #fed7d7;
+        color: #e53e3e;
+
+        &:hover:not(:disabled) {
+            background: #feb2b2;
+        }
     }
 }
 
@@ -91,6 +94,18 @@
     margin-bottom: 24px;
     font-weight: 500;
     animation: slideDown 0.3s ease;
+
+    &--success {
+        background: #f0fff4;
+        color: #38a169;
+        border: 1px solid #c6f6d5;
+    }
+
+    &--error {
+        background: #fed7d7;
+        color: #e53e3e;
+        border: 1px solid #feb2b2;
+    }
 }
 
 @keyframes slideDown {
@@ -105,26 +120,30 @@
     }
 }
 
-.article-preview__message--success {
-    background: #f0fff4;
-    color: #38a169;
-    border: 1px solid #c6f6d5;
-}
-
-.article-preview__message--error {
-    background: #fed7d7;
-    color: #e53e3e;
-    border: 1px solid #feb2b2;
-}
-
-/* === LOADING === */
-.article-preview__loading {
+/* === LOADING & ERROR STATES === */
+.article-preview__loading,
+.article-preview__error {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 80px 20px;
     text-align: center;
+}
+
+.article-preview__loading p,
+.article-preview__error p {
+    color: #718096;
+    font-size: 16px;
+    margin: 0 0 24px 0;
+}
+
+.article-preview__error h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 12px 0;
+    font-family: "Montserrat", sans-serif;
 }
 
 .spinner {
@@ -141,40 +160,6 @@
     to {
         transform: rotate(360deg);
     }
-}
-
-.article-preview__loading p {
-    color: #718096;
-    font-size: 16px;
-}
-
-/* === ERROR === */
-.article-preview__error {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 80px 20px;
-    text-align: center;
-}
-
-.article-preview__error-icon {
-    font-size: 64px;
-    margin-bottom: 20px;
-}
-
-.article-preview__error h2 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #2d3748;
-    margin: 0 0 12px 0;
-    font-family: "Montserrat", sans-serif;
-}
-
-.article-preview__error p {
-    font-size: 16px;
-    color: #718096;
-    margin: 0 0 24px 0;
 }
 
 .article-preview__back-btn {
@@ -198,7 +183,7 @@
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    padding: 40px;
+    padding: 20px;
 }
 
 /* === META INFO === */
@@ -219,24 +204,27 @@
     letter-spacing: 0.5px;
 }
 
-.status--draft {
-    background: #e2e8f0;
-    color: #4a5568;
-}
+/* Статусы статей */
+.status {
+    &--draft {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
 
-.status--pending {
-    background: #fef5e7;
-    color: #d69e2e;
-}
+    &--pending {
+        background: #fef5e7;
+        color: #d69e2e;
+    }
 
-.status--published {
-    background: #f0fff4;
-    color: #38a169;
-}
+    &--published {
+        background: #f0fff4;
+        color: #38a169;
+    }
 
-.status--rejected {
-    background: #fed7d7;
-    color: #e53e3e;
+    &--rejected {
+        background: #fed7d7;
+        color: #e53e3e;
+    }
 }
 
 .article-preview__date,
@@ -265,6 +253,12 @@
     margin: 0 0 24px 0;
     line-height: 1.2;
     font-family: "Montserrat", sans-serif;
+
+    /* ✅ ПРИНУДИТЕЛЬНЫЙ ПЕРЕНОС ДЛИННОГО ТЕКСТА */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
 }
 
 /* === EXCERPT === */
@@ -278,6 +272,12 @@
     border-left: 4px solid #5a67d8;
     border-radius: 4px;
     font-style: italic;
+
+    /* ✅ ПРИНУДИТЕЛЬНЫЙ ПЕРЕНОС ДЛИННОГО ТЕКСТА */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
 }
 
 /* === TAGS === */
@@ -297,14 +297,20 @@
     font-weight: 500;
 }
 
-/* === BODY (TinyMCE Content) === */
+/* === BODY (TINYMCE CONTENT) === */
 .article-preview__body {
     font-size: 18px;
     line-height: 1.8;
     color: #2d3748;
     margin-bottom: 40px;
 
-    /* Стили для HTML контента из TinyMCE */
+    /* ✅ ПРИНУДИТЕЛЬНЫЙ ПЕРЕНОС ДЛИННОГО ТЕКСТА */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+
+    /* Заголовки */
     h1,
     h2,
     h3,
@@ -343,10 +349,15 @@
         font-size: 16px;
     }
 
+    /* Параграфы */
     p {
         margin-bottom: 16px;
+
+        /* ✅ ПРИНУДИТЕЛЬНЫЙ ПЕРЕНОС ДЛЯ ОЧЕНЬ ДЛИННЫХ СЛОВ */
+        overflow-wrap: anywhere;
     }
 
+    /* Ссылки */
     a {
         color: #5a67d8;
         text-decoration: underline;
@@ -356,6 +367,7 @@
         }
     }
 
+    /* Списки */
     ul,
     ol {
         margin: 16px 0;
@@ -366,20 +378,31 @@
         margin-bottom: 8px;
     }
 
+    /* Цитаты */
     blockquote {
         margin: 24px 0;
         padding: 16px 24px;
         background: #f7fafc;
         border-left: 4px solid #cbd5e0;
         font-style: italic;
+
+        /* ✅ ПРИНУДИТЕЛЬНЫЙ ПЕРЕНОС В ЦИТАТАХ */
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
     }
 
+    /* Код */
     code {
         background: #f7fafc;
         padding: 2px 6px;
         border-radius: 4px;
         font-family: monospace;
         font-size: 0.9em;
+
+        /* ✅ ПРИНУДИТЕЛЬНЫЙ ПЕРЕНОС В КОДЕ */
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     pre {
@@ -390,6 +413,11 @@
         overflow-x: auto;
         margin: 24px 0;
 
+        /* ✅ ПРИНУДИТЕЛЬНЫЙ ПЕРЕНОС С СОХРАНЕНИЕМ ФОРМАТИРОВАНИЯ */
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+
         code {
             background: none;
             padding: 0;
@@ -397,6 +425,7 @@
         }
     }
 
+    /* Изображения */
     img {
         max-width: 100%;
         height: auto;
@@ -404,21 +433,121 @@
         margin: 24px 0;
     }
 
+    /* Таблицы - базовые стили (будут обёрнуты в .table-wrapper через JS) */
     table {
         width: 100%;
         border-collapse: collapse;
-        margin: 24px 0;
+        margin: 0;
 
         th,
         td {
             border: 1px solid #e2e8f0;
             padding: 12px;
             text-align: left;
+            vertical-align: top;
+
+            /* ✅ ПРИНУДИТЕЛЬНЫЙ ПЕРЕНОС В ЯЧЕЙКАХ */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         th {
             background: #f7fafc;
             font-weight: 600;
+        }
+    }
+}
+
+/* ============================================
+   📱 ИСПРАВЛЕННЫЙ TABLE WRAPPER - для всех экранов
+   ============================================ */
+
+.table-wrapper {
+    width: 100%;
+    margin: 24px 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+
+    /* ✅ ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ НА ВСЕХ ЭКРАНАХ */
+    overflow-x: auto;
+    overflow-y: visible;
+
+    /* Скрытие полосы прокрутки */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
+
+    &::-webkit-scrollbar {
+        display: none;
+        /* Chrome/Safari */
+    }
+
+    /* Плавная прокрутка на touch устройствах */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+
+    /* ✅ БАЗОВЫЕ СТИЛИ ДЛЯ ВСЕХ ЭКРАНОВ */
+    table {
+        width: 100%;
+        min-width: 100%;
+        /* Минимальная ширина - как контейнер */
+        border-collapse: collapse;
+        margin: 0;
+
+        th,
+        td {
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+            vertical-align: top;
+
+            /* ✅ ПРИНУДИТЕЛЬНЫЙ ПЕРЕНОС */
+            white-space: normal;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            word-break: break-word !important;
+
+            /* ✅ АВТОМАТИЧЕСКАЯ ШИРИНА БЕЗ ЖЁСТКИХ ОГРАНИЧЕНИЙ */
+            width: auto;
+            min-width: 120px;
+            /* Минимальная читаемая ширина */
+            max-width: none;
+            /* Без максимальных ограничений */
+        }
+
+        th {
+            background: #f7fafc;
+            font-weight: 600;
+        }
+    }
+
+    /* ✅ АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ - только размеры шрифтов и отступов */
+    @media (max-width: 768px) {
+        table {
+
+            th,
+            td {
+                padding: 8px;
+                font-size: 14px;
+                min-width: 100px;
+                /* Чуть меньше для мобильных */
+            }
+        }
+    }
+
+    @media (max-width: 480px) {
+        table {
+
+            th,
+            td {
+                padding: 6px;
+                font-size: 13px;
+                min-width: 80px;
+                /* Ещё меньше для очень маленьких экранов */
+            }
         }
     }
 }
@@ -515,30 +644,30 @@
         opacity: 0.5;
         cursor: not-allowed;
     }
-}
 
-.reject-modal__btn--cancel {
-    background: #e2e8f0;
-    color: #4a5568;
+    &--cancel {
+        background: #e2e8f0;
+        color: #4a5568;
 
-    &:hover:not(:disabled) {
-        background: #cbd5e0;
+        &:hover:not(:disabled) {
+            background: #cbd5e0;
+        }
     }
-}
 
-.reject-modal__btn--submit {
-    background: #e53e3e;
-    color: white;
+    &--submit {
+        background: #e53e3e;
+        color: white;
 
-    &:hover:not(:disabled) {
-        background: #c53030;
+        &:hover:not(:disabled) {
+            background: #c53030;
+        }
     }
 }
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
     .article-preview {
-        padding: 0;
+        padding: 24px 16px;
     }
 
     .article-preview__header {
@@ -576,7 +705,7 @@
 
 @media (max-width: 480px) {
     .article-preview {
-        padding: 0;
+        padding: 20px 12px;
     }
 
     .article-preview__content {
@@ -604,4 +733,26 @@
         font-size: 13px;
         padding: 8px 16px;
     }
+}
+
+/* ============================================
+   ✅ УНИВЕРСАЛЬНОЕ РЕШЕНИЕ ДЛЯ ПЕРЕНОСА ТЕКСТА
+   ============================================ */
+
+/* Применяем принудительный перенос ко всем текстовым элементам */
+.article-preview__content *,
+.article-preview__body *,
+.article-preview__excerpt,
+.article-preview__title {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+/* Для самых упрямых случаев - очень длинные строки без пробелов */
+.article-preview__body p,
+.article-preview__body div,
+.article-preview__body span,
+.article-preview__excerpt {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
 }

@@ -36,6 +36,37 @@ const ArticleViewPage = ({ article, user }) => {
         }
     }, []);
 
+    // ✅ НОВОЕ: useEffect для обёртывания таблиц в wrapper
+    useEffect(() => {
+        if (article && article.content) {
+            const wrapTables = () => {
+                // Находим все таблицы в контенте статьи
+                const bodyElement = document.querySelector('.article-view__body');
+                if (!bodyElement) return;
+
+                const tables = bodyElement.querySelectorAll('table');
+
+                tables.forEach(table => {
+                    // Проверяем, не обёрнута ли уже таблица
+                    if (!table.parentElement.classList.contains('table-wrapper')) {
+                        // Создаём wrapper
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'table-wrapper';
+
+                        // Вставляем wrapper перед таблицей
+                        table.parentNode.insertBefore(wrapper, table);
+
+                        // Перемещаем таблицу в wrapper
+                        wrapper.appendChild(table);
+                    }
+                });
+            };
+
+            // Запускаем обёртывание с небольшой задержкой
+            setTimeout(wrapTables, 100);
+        }
+    }, [article]);
+
     /**
      * Загрузка комментариев к статье
      */
@@ -176,11 +207,13 @@ const ArticleViewPage = ({ article, user }) => {
                     {article.excerpt}
                 </div>
 
-                {/* Основной контент */}
-                <div
-                    className="article-view__body"
-                    dangerouslySetInnerHTML={{ __html: article.content }}
-                />
+                {/* ✅ ВАЖНО: Основной контент будет автоматически обёрнут в table-wrapper */}
+                {article.content && article.content.trim() !== '' && (
+                    <div
+                        className="article-view__body"
+                        dangerouslySetInnerHTML={{ __html: article.content }}
+                    />
+                )}
 
                 {/* Теги */}
                 {article.tags && article.tags.length > 0 && (

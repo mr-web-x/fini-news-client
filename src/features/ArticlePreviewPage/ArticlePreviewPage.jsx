@@ -23,6 +23,37 @@ const ArticlePreviewPage = ({ user, articleId }) => {
         loadArticle();
     }, [articleId]);
 
+    // ✅ НОВОЕ: useEffect для обёртывания таблиц в wrapper
+    useEffect(() => {
+        if (article && article.content) {
+            const wrapTables = () => {
+                // Находим все таблицы в контенте статьи
+                const bodyElement = document.querySelector('.article-preview__body');
+                if (!bodyElement) return;
+
+                const tables = bodyElement.querySelectorAll('table');
+
+                tables.forEach(table => {
+                    // Проверяем, не обёрнута ли уже таблица
+                    if (!table.parentElement.classList.contains('table-wrapper')) {
+                        // Создаём wrapper
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'table-wrapper';
+
+                        // Вставляем wrapper перед таблицей
+                        table.parentNode.insertBefore(wrapper, table);
+
+                        // Перемещаем таблицу в wrapper
+                        wrapper.appendChild(table);
+                    }
+                });
+            };
+
+            // Запускаем обёртывание с небольшой задержкой
+            setTimeout(wrapTables, 100);
+        }
+    }, [article]);
+
     const loadArticle = async () => {
         setLoading(true);
         setError(null);
@@ -285,7 +316,7 @@ const ArticlePreviewPage = ({ user, articleId }) => {
                     </div>
                 )}
 
-                {/* Main Content (HTML from TinyMCE) */}
+                {/* ✅ ВАЖНО: Main Content будет автоматически обёрнут в table-wrapper */}
                 <div
                     className="article-preview__body"
                     dangerouslySetInnerHTML={{ __html: article.content }}
