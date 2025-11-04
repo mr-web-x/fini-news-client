@@ -1,0 +1,25 @@
+.desktop-lines {
+    .background__lines-row {
+        display: grid;
+        gap: 15px;
+        grid-template-rows: repeat(8, 1fr);
+    }
+
+    .background__lines-wrapper {
+        opacity: 0.4;
+        height: 100vh;
+        width: 100%;
+        top: 0;
+        left: 0;
+        position: fixed;
+        z-index: -1;
+
+        .background__line-75-row {
+            background-image: linear-gradient(to right, black 0%, white 50%, black 100%);
+            background-size: 100% 100%;
+            background-position: 50% 50%;
+            animation: moveRight 4s linear infinite;
+        }
+    }
+
+}

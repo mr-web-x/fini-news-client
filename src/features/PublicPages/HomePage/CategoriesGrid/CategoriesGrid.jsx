@@ -1,145 +1,91 @@
 "use client"
 import "./CategoriesGrid.scss"
+import { useState, useEffect } from "react"
+import CategoryCard from "@/components/CategoryCard/CategoryCard"
+import { getAllCategories } from "@/actions/categories.actions"
+import { getAllArticles } from "@/actions/articles.actions"
 
 const CategoriesGrid = () => {
-    // Mock данные категорий с топ статьями
-    const categories = [
-        {
-            id: 1,
-            name: "Banky",
-            slug: "banky",
-            color: "#2563eb",
-            icon: "🏦",
-            articles: [
-                {
-                    id: 1,
-                    title: "Slovenská sporiteľňa zvýšila úroky na hypotékach",
-                    date: "3. november 2025",
-                    views: 1245
-                },
-                {
-                    id: 2,
-                    title: "Tatra banka spúšťa novú mobilnú aplikáciu",
-                    date: "1. november 2025",
-                    views: 743
-                },
-                {
-                    id: 3,
-                    title: "VÚB banka mení poplatkový poriadok",
-                    date: "30. október 2025",
-                    views: 892
+    const [categoriesData, setCategoriesData] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState("")
+
+    // Дефолтные иконки и цвета для категорий
+    const categoryStyles = {
+        "banky": { icon: "🏦", color: "#2563eb" },
+        "uvery": { icon: "💳", color: "#7c3aed" },
+        "poistenie": { icon: "🛡️", color: "#059669" },
+        "dane": { icon: "📊", color: "#dc2626" },
+        "ekonomika": { icon: "📈", color: "#ea580c" }
+    }
+
+    useEffect(() => {
+        const fetchCategoriesWithArticles = async () => {
+            try {
+                // 1. Получаем все категории
+                const categoriesResult = await getAllCategories()
+
+                if (!categoriesResult.success) {
+                    setError(categoriesResult.message || "Nepodarilo sa načítať kategórie")
+                    setLoading(false)
+                    return
                 }
-            ]
-        },
-        {
-            id: 2,
-            name: "Úvery",
-            slug: "uvery",
-            color: "#7c3aed",
-            icon: "💳",
-            articles: [
-                {
-                    id: 4,
-                    title: "Nové pravidlá pre spotrebiteľské úvery od 2026",
-                    date: "3. november 2025",
-                    views: 987
-                },
-                {
-                    id: 5,
-                    title: "Ako získať výhodný hypotekárny úver",
-                    date: "2. november 2025",
-                    views: 1432
-                },
-                {
-                    id: 6,
-                    title: "Porovnanie úrokových sadzieb bánk",
-                    date: "1. november 2025",
-                    views: 1156
+
+                // Обрабатываем разные структуры ответа
+                let categories = []
+                if (Array.isArray(categoriesResult.data)) {
+                    categories = categoriesResult.data
+                } else if (categoriesResult.data?.data && Array.isArray(categoriesResult.data.data)) {
+                    categories = categoriesResult.data.data
+                } else if (categoriesResult.data?.categories && Array.isArray(categoriesResult.data.categories)) {
+                    categories = categoriesResult.data.categories
                 }
-            ]
-        },
-        {
-            id: 3,
-            name: "Poistenie",
-            slug: "poistenie",
-            color: "#059669",
-            icon: "🛡️",
-            articles: [
-                {
-                    id: 7,
-                    title: "Povinné ručenie zdražie o 15 percent",
-                    date: "2. november 2025",
-                    views: 2103
-                },
-                {
-                    id: 8,
-                    title: "Životné poistenie: čo treba vedieť",
-                    date: "1. november 2025",
-                    views: 654
-                },
-                {
-                    id: 9,
-                    title: "Poistenie nehnuteľnosti v roku 2026",
-                    date: "30. október 2025",
-                    views: 823
-                }
-            ]
-        },
-        {
-            id: 4,
-            name: "Dane",
-            slug: "dane",
-            color: "#dc2626",
-            icon: "📊",
-            articles: [
-                {
-                    id: 10,
-                    title: "Daňové zmeny pre SZČO v roku 2026",
-                    date: "2. november 2025",
-                    views: 1567
-                },
-                {
-                    id: 11,
-                    title: "Daňové priznanie: termíny a povinnosti",
-                    date: "1. november 2025",
-                    views: 934
-                },
-                {
-                    id: 12,
-                    title: "DPH zmeny od januára 2026",
-                    date: "29. október 2025",
-                    views: 1289
-                }
-            ]
-        },
-        {
-            id: 5,
-            name: "Ekonomika",
-            slug: "ekonomika",
-            color: "#ea580c",
-            icon: "📈",
-            articles: [
-                {
-                    id: 13,
-                    title: "Slovenská ekonomika rastie nad očakávania",
-                    date: "1. november 2025",
-                    views: 892
-                },
-                {
-                    id: 14,
-                    title: "Inflácia klesla na 3,2 percenta",
-                    date: "31. október 2025",
-                    views: 1123
-                },
-                {
-                    id: 15,
-                    title: "Nezamestnanosť na najnižšej úrovni",
-                    date: "28. október 2025",
-                    views: 756
-                }
-            ]
+
+                console.log('Categories loaded:', categories) // для отладки
+
+                // 2. Для каждой категории получаем топ 3 статьи
+                const categoriesWithArticles = await Promise.all(
+                    categories.map(async (category) => {
+                        try {
+                            const articlesResult = await getAllArticles({
+                                category: category.slug,
+                                limit: 3,
+                                sort: '-views' // сортировка по просмотрам
+                            })
+
+                            const articles = articlesResult.success
+                                ? (articlesResult.data?.articles || articlesResult.data || [])
+                                : []
+
+                            // Добавляем стили (иконка и цвет) для категории
+                            const style = categoryStyles[category.slug] || { icon: "📰", color: "#2563eb" }
+
+                            return {
+                                ...category,
+                                icon: style.icon,
+                                color: style.color,
+                                articles: articles
+                            }
+                        } catch (err) {
+                            console.error(`Error loading articles for ${category.slug}:`, err)
+                            return {
+                                ...category,
+                                articles: []
+                            }
+                        }
+                    })
+                )
+
+                setCategoriesData(categoriesWithArticles)
+            } catch (err) {
+                setError(err.message || "Chyba pri načítaní kategórií")
+            } finally {
+                setLoading(false)
+            }
         }
-    ]
+
+        fetchCategoriesWithArticles()
+    }, [])
 
     return (
         <section className="categories-grid">
@@ -150,39 +96,31 @@ const CategoriesGrid = () => {
                         Sledujte najnovšie správy v jednotlivých oblastiach
                     </p>
                 </div>
-                <div className="categories-list">
-                    {categories.map((category) => (
-                        <div key={category.id} className="category-card">
-                            <div className="category-header">
-                                <div className="category-icon" style={{ backgroundColor: category.color }}>
-                                    {category.icon}
-                                </div>
-                                <h3 className="category-name">{category.name}</h3>
-                                <a
-                                    href={`/spravy/${category.slug}`}
-                                    className="category-link"
-                                    style={{ color: category.color }}
-                                >
-                                    Všetky správy →
-                                </a>
-                            </div>
-                            <div className="category-articles">
-                                {category.articles.map((article, index) => (
-                                    <article key={article.id} className="category-article">
-                                        <div className="article-number">{index + 1}</div>
-                                        <div className="article-info">
-                                            <h4 className="article-title">{article.title}</h4>
-                                            <div className="article-meta">
-                                                <span className="article-date">{article.date}</span>
-                                                <span className="article-views">{article.views} zobrazení</span>
-                                            </div>
-                                        </div>
-                                    </article>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+
+                {loading ? (
+                    <div className="categories-loader">
+                        <div className="spinner"></div>
+                        <p>Načítavanie kategórií...</p>
+                    </div>
+                ) : error ? (
+                    <div className="categories-error">
+                        <p>{error}</p>
+                    </div>
+                ) : categoriesData.length === 0 ? (
+                    <div className="categories-empty">
+                        <p>Zatiaľ nie sú dostupné žiadne kategórie</p>
+                    </div>
+                ) : (
+                    <div className="categories-list">
+                        {categoriesData.map((category) => (
+                            <CategoryCard
+                                key={category._id}
+                                category={category}
+                                articles={category.articles}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </section>
     )
