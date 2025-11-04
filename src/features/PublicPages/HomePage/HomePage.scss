@@ -1,0 +1,23 @@
+.home-page {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #ffffff;
+
+    // Отступы между секциями
+    &>section {
+        padding-bottom: 80px;
+
+        @media (max-width: 768px) {
+            padding-bottom: 60px;
+        }
+
+        @media (max-width: 480px) {
+            padding-bottom: 40px;
+        }
+    }
+
+    // Убираем нижний отступ у последней секции
+    &>section:last-child {
+        padding-bottom: 0;
+    }
+}

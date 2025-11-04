@@ -1,4 +1,4 @@
-import LoginPage from "@/features/LoginPage/LoginPage";
+import LoginPage from "@/features/PublicPages/LoginPage/LoginPage";
 
 export default function AUTH() {
     return (
