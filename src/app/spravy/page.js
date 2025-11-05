@@ -8,7 +8,7 @@ export default async function SpravyPage({ searchParams }) {
     const categorySlug = params?.category || null;
     const sortBy = params?.sortBy || 'createdAt';
     const page = parseInt(params?.page) || 1;
-    const limit = 18;
+    const limit = 6;
 
     let articles = [];
     let total = 0;

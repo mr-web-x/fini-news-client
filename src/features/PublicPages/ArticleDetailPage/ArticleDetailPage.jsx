@@ -1,0 +1,234 @@
+import "./ArticleDetailPage.scss"
+import Link from "next/link"
+import CommentsList from "@/components/CommentsList/CommentsList"
+import CommentForm from "@/components/CommentForm/CommentForm"
+import NewsCard from "@/components/NewsCard/NewsCard"
+
+const ArticleDetailPage = ({
+    article,
+    relatedArticles = [],
+    user = null
+}) => {
+    // Форматирование даты
+    const formatDate = (isoDate) => {
+        if (!isoDate) return ""
+        const date = new Date(isoDate)
+        const day = String(date.getDate()).padStart(2, "0")
+        const month = String(date.getMonth() + 1).padStart(2, "0")
+        const year = date.getFullYear()
+        return `${day}.${month}.${year}`
+    }
+
+    return (
+        <div className="article-detail-page">
+            <div className="container">
+                {/* Breadcrumbs */}
+                <nav className="breadcrumbs">
+                    <Link href="/">Domov</Link>
+                    <span>/</span>
+                    <Link href="/spravy">Správy</Link>
+                    <span>/</span>
+                    {article.category && (
+                        <>
+                            <Link href={`/spravy?category=${article.category.slug}`}>
+                                {article.category.name}
+                            </Link>
+                            <span>/</span>
+                        </>
+                    )}
+                    <span className="breadcrumbs__current">{article.title}</span>
+                </nav>
+
+                <div className="article-detail">
+                    {/* Основной контент */}
+                    <article className="article-detail__main">
+                        {/* Категория */}
+                        {article.category && (
+                            <Link
+                                href={`/spravy?category=${article.category.slug}`}
+                                className="article-detail__category"
+                            >
+                                {article.category.name}
+                            </Link>
+                        )}
+
+                        {/* Заголовок */}
+                        <h1 className="article-detail__title">{article.title}</h1>
+
+                        {/* Мета-информация */}
+                        <div className="article-detail__meta">
+                            {/* Автор */}
+                            {article.author && (
+                                <div className="article-detail__author">
+                                    <div className="article-detail__author-avatar-placeholder">
+                                        {article.author.firstName?.[0]}{article.author.lastName?.[0]}
+                                    </div>
+                                    <span className="article-detail__author-name">
+                                        {article.author.firstName} {article.author.lastName}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Дата публикации */}
+                            <span className="article-detail__date">
+                                {formatDate(article.publishedAt || article.createdAt)}
+                            </span>
+
+                            {/* Время чтения */}
+                            {article.readTime && (
+                                <span className="article-detail__read-time">
+                                    {article.readTime} min čítania
+                                </span>
+                            )}
+
+                            {/* Просмотры */}
+                            <span className="article-detail__views">
+                                👁️ {article.views || 0} zobrazení
+                            </span>
+                        </div>
+
+                        {/* Изображение - пока заглушка */}
+                        {article.coverImage && (
+                            <div className="article-detail__image">
+                                <div className="article-detail__image-placeholder">
+                                    📷 Cover Image
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Краткое описание */}
+                        {article.excerpt && (
+                            <div className="article-detail__excerpt">
+                                {article.excerpt}
+                            </div>
+                        )}
+
+                        {/* Контент статьи */}
+                        {article.content && (
+                            <div
+                                className="article-detail__content"
+                                dangerouslySetInnerHTML={{ __html: article.content }}
+                            />
+                        )}
+
+                        {/* Теги */}
+                        {article.tags && article.tags.length > 0 && (
+                            <div className="article-detail__tags">
+                                {article.tags.map((tag, index) => (
+                                    <span key={index} className="article-detail__tag">
+                                        #{tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Информация об авторе (врезка) */}
+                        {article.author && (
+                            <div className="article-author-bio">
+                                <div className="article-author-bio__avatar-placeholder">
+                                    {article.author.firstName?.[0]}{article.author.lastName?.[0]}
+                                </div>
+                                <div className="article-author-bio__content">
+                                    <h3 className="article-author-bio__name">
+                                        {article.author.firstName} {article.author.lastName}
+                                    </h3>
+                                    {article.author.position && (
+                                        <p className="article-author-bio__position">
+                                            {article.author.position}
+                                        </p>
+                                    )}
+                                    {article.author.bio && (
+                                        <p className="article-author-bio__text">
+                                            {article.author.bio}
+                                        </p>
+                                    )}
+                                    <Link
+                                        href={`/autori/${article.author.id}`}
+                                        className="article-author-bio__link"
+                                    >
+                                        Všetky články autora →
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Социальные кнопки */}
+                        <div className="article-detail__share">
+                            <h3 className="article-detail__share-title">Zdieľať článok</h3>
+                            <div className="article-detail__share-buttons">
+                                <button className="share-button share-button--facebook">
+                                    Facebook
+                                </button>
+                                <button className="share-button share-button--twitter">
+                                    Twitter
+                                </button>
+                                <button className="share-button share-button--linkedin">
+                                    LinkedIn
+                                </button>
+                                <button className="share-button share-button--copy">
+                                    Kopírovať odkaz
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Похожие статьи */}
+                        {relatedArticles.length > 0 && (
+                            <div className="related-articles">
+                                <h2 className="related-articles__title">Podobné články</h2>
+                                <div className="related-articles__grid">
+                                    {relatedArticles.slice(0, 6).map((relatedArticle) => (
+                                        <NewsCard
+                                            key={relatedArticle._id}
+                                            article={relatedArticle}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Рекламный блок */}
+                        <div className="article-detail__ad">
+                            <p className="article-detail__ad-label">Reklama</p>
+                            <div className="article-detail__ad-content">
+                                <p>Reklamný priestor</p>
+                            </div>
+                        </div>
+                    </article>
+
+                    {/* Комментарии */}
+                    <section className="article-detail__comments">
+                        <h2 className="article-detail__comments-title">
+                            Komentáre
+                        </h2>
+
+                        {/* Форма для авторизованных */}
+                        {user && (
+                            <CommentForm
+                                articleId={article._id}
+                                user={user}
+                            />
+                        )}
+
+                        {/* Список комментариев */}
+                        <CommentsList
+                            articleId={article._id}
+                            user={user}
+                        />
+
+                        {/* Сообщение для неавторизованных */}
+                        {!user && (
+                            <div className="article-detail__login-prompt">
+                                <p>Prihláste sa, aby ste mohli pridať komentár</p>
+                                <Link href="/prihlasenie" className="article-detail__login-button">
+                                    Prihlásiť sa
+                                </Link>
+                            </div>
+                        )}
+                    </section>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default ArticleDetailPage

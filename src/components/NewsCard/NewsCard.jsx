@@ -15,7 +15,7 @@ const NewsCard = ({ article }) => {
     }
 
     return (
-        <Link href={`/spravy/${article.category?.slug || 'uncategorized'}/${article.slug}`} className="news-card">
+        <Link href={`/spravy/${article.slug}`} className="news-card">
             <article>
                 <div className="news-card-image">
                     <Image
