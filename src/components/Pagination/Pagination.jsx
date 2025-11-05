@@ -1,9 +1,19 @@
 "use client"
 import "./Pagination.scss"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
-const Pagination = ({ currentPage = 1, totalPages = 1, baseUrl = "" }) => {
+const Pagination = ({ currentPage = 1, totalPages = 1 }) => {
+    const searchParams = useSearchParams()
+
     if (totalPages <= 1) return null
+
+    // Функция для создания URL с сохранением текущих параметров
+    const createPageUrl = (page) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('page', page)
+        return `/spravy?${params.toString()}`
+    }
 
     // Генерация массива страниц для отображения
     const getPageNumbers = () => {
@@ -39,7 +49,7 @@ const Pagination = ({ currentPage = 1, totalPages = 1, baseUrl = "" }) => {
             {/* Кнопка "Предыдущая" */}
             {currentPage > 1 ? (
                 <Link
-                    href={`${baseUrl}${currentPage - 1}`}
+                    href={createPageUrl(currentPage - 1)}
                     className="pagination__button pagination__button--prev"
                 >
                     ← Predchádzajúca
@@ -64,7 +74,7 @@ const Pagination = ({ currentPage = 1, totalPages = 1, baseUrl = "" }) => {
                     return (
                         <Link
                             key={page}
-                            href={`${baseUrl}${page}`}
+                            href={createPageUrl(page)}
                             className={`pagination__number ${page === currentPage ? "pagination__number--active" : ""
                                 }`}
                         >
@@ -77,7 +87,7 @@ const Pagination = ({ currentPage = 1, totalPages = 1, baseUrl = "" }) => {
             {/* Кнопка "Следующая" */}
             {currentPage < totalPages ? (
                 <Link
-                    href={`${baseUrl}${currentPage + 1}`}
+                    href={createPageUrl(currentPage + 1)}
                     className="pagination__button pagination__button--next"
                 >
                     Ďalšia →

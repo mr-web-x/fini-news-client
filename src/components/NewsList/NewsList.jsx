@@ -1,4 +1,4 @@
-// src/features/NewsListPage/NewsList/NewsList.jsx
+// src/components/NewsList/NewsList.jsx
 import NewsCard from "@/components/NewsCard/NewsCard"
 import Pagination from "@/components/Pagination/Pagination"
 import "./NewsList.scss"
@@ -24,7 +24,10 @@ const NewsList = ({ articles, currentPage, totalPages }) => {
 
             {totalPages > 1 && (
                 <div className="news-list-pagination">
-                    <Pagination currentPage={currentPage} totalPages={totalPages} />
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                    />
                 </div>
             )}
         </div>
