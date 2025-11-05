@@ -1,0 +1,113 @@
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 48px;
+    padding: 20px 0;
+
+    @media (max-width: 768px) {
+        gap: 12px;
+        margin-top: 32px;
+    }
+
+    @media (max-width: 480px) {
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 24px;
+    }
+}
+
+.pagination__button {
+    padding: 10px 20px;
+    background-color: #ffffff;
+    color: #2563eb;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover:not(&--disabled) {
+        background-color: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+    }
+
+    &--disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    @media (max-width: 480px) {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
+
+.pagination__numbers {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    @media (max-width: 480px) {
+        gap: 6px;
+    }
+}
+
+.pagination__number {
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    &--active {
+        background-color: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+
+        &:hover {
+            background-color: #1d4ed8;
+        }
+    }
+
+    @media (max-width: 480px) {
+        min-width: 36px;
+        height: 36px;
+        font-size: 13px;
+    }
+}
+
+.pagination__dots {
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 600;
+
+    @media (max-width: 480px) {
+        min-width: 36px;
+        height: 36px;
+        font-size: 13px;
+    }
+}

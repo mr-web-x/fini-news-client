@@ -156,6 +156,15 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         }
 
         if (targetRef?.current) {
+            // Для TinyMCE editor (content)
+            if (fieldName === 'content' && editorRef.current) {
+                setTimeout(() => {
+                    editorRef.current.focus();
+                }, 100);
+                return;
+            }
+
+            // Для обычных полей ввода
             fieldElement = targetRef.current.closest('.new-article__field');
 
             // Добавляем класс ошибки с анимацией
@@ -182,7 +191,7 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
     const handleSave = async (submitForReview = false) => {
         setMessage({ type: '', text: '' });
 
-        // Валидация с автофокусом
+        // Валидация с автофокусом (ваш существующий код)
         if (!formData.title.trim()) {
             setMessage({ type: 'error', text: 'Nadpis článku je povinný' });
             focusOnError('title');
@@ -197,6 +206,12 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
 
         if (formData.excerpt.trim().length < 150) {
             setMessage({ type: 'error', text: 'Perex musí obsahovať minimálne 150 znakov' });
+            focusOnError('excerpt');
+            return;
+        }
+
+        if (formData.excerpt.trim().length > 200) {
+            setMessage({ type: 'error', text: 'Perex môže obsahovať maximálne 200 znakov' });
             focusOnError('excerpt');
             return;
         }
@@ -278,12 +293,20 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         : 'Článok bol úspešne vytvorený ako koncept'
                 });
 
-                if (isEditMode) {
+                // ✅ ИЗМЕНЕНИЕ: Для авторов всегда перенаправляем на предпросмотр
+                if (user?.role === 'author' || user?.role === 'admin') {
                     setTimeout(() => {
                         router.push(`/profil/moje-clanky/${savedArticle._id}/ukazka`);
                     }, 1000);
                 } else {
-                    router.push(`/profil/novy-clanok?id=${savedArticle._id}`);
+                    // Для других ролей оставляем старое поведение
+                    if (isEditMode) {
+                        setTimeout(() => {
+                            router.push(`/profil/moje-clanky/${savedArticle._id}/ukazka`);
+                        }, 1000);
+                    } else {
+                        router.push(`/profil/novy-clanok?id=${savedArticle._id}`);
+                    }
                 }
             }
 
@@ -304,18 +327,19 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         }
     };
 
-    const getCharacterCount = (text, max) => {
+    const getCharacterCount = (text, min, max) => {
         const count = text.length;
         const remaining = max - count;
         return {
             count,
             remaining,
-            className: remaining < 0 ? 'text-danger' : remaining < 50 ? 'text-warning' : ''
+            className: count > max ? 'text-danger' : count < min ? 'text-warning' : ''
         };
     };
 
-    const excerptCount = getCharacterCount(formData.excerpt, 200);
-    const contentCount = getCharacterCount(formData.content, 5000);
+    // Использование:
+    const excerptCount = getCharacterCount(formData.excerpt, 150, 200);
+    const contentCount = getCharacterCount(formData.content, 500, 5000);
 
     if (loadingArticle) {
         return (
@@ -449,7 +473,7 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         <div ref={contentRef} className="new-article__editor-wrapper">
                             <Editor
                                 apiKey={process.env.NEXT_PUBLIC_TINYMCE}
-                                ref={editorRef}
+                                onInit={(evt, editor) => editorRef.current = editor}
                                 value={formData.content}
                                 onEditorChange={handleEditorChange}
                                 init={{
@@ -521,17 +545,7 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                                         }
                                     `,
 
-                                    placeholder: 'Začnite písať obsah vášho článku...',
-
-                                    setup: (editor) => {
-                                        editor.on('change', () => {
-                                            const content = editor.getContent();
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                content: content
-                                            }));
-                                        });
-                                    }
+                                    placeholder: 'Začnite písať obsah vášho článku...'
                                 }}
                                 disabled={loading}
                             />
