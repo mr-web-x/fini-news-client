@@ -1,64 +1,81 @@
+// src/app/spravy/page.js
 import NewsListPage from "@/features/PublicPages/NewsListPage/NewsListPage";
 import articlesService from "@/services/articles.service";
 import categoriesService from "@/services/categories.service";
 
 export default async function SpravyPage({ searchParams }) {
-    // Получаем параметры из URL
     const params = await searchParams;
-    const category = params?.category || null;
+    const categorySlug = params?.category || null;
     const sortBy = params?.sortBy || 'createdAt';
     const page = parseInt(params?.page) || 1;
-    const limit = 18; // 18 статей на страницу
+    const limit = 18;
 
-    // Загружаем данные на сервере
     let articles = [];
     let total = 0;
     let categories = [];
     let topArticles = [];
+    let selectedCategoryId = null;
 
+    // Загружаем категории
     try {
-        // Получаем статьи с фильтрами
-        const articlesResponse = await articlesService.getAllArticles({
-            category: category,
-            page: page,
-            limit: limit,
-            sort: sortBy === 'views' ? '-views' : sortBy === 'popular' ? '-views' : '-createdAt'
-        });
-
-        articles = articlesResponse?.articles || [];
-        total = articlesResponse?.total || 0;
-    } catch (error) {
-        console.error('Error loading articles:', error);
-    }
-
-    try {
-        // Получаем все категории для табов
         const categoriesResponse = await categoriesService.getAllCategories();
 
-        if (Array.isArray(categoriesResponse)) {
+        if (categoriesResponse?.success && categoriesResponse?.data?.categories) {
+            categories = categoriesResponse.data.categories;
+        } else if (Array.isArray(categoriesResponse)) {
             categories = categoriesResponse;
         } else if (categoriesResponse?.data && Array.isArray(categoriesResponse.data)) {
             categories = categoriesResponse.data;
         } else if (categoriesResponse?.categories && Array.isArray(categoriesResponse.categories)) {
             categories = categoriesResponse.categories;
         }
+
+        // Находим ID категории по slug
+        if (categorySlug && categories.length > 0) {
+            const foundCategory = categories.find(cat => cat.slug === categorySlug);
+            if (foundCategory) {
+                selectedCategoryId = foundCategory._id;
+            }
+        }
+
     } catch (error) {
         console.error('Error loading categories:', error);
     }
 
+    // Загружаем статьи
     try {
-        // Получаем топ 5 статей для сайдбара
+        const filters = {
+            page: page,
+            limit: limit,
+            sort: sortBy === 'views' ? '-views' : sortBy === 'popular' ? '-views' : '-createdAt'
+        };
+
+        if (selectedCategoryId) {
+            filters.category = selectedCategoryId;
+        }
+
+        const articlesResponse = await articlesService.getAllArticles(filters);
+
+        articles = articlesResponse?.articles || [];
+        total = articlesResponse?.total || 0;
+
+    } catch (error) {
+        console.error('Error loading articles:', error);
+    }
+
+    // Загружаем топ статьи
+    try {
         const topArticlesResponse = await articlesService.getAllArticles({
             limit: 5,
             sort: '-views'
         });
 
         topArticles = topArticlesResponse?.articles || [];
+
     } catch (error) {
         console.error('Error loading top articles:', error);
     }
 
-    // Вычисляем общее количество страниц
     const totalPages = Math.ceil(total / limit);
 
     return (
@@ -68,7 +85,7 @@ export default async function SpravyPage({ searchParams }) {
             topArticles={topArticles}
             currentPage={page}
             totalPages={totalPages}
-            selectedCategory={category}
+            selectedCategory={categorySlug}
             selectedSort={sortBy}
         />
     );
