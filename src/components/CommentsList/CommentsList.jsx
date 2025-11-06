@@ -4,33 +4,19 @@ import CommentItem from '@/components/CommentItem/CommentItem';
 import "./CommentsList.scss";
 
 /**
- * Компонент списка комментариев
+ * Презентационный компонент списка комментариев
+ * Получает комментарии через props (загружаются в page.js)
  * @param {Array} comments - массив комментариев
- * @param {boolean} loading - состояние загрузки
  * @param {Object} user - объект пользователя
  * @param {Function} onCommentUpdated - callback при обновлении комментария
  * @param {Function} onCommentDeleted - callback при удалении комментария
  */
 const CommentsList = ({
     comments = [],
-    loading = false,
     user = null,
     onCommentUpdated,
     onCommentDeleted
 }) => {
-
-    // Показываем загрузку
-    if (loading) {
-        return (
-            <div className="comments-list">
-                <div className="comments-list__loading">
-                    <div className="comments-list__spinner"></div>
-                    <p>Načítavam komentáre...</p>
-                </div>
-            </div>
-        );
-    }
-
     // Если нет комментариев
     if (!comments || comments.length === 0) {
         return (
@@ -47,6 +33,10 @@ const CommentsList = ({
 
     return (
         <div className="comments-list">
+            <div className="comments-list__count">
+                {comments.length} {comments.length === 1 ? 'komentár' :
+                    comments.length < 5 ? 'komentáre' : 'komentárov'}
+            </div>
             {comments.map((comment) => (
                 <CommentItem
                     key={comment._id}

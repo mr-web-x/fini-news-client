@@ -5,17 +5,17 @@ import api from '@/lib/serverApiClient';
  * Все методы возвращают Promise с данными или ошибкой
  */
 class ArticlesService {
-    /**
-     * Получить все опубликованные статьи (публичный доступ)
-     * @param {Object} filters - Фильтры (category, tags, page, limit, sort)
-     * @returns {Promise<Object>} - Список статей с пагинацией
-     */
+
     async getAllArticles(filters = {}) {
         const params = new URLSearchParams();
 
         if (filters.category) params.append('category', filters.category);
         if (filters.tags) params.append('tags', filters.tags);
+
+        // Поддержка обоих вариантов: page и skip
         if (filters.page) params.append('page', filters.page);
+        if (filters.skip !== undefined) params.append('skip', filters.skip);
+
         if (filters.limit) params.append('limit', filters.limit);
         if (filters.sort) params.append('sort', filters.sort);
 

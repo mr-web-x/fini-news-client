@@ -8,13 +8,33 @@ export default async function SpravyPage({ searchParams }) {
     const categorySlug = params?.category || null;
     const sortBy = params?.sortBy || 'createdAt';
     const page = parseInt(params?.page) || 1;
-    const limit = 2;
+    const limit = 4; // Количество статей на странице
 
     let articles = [];
     let total = 0;
     let categories = [];
     let topArticles = [];
     let selectedCategoryId = null;
+
+    // Вычисляем skip для пагинации
+    const skip = (page - 1) * limit;
+
+    // Определяем правильную сортировку для backend
+    let sortValue;
+    switch (sortBy) {
+        case 'views':
+            sortValue = '-views'; // От большего к меньшему (популярные сверху)
+            break;
+        case 'title':
+            sortValue = 'title'; // От A до Z (без минуса)
+            break;
+        case 'createdAt':
+        default:
+            sortValue = '-createdAt'; // От новых к старым (минус = DESC)
+            break;
+    }
+
+    console.log('📄 Page:', page, '| Skip:', skip, '| SortBy:', sortBy, '| Sort:', sortValue);
 
     // Загружаем категории
     try {
@@ -45,19 +65,23 @@ export default async function SpravyPage({ searchParams }) {
     // Загружаем статьи
     try {
         const filters = {
-            page: page,
+            skip: skip,
             limit: limit,
-            sort: sortBy === 'views' ? '-views' : sortBy === 'popular' ? '-views' : '-createdAt'
+            sort: sortValue // ✅ Используем правильное значение
         };
 
         if (selectedCategoryId) {
             filters.category = selectedCategoryId;
         }
 
+        console.log('🔍 Filters:', filters);
+
         const articlesResponse = await articlesService.getAllArticles(filters);
 
         articles = articlesResponse?.articles || [];
         total = articlesResponse?.total || 0;
+
+        console.log('✅ Loaded:', articles.length, 'articles | Total:', total);
 
     } catch (error) {
         console.error('Error loading articles:', error);

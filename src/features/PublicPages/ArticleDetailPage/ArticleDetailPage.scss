@@ -603,3 +603,73 @@
         }
     }
 }
+
+// === АВАТАРЫ АВТОРА ===
+
+// Мета-информация: аватар автора
+.article-detail__author-avatar,
+.article-detail__author-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.article-detail__author-avatar {
+    object-fit: cover;
+}
+
+.article-detail__author-avatar-placeholder {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+// Врезка автора: аватар
+.article-author-bio__avatar,
+.article-author-bio__avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    @media (max-width: 480px) {
+        width: 64px;
+        height: 64px;
+    }
+}
+
+.article-author-bio__avatar {
+    object-fit: cover;
+}
+
+.article-author-bio__avatar-placeholder {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 24px;
+    text-transform: uppercase;
+
+    @media (max-width: 480px) {
+        font-size: 20px;
+    }
+}
+
+// Ссылка на автора должна быть кликабельной
+.article-detail__author {
+    text-decoration: none;
+    color: inherit;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+        opacity: 0.8;
+    }
+}

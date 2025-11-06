@@ -1,3 +1,6 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import "./ArticleDetailPage.scss"
 import Link from "next/link"
 import CommentsList from "@/components/CommentsList/CommentsList"
@@ -7,8 +10,11 @@ import NewsCard from "@/components/NewsCard/NewsCard"
 const ArticleDetailPage = ({
     article,
     relatedArticles = [],
+    comments = [], // ✅ Комментарии из props
     user = null
 }) => {
+    const router = useRouter();
+
     // Форматирование даты
     const formatDate = (isoDate) => {
         if (!isoDate) return ""
@@ -18,6 +24,43 @@ const ArticleDetailPage = ({
         const year = date.getFullYear()
         return `${day}.${month}.${year}`
     }
+
+    // Вычисление времени чтения на основе контента
+    const calculateReadTime = (content) => {
+        if (!content) return 5;
+
+        // Убираем HTML теги
+        const text = content.replace(/<[^>]*>/g, '');
+        // Считаем слова
+        const words = text.trim().split(/\s+/).length;
+        // Средняя скорость чтения: 200 слов в минуту
+        const minutes = Math.ceil(words / 200);
+
+        return minutes > 0 ? minutes : 1;
+    }
+
+    // Получаем время чтения
+    const readTime = article.readTime || calculateReadTime(article.content);
+
+    // Получаем полное имя автора
+    const authorFullName = article.author
+        ? `${article.author.firstName || ''} ${article.author.lastName || ''}`.trim()
+        : 'Autor';
+
+    // ✅ Callback при добавлении комментария - перезагружаем страницу
+    const handleCommentAdded = () => {
+        router.refresh(); // Перезагружает серверный компонент (page.js)
+    };
+
+    // ✅ Callback при обновлении комментария
+    const handleCommentUpdated = () => {
+        router.refresh();
+    };
+
+    // ✅ Callback при удалении комментария
+    const handleCommentDeleted = () => {
+        router.refresh();
+    };
 
     return (
         <div className="article-detail-page">
@@ -59,14 +102,25 @@ const ArticleDetailPage = ({
                         <div className="article-detail__meta">
                             {/* Автор */}
                             {article.author && (
-                                <div className="article-detail__author">
-                                    <div className="article-detail__author-avatar-placeholder">
-                                        {article.author.firstName?.[0]}{article.author.lastName?.[0]}
-                                    </div>
+                                <Link
+                                    href={`/autori/${article.author._id}`}
+                                    className="article-detail__author"
+                                >
+                                    {article.author.avatar ? (
+                                        <img
+                                            src={article.author.avatar}
+                                            alt={authorFullName}
+                                            className="article-detail__author-avatar"
+                                        />
+                                    ) : (
+                                        <div className="article-detail__author-avatar-placeholder">
+                                            {article.author.firstName?.[0] || '?'}{article.author.lastName?.[0] || ''}
+                                        </div>
+                                    )}
                                     <span className="article-detail__author-name">
-                                        {article.author.firstName} {article.author.lastName}
+                                        {authorFullName}
                                     </span>
-                                </div>
+                                </Link>
                             )}
 
                             {/* Дата публикации */}
@@ -75,11 +129,9 @@ const ArticleDetailPage = ({
                             </span>
 
                             {/* Время чтения */}
-                            {article.readTime && (
-                                <span className="article-detail__read-time">
-                                    {article.readTime} min čítania
-                                </span>
-                            )}
+                            <span className="article-detail__read-time">
+                                📖 {readTime} min čítania
+                            </span>
 
                             {/* Просмотры */}
                             <span className="article-detail__views">
@@ -125,25 +177,37 @@ const ArticleDetailPage = ({
                         {/* Информация об авторе (врезка) */}
                         {article.author && (
                             <div className="article-author-bio">
-                                <div className="article-author-bio__avatar-placeholder">
-                                    {article.author.firstName?.[0]}{article.author.lastName?.[0]}
-                                </div>
+                                {article.author.avatar ? (
+                                    <img
+                                        src={article.author.avatar}
+                                        alt={authorFullName}
+                                        className="article-author-bio__avatar"
+                                    />
+                                ) : (
+                                    <div className="article-author-bio__avatar-placeholder">
+                                        {article.author.firstName?.[0] || '?'}{article.author.lastName?.[0] || ''}
+                                    </div>
+                                )}
                                 <div className="article-author-bio__content">
                                     <h3 className="article-author-bio__name">
-                                        {article.author.firstName} {article.author.lastName}
+                                        {authorFullName}
                                     </h3>
                                     {article.author.position && (
                                         <p className="article-author-bio__position">
                                             {article.author.position}
                                         </p>
                                     )}
-                                    {article.author.bio && (
+                                    {article.author.bio ? (
                                         <p className="article-author-bio__text">
                                             {article.author.bio}
                                         </p>
+                                    ) : (
+                                        <p className="article-author-bio__text">
+                                            Autor tohto článku.
+                                        </p>
                                     )}
                                     <Link
-                                        href={`/autori/${article.author.id}`}
+                                        href={`/autori/${article.author._id}`}
                                         className="article-author-bio__link"
                                     >
                                         Všetky články autora →
@@ -206,13 +270,16 @@ const ArticleDetailPage = ({
                             <CommentForm
                                 articleId={article._id}
                                 user={user}
+                                onCommentAdded={handleCommentAdded}
                             />
                         )}
 
                         {/* Список комментариев */}
                         <CommentsList
-                            articleId={article._id}
+                            comments={comments} // ✅ Передаём комментарии из props
                             user={user}
+                            onCommentUpdated={handleCommentUpdated}
+                            onCommentDeleted={handleCommentDeleted}
                         />
 
                         {/* Сообщение для неавторизованных */}
