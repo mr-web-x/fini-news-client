@@ -14,26 +14,6 @@ const NewsCard = ({ article }) => {
         return `${day}.${month}.${year}`
     }
 
-    // Форматирование времени
-    const formatTime = (isoDate) => {
-        if (!isoDate) return ""
-        const date = new Date(isoDate)
-        const hours = String(date.getHours()).padStart(2, "0")
-        const minutes = String(date.getMinutes()).padStart(2, "0")
-        return `${hours}:${minutes}`
-    }
-
-    // Расчёт времени чтения
-    const calculateReadTime = (text) => {
-        if (!text) return 1
-        const wordsPerMinute = 200
-        const plainText = text.replace(/<[^>]+>/g, " ")
-        const words = plainText.trim().split(/\s+/).length
-        return Math.max(1, Math.ceil(words / wordsPerMinute))
-    }
-
-    const readTime = article.readTime || calculateReadTime(article.content || article.body || article.excerpt || "")
-
     return (
         <Link href={`/spravy/${article.slug}`} className="news-card">
             <article>
@@ -55,7 +35,7 @@ const NewsCard = ({ article }) => {
                     <div className="news-card-meta">
                         <span className="news-card-author">{article.author?.name || "Autor"}</span>
                         <span className="news-card-date">{formatDate(article.publishedAt || article.createdAt)}</span>
-                        <span className="news-card-time">{formatTime(article.publishedAt || article.createdAt)} min</span>
+                        <span className="news-card-time">{article.readTime || "5"} min</span>
                     </div>
                 </div>
             </article>

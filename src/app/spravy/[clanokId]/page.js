@@ -36,13 +36,16 @@ export default async function ClanokDetailPage({ params }) {
             notFound();
         }
 
-        // ✅ ДОБАВЬТЕ ПРОВЕРКУ ДАННЫХ НА СЕРВЕРЕ
-        console.log('🔍 SERVER - Article Author Data:', {
-            author: article.author,
+        // 🔍 ОТЛАДКА: Проверяем данные автора
+        console.log('📊 Article Author Data:', {
+            _id: article.author?._id,
+            firstName: article.author?.firstName,
+            lastName: article.author?.lastName,
+            email: article.author?.email,
+            avatar: article.author?.avatar,
             bio: article.author?.bio,
-            bioExists: !!article.author?.bio,
-            bioLength: article.author?.bio?.length,
-            authorId: article.author?._id
+            position: article.author?.position,
+            role: article.author?.role
         });
 
         try {

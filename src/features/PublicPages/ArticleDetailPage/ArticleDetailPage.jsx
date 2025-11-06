@@ -10,23 +10,19 @@ import NewsCard from "@/components/NewsCard/NewsCard"
 const ArticleDetailPage = ({
     article,
     relatedArticles = [],
-    comments = [],
+    comments = [], // ✅ Комментарии из props
     user = null
 }) => {
     const router = useRouter();
 
-    // ✅ КРИТИЧЕСКАЯ ОТЛАДОЧНАЯ ИНФОРМАЦИЯ
-    console.log('🔍 ArticleDetailPage - Full Author Object:', {
-        article_id: article._id,
-        author_full: article.author,
-        author_id: article.author?._id,
-        author_bio: article.author?.bio,
-        bio_type: typeof article.author?.bio,
-        bio_length: article.author?.bio?.length,
-        bio_truthy: !!article.author?.bio,
-        firstName: article.author?.firstName,
-        lastName: article.author?.lastName,
-        position: article.author?.position
+    console.log('🔍 ArticleDetailPage DEBUG:', {
+        articleAuthor: article.author,
+        hasAuthor: !!article.author,
+        authorBio: article.author?.bio,
+        bioLength: article.author?.bio?.length,
+        bioType: typeof article.author?.bio,
+        authorFirstName: article.author?.firstName,
+        authorLastName: article.author?.lastName
     });
 
     // Форматирование даты
@@ -42,32 +38,46 @@ const ArticleDetailPage = ({
     // Вычисление времени чтения на основе контента
     const calculateReadTime = (content) => {
         if (!content) return 5;
+
+        // Убираем HTML теги
         const text = content.replace(/<[^>]*>/g, '');
+        // Считаем слова
         const words = text.trim().split(/\s+/).length;
+        // Средняя скорость чтения: 200 слов в минуту
         const minutes = Math.ceil(words / 200);
+
         return minutes > 0 ? minutes : 1;
     }
 
+    // Получаем время чтения
     const readTime = article.readTime || calculateReadTime(article.content);
+
+    // Получаем полное имя автора
     const authorFullName = article.author
         ? `${article.author.firstName || ''} ${article.author.lastName || ''}`.trim()
         : 'Autor';
 
+    // ✅ Callback при добавлении комментария - перезагружаем страницу
     const handleCommentAdded = () => {
-        router.refresh();
+        router.refresh(); // Перезагружает серверный компонент (page.js)
     };
 
+    // ✅ Callback при обновлении комментария
     const handleCommentUpdated = () => {
         router.refresh();
     };
 
+    // ✅ Callback при удалении комментария
     const handleCommentDeleted = () => {
         router.refresh();
     };
 
+
+
     return (
         <div className="article-detail-page">
             <div className="container">
+                {/* Breadcrumbs */}
                 <nav className="breadcrumbs">
                     <Link href="/">Domov</Link>
                     <span>/</span>
@@ -85,7 +95,9 @@ const ArticleDetailPage = ({
                 </nav>
 
                 <div className="article-detail">
+                    {/* Основной контент */}
                     <article className="article-detail__main">
+                        {/* Категория */}
                         {article.category && (
                             <Link
                                 href={`/spravy?category=${article.category.slug}`}
@@ -95,9 +107,12 @@ const ArticleDetailPage = ({
                             </Link>
                         )}
 
+                        {/* Заголовок */}
                         <h1 className="article-detail__title">{article.title}</h1>
 
+                        {/* Мета-информация */}
                         <div className="article-detail__meta">
+                            {/* Автор */}
                             {article.author && (
                                 <Link
                                     href={`/autori/${article.author._id}`}
@@ -120,19 +135,23 @@ const ArticleDetailPage = ({
                                 </Link>
                             )}
 
+                            {/* Дата публикации */}
                             <span className="article-detail__date">
                                 {formatDate(article.publishedAt || article.createdAt)}
                             </span>
 
+                            {/* Время чтения */}
                             <span className="article-detail__read-time">
                                 📖 {readTime} min čítania
                             </span>
 
+                            {/* Просмотры */}
                             <span className="article-detail__views">
                                 👁️ {article.views || 0} zobrazení
                             </span>
                         </div>
 
+                        {/* Изображение - пока заглушка */}
                         {article.coverImage && (
                             <div className="article-detail__image">
                                 <div className="article-detail__image-placeholder">
@@ -141,12 +160,14 @@ const ArticleDetailPage = ({
                             </div>
                         )}
 
+                        {/* Краткое описание */}
                         {article.excerpt && (
                             <div className="article-detail__excerpt">
                                 {article.excerpt}
                             </div>
                         )}
 
+                        {/* Контент статьи */}
                         {article.content && (
                             <div
                                 className="article-detail__content"
@@ -154,6 +175,7 @@ const ArticleDetailPage = ({
                             />
                         )}
 
+                        {/* Теги */}
                         {article.tags && article.tags.length > 0 && (
                             <div className="article-detail__tags">
                                 {article.tags.map((tag, index) => (
@@ -164,30 +186,7 @@ const ArticleDetailPage = ({
                             </div>
                         )}
 
-                        {/* ✅ ВРЕМЕННЫЙ ОТЛАДОЧНЫЙ БЛОК - ПОКАЖЕТ ЧТО РЕАЛЬНО ПРИХОДИТ */}
-                        <div style={{
-                            background: '#fff3cd',
-                            border: '2px solid #ffc107',
-                            padding: '20px',
-                            margin: '30px 0',
-                            borderRadius: '8px',
-                            fontFamily: 'monospace',
-                            fontSize: '14px'
-                        }}>
-                            <h3 style={{ margin: '0 0 15px 0', color: '#856404' }}>
-                                🔍 DEBUG: Author Bio Information
-                            </h3>
-                            <div><strong>Author ID:</strong> {article.author?._id || 'N/A'}</div>
-                            <div><strong>Full Name:</strong> {authorFullName}</div>
-                            <div><strong>Position:</strong> {article.author?.position || 'EMPTY'}</div>
-                            <div><strong>Bio exists:</strong> {article.author?.bio ? 'YES ✅' : 'NO ❌'}</div>
-                            <div><strong>Bio type:</strong> {typeof article.author?.bio}</div>
-                            <div><strong>Bio length:</strong> {article.author?.bio?.length || 0}</div>
-                            <div style={{ marginTop: '10px', padding: '10px', background: 'white', borderRadius: '4px' }}>
-                                <strong>Bio content:</strong><br />
-                                "{article.author?.bio || 'COMPLETELY EMPTY'}"
-                            </div>
-                        </div>
+                        {/* Информация об авторе (врезка) */}
 
                         {article.author && (
                             <div className="article-author-bio">
@@ -211,10 +210,15 @@ const ArticleDetailPage = ({
                                             {article.author.position}
                                         </p>
                                     )}
-                                    {/* ✅ УПРОЩЕННАЯ ЛОГИКА */}
+
                                     <p className="article-author-bio__text">
                                         {article.author.bio || "Autor tohto článku."}
                                     </p>
+                                    <div style={{ display: 'none' }} className="debug-info">
+                                        Debug - Bio: {article.author.bio}
+                                        Bio Length: {article.author.bio?.length}
+                                        Has Bio: {!!article.author.bio}
+                                    </div>
                                     <Link
                                         href={`/autori/${article.author._id}`}
                                         className="article-author-bio__link"
@@ -225,6 +229,7 @@ const ArticleDetailPage = ({
                             </div>
                         )}
 
+                        {/* Социальные кнопки */}
                         <div className="article-detail__share">
                             <h3 className="article-detail__share-title">Zdieľať článok</h3>
                             <div className="article-detail__share-buttons">
@@ -243,6 +248,7 @@ const ArticleDetailPage = ({
                             </div>
                         </div>
 
+                        {/* Похожие статьи */}
                         {relatedArticles.length > 0 && (
                             <div className="related-articles">
                                 <h2 className="related-articles__title">Podobné články</h2>
@@ -257,6 +263,7 @@ const ArticleDetailPage = ({
                             </div>
                         )}
 
+                        {/* Рекламный блок */}
                         <div className="article-detail__ad">
                             <p className="article-detail__ad-label">Reklama</p>
                             <div className="article-detail__ad-content">
@@ -265,11 +272,13 @@ const ArticleDetailPage = ({
                         </div>
                     </article>
 
+                    {/* Комментарии */}
                     <section className="article-detail__comments">
                         <h2 className="article-detail__comments-title">
                             Komentáre
                         </h2>
 
+                        {/* Форма для авторизованных */}
                         {user && (
                             <CommentForm
                                 articleId={article._id}
@@ -278,13 +287,15 @@ const ArticleDetailPage = ({
                             />
                         )}
 
+                        {/* Список комментариев */}
                         <CommentsList
-                            comments={comments}
+                            comments={comments} // ✅ Передаём комментарии из props
                             user={user}
                             onCommentUpdated={handleCommentUpdated}
                             onCommentDeleted={handleCommentDeleted}
                         />
 
+                        {/* Сообщение для неавторизованных */}
                         {!user && (
                             <div className="article-detail__login-prompt">
                                 <p>Prihláste sa, aby ste mohli pridať komentár</p>
