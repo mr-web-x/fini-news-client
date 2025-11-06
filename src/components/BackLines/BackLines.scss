@@ -1,25 +1,70 @@
-.desktop-lines {
-    .background__lines-row {
+.background-lines {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0.15;
+    pointer-events: none;
+    overflow: hidden;
+
+    .lines-row,
+    .lines-column {
+        position: absolute;
+        inset: 0;
         display: grid;
-        gap: 15px;
+    }
+
+    /* Горизонтальные линии */
+    .lines-row {
         grid-template-rows: repeat(8, 1fr);
     }
 
-    .background__lines-wrapper {
-        opacity: 0.4;
-        height: 100vh;
-        width: 100%;
-        top: 0;
-        left: 0;
-        position: fixed;
-        z-index: -1;
+    /* Вертикальные линии */
+    .lines-column {
+        grid-template-columns: repeat(16, 1fr);
+    }
 
-        .background__line-75-row {
-            background-image: linear-gradient(to right, black 0%, white 50%, black 100%);
-            background-size: 100% 100%;
-            background-position: 50% 50%;
-            animation: moveRight 4s linear infinite;
+    .line {
+        background: linear-gradient(to right,
+                rgba(0, 0, 0, 0.1) 0%,
+                rgba(0, 0, 0, 0.05) 50%,
+                rgba(0, 0, 0, 0.1) 100%);
+    }
+
+    .horizontal {
+        height: 1px;
+        width: 100%;
+        animation: moveRight 12s linear infinite;
+    }
+
+    .vertical {
+        width: 1px;
+        height: 100%;
+        background: linear-gradient(to bottom,
+                rgba(0, 0, 0, 0.1) 0%,
+                rgba(0, 0, 0, 0.05) 50%,
+                rgba(0, 0, 0, 0.1) 100%);
+        animation: moveDown 18s linear infinite;
+    }
+
+    @keyframes moveRight {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(10px);
         }
     }
 
+    @keyframes moveDown {
+        0% {
+            transform: translateY(0);
+        }
+
+        100% {
+            transform: translateY(10px);
+        }
+    }
 }

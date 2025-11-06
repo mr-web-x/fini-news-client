@@ -2,6 +2,9 @@ import "./CategoriesGrid.scss"
 import CategoryCard from "@/components/CategoryCard/CategoryCard"
 
 const CategoriesGrid = ({ categoriesData = [] }) => {
+    // Добавьте логирование для отладки
+    console.log('CategoriesGrid received data:', categoriesData);
+
     return (
         <section className="categories-grid">
             <div className="container">
@@ -12,7 +15,7 @@ const CategoriesGrid = ({ categoriesData = [] }) => {
                     </p>
                 </div>
 
-                {categoriesData.length === 0 ? (
+                {!categoriesData || categoriesData.length === 0 ? (
                     <div className="categories-empty">
                         <p>Zatiaľ nie sú dostupné žiadne kategórie</p>
                     </div>
@@ -20,9 +23,9 @@ const CategoriesGrid = ({ categoriesData = [] }) => {
                     <div className="categories-list">
                         {categoriesData.map((category) => (
                             <CategoryCard
-                                key={category._id}
+                                key={category._id || category.id}
                                 category={category}
-                                articles={category.articles}
+                                articles={category.articles || []}
                             />
                         ))}
                     </div>

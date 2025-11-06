@@ -1,47 +1,19 @@
 'use client'
-import "./BackLines.scss"
+import './BackLines.scss'
 
-const BackLines = () => {
-
+export default function BackLines() {
     return (
-        <div className="background__lines desktop-lines">
-
-            <div className="background__lines-wrapper background__lines-row">
-
-                <div className="background__line background__line-75-row"></div>
-                <div className="background__line background__line-50-row"></div>
-                <div className="background__line background__line-full-row"></div>
-                <div className="background__line background__line-75-row"></div>
-                <div className="background__line background__line-50-row"></div>
-                <div className="background__line background__line-full-row"></div>
-                <div className="background__line background__line-75-row"></div>
-                <div className="background__line background__line-50-row"></div>
+        <div className="background-lines">
+            <div className="lines-row">
+                {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="line horizontal"></div>
+                ))}
             </div>
-
-            <div className="background__lines-wrapper background__lines-column">
-
-                <div className="background__line background__line-75-column"></div>
-                <div className="background__line background__line-50-column"></div>
-                <div className="background__line background__line-full-column"></div>
-                <div className="background__line background__line-75-column"></div>
-                <div className="background__line background__line-50-column"></div>
-                <div className="background__line background__line-full-column"></div>
-                <div className="background__line background__line-75-column"></div>
-                <div className="background__line background__line-50-column"></div>
-                <div className="background__line background__line-full-column"></div>
-                <div className="background__line background__line-75-column"></div>
-                <div className="background__line background__line-50-column"></div>
-                <div className="background__line background__line-full-column"></div>
-                <div className="background__line background__line-75-column"></div>
-                <div className="background__line background__line-50-column"></div>
-                <div className="background__line background__line-full-column"></div>
-
+            <div className="lines-column">
+                {Array.from({ length: 16 }).map((_, i) => (
+                    <div key={i} className="line vertical"></div>
+                ))}
             </div>
-
         </div>
     )
-
 }
-
-
-export default BackLines

@@ -6,7 +6,6 @@ import authService from "@/services/auth.service";
 import { cookies } from "next/headers";
 
 export default async function ClanokDetailPage({ params }) {
-    // Получаем slug статьи из параметров
     const resolvedParams = await params;
     const clanokId = resolvedParams.clanokId;
 
@@ -14,7 +13,6 @@ export default async function ClanokDetailPage({ params }) {
         notFound();
     }
 
-    // ✅ Получаем токен и пользователя через сервис
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value || null;
 
@@ -32,22 +30,26 @@ export default async function ClanokDetailPage({ params }) {
     let comments = [];
 
     try {
-        // Получаем статью по slug через сервис
         article = await articlesService.getArticleBySlug(clanokId);
 
-        // Если статья не найдена или не опубликована - 404
         if (!article || article.status !== 'published') {
             notFound();
         }
 
-        // ✅ ВАЖНО: Увеличиваем счётчик просмотров +1
+        // ✅ ДОБАВЬТЕ ПРОВЕРКУ ДАННЫХ НА СЕРВЕРЕ
+        console.log('🔍 SERVER - Article Author Data:', {
+            author: article.author,
+            bio: article.author?.bio,
+            bioExists: !!article.author?.bio,
+            bioLength: article.author?.bio?.length,
+            authorId: article.author?._id
+        });
+
         try {
             await articlesService.incrementViews(article._id);
-            // Обновляем локальное значение views для отображения
             article.views = (article.views || 0) + 1;
         } catch (error) {
             console.error('Error incrementing views:', error);
-            // Продолжаем даже если не удалось увеличить счётчик
         }
 
     } catch (error) {
@@ -56,7 +58,6 @@ export default async function ClanokDetailPage({ params }) {
     }
 
     try {
-        // Получаем похожие статьи (из той же категории) через сервис
         if (article.category?._id) {
             const relatedResponse = await articlesService.getAllArticles({
                 category: article.category._id,
@@ -65,23 +66,21 @@ export default async function ClanokDetailPage({ params }) {
             });
 
             relatedArticles = (relatedResponse?.articles || relatedResponse || [])
-                .filter(a => a._id !== article._id); // Исключаем текущую статью
+                .filter(a => a._id !== article._id);
         }
     } catch (error) {
         console.error('Error loading related articles:', error);
     }
 
-    // ✅ Загружаем комментарии на сервере
     try {
         const commentsResponse = await commentsService.getArticleComments(article._id, {
             limit: 100,
-            sort: '-createdAt' // Новые сверху
+            sort: '-createdAt'
         });
 
         comments = commentsResponse?.comments || commentsResponse || [];
     } catch (error) {
         console.error('Error loading comments:', error);
-        // Если ошибка - передаём пустой массив
         comments = [];
     }
 
@@ -89,7 +88,7 @@ export default async function ClanokDetailPage({ params }) {
         <ArticleDetailPage
             article={article}
             relatedArticles={relatedArticles}
-            comments={comments} // ✅ Передаём комментарии
+            comments={comments}
             user={user}
         />
     );
