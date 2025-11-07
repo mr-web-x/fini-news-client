@@ -3,10 +3,24 @@ import NewsListPage from "@/features/PublicPages/NewsListPage/NewsListPage";
 import articlesService from "@/services/articles.service";
 import categoriesService from "@/services/categories.service";
 
+/**
+ * ========================================
+ * УПРОЩЁННАЯ ВЕРСИЯ - БЕЗ ФРОНТЕНД ЛОГИКИ
+ * ========================================
+ * 
+ * Теперь Frontend просто:
+ * 1. Собирает параметры из URL
+ * 2. Отправляет их на Backend КАК ЕСТЬ
+ * 3. Backend сам фильтрует и сортирует
+ * 
+ * Пример URL: /spravy?sortBy=views&category=banky&page=2
+ */
 export default async function SpravyPage({ searchParams }) {
     const params = await searchParams;
-    const categorySlug = params?.category || null;
-    const sortBy = params?.sortBy || 'createdAt';
+
+    // ✅ НОВОЕ: Просто берём параметры из URL как есть
+    const categorySlug = params?.category || null;  // "banky"
+    const sortBy = params?.sortBy || 'createdAt';   // "views", "createdAt", "title"
     const page = parseInt(params?.page) || 1;
     const limit = 2; // Количество статей на странице
 
@@ -14,29 +28,10 @@ export default async function SpravyPage({ searchParams }) {
     let total = 0;
     let categories = [];
     let topArticles = [];
-    let selectedCategoryId = null;
 
-    // Вычисляем skip для пагинации
-    const skip = (page - 1) * limit;
+    console.log('📄 URL Params:', { categorySlug, sortBy, page });
 
-    // Определяем правильную сортировку для backend
-    let sortValue;
-    switch (sortBy) {
-        case 'views':
-            sortValue = '-views'; // От большего к меньшему (популярные сверху)
-            break;
-        case 'title':
-            sortValue = 'title'; // От A до Z (без минуса)
-            break;
-        case 'createdAt':
-        default:
-            sortValue = '-createdAt'; // От новых к старым (минус = DESC)
-            break;
-    }
-
-    console.log('📄 Page:', page, '| Skip:', skip, '| SortBy:', sortBy, '| Sort:', sortValue);
-
-    // Загружаем категории
+    // Загружаем категории (для отображения фильтров)
     try {
         const categoriesResponse = await categoriesService.getAllCategories();
 
@@ -50,31 +45,20 @@ export default async function SpravyPage({ searchParams }) {
             categories = categoriesResponse.categories;
         }
 
-        // Находим ID категории по slug
-        if (categorySlug && categories.length > 0) {
-            const foundCategory = categories.find(cat => cat.slug === categorySlug);
-            if (foundCategory) {
-                selectedCategoryId = foundCategory._id;
-            }
-        }
-
     } catch (error) {
         console.error('Error loading categories:', error);
     }
 
-    // Загружаем статьи
+    // ✅ НОВОЕ: Загружаем статьи - просто передаём параметры как есть
     try {
         const filters = {
-            skip: skip,
-            limit: limit,
-            sort: sortValue // ✅ Используем правильное значение
+            page: page,           // Страница
+            limit: limit,         // Лимит на странице
+            sortBy: sortBy,       // Сортировка: "views", "createdAt", "title"
+            category: categorySlug // Категория по slug: "banky", "akcie" и т.д.
         };
 
-        if (selectedCategoryId) {
-            filters.category = selectedCategoryId;
-        }
-
-        console.log('🔍 Filters:', filters);
+        console.log('🔍 Filters to Backend:', filters);
 
         const articlesResponse = await articlesService.getAllArticles(filters);
 
@@ -87,11 +71,11 @@ export default async function SpravyPage({ searchParams }) {
         console.error('Error loading articles:', error);
     }
 
-    // Загружаем топ статьи
+    // Загружаем топ статьи (популярные)
     try {
         const topArticlesResponse = await articlesService.getAllArticles({
             limit: 5,
-            sort: '-views'
+            sortBy: 'views' // Сортировка по просмотрам для топа
         });
 
         topArticles = topArticlesResponse?.articles || [];
@@ -109,8 +93,8 @@ export default async function SpravyPage({ searchParams }) {
             topArticles={topArticles}
             currentPage={page}
             totalPages={totalPages}
-            selectedCategory={categorySlug}
-            selectedSort={sortBy}
+            selectedCategory={categorySlug}  // Передаём slug как есть
+            selectedSort={sortBy}             // Передаём sortBy как есть
         />
     );
 }

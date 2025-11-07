@@ -37,7 +37,7 @@ const CategoryCard = ({ category, articles = [] }) => {
                     articles.map((article, index) => (
                         <Link
                             key={article._id}
-                            href={`/spravy/${category.slug}/${article.slug}`}
+                            href={`/spravy/${article.slug}`}
                             className="category-article"
                         >
                             <div className="article-number">{index + 1}</div>

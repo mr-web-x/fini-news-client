@@ -32,7 +32,7 @@ const Sidebar = ({ topArticles = [] }) => {
             </div>
 
             {/* Newsletter подписка */}
-            <div className="sidebar-block sidebar-block--newsletter">
+            {/* <div className="sidebar-block sidebar-block--newsletter">
                 <h3 className="sidebar-block__title">Prihláste sa k odberu</h3>
                 <p className="sidebar-block__text">
                     Získajte najnovšie finančné správy priamo do svojej e-mailovej schránky
@@ -48,7 +48,7 @@ const Sidebar = ({ topArticles = [] }) => {
                         Prihlásiť sa
                     </button>
                 </form>
-            </div>
+            </div> */}
 
             {/* Рекламный блок */}
             <div className="sidebar-block sidebar-block--ad">

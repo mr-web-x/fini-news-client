@@ -6,23 +6,33 @@ import api from '@/lib/serverApiClient';
  */
 class ArticlesService {
 
-    async getAllArticles(filters = {}) {
-        const params = new URLSearchParams();
+async getAllArticles(filters = {}) {
+    const params = new URLSearchParams();
 
-        if (filters.category) params.append('category', filters.category);
-        if (filters.tags) params.append('tags', filters.tags);
+    // ✅ НОВОЕ: Отправляем параметры как есть, без преобразований
+    
+    // Пагинация
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
 
-        // Поддержка обоих вариантов: page и skip
-        if (filters.page) params.append('page', filters.page);
-        if (filters.skip !== undefined) params.append('skip', filters.skip);
+    // Сортировка (простая строка)
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
 
-        if (filters.limit) params.append('limit', filters.limit);
-        if (filters.sort) params.append('sort', filters.sort);
+    // Фильтрация
+    if (filters.category) params.append('category', filters.category); // slug
+    if (filters.author) params.append('author', filters.author);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.tags) params.append('tags', filters.tags);
 
-        const response = await api.get(`/api/articles?${params.toString()}`);
-        return response.data;
-    }
+    // ❌ УДАЛЕНО: skip и sort больше не нужны
+    // Frontend не вычисляет skip
+    // Frontend не преобразует sortBy в sort
 
+    console.log('📤 Sending to Backend:', params.toString());
+
+    const response = await api.get(`/api/articles?${params.toString()}`);
+    return response.data;
+}
     /**
      * Получить статью по slug (публичный доступ)
      * @param {string} slug - Slug статьи
