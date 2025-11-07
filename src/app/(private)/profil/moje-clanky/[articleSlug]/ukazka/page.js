@@ -1,11 +1,21 @@
 import { getMe } from '@/actions/auth.actions';
-import { getArticleById } from '@/actions/articles.actions';
+import { getArticleBySlug } from '@/actions/articles.actions';
 import { redirect } from 'next/navigation';
 import ArticlePreviewPage from '@/features/ArticlePreviewPage/ArticlePreviewPage';
 
 /**
- * Серверная страница предпросмотра статьи
- * Route: /profil/moje-clanky/[moje-clankyId]/ukazka
+ * ========================================
+ * ОБНОВЛЕННАЯ СТРАНИЦА ПРЕДПРОСМОТРА
+ * ========================================
+ * 
+ * Route: /profil/moje-clanky/[articleSlug]/ukazka
+ * 
+ * ИЗМЕНЕНИЯ:
+ * 1. Параметр изменён с [moje-clankyId] на [articleSlug]
+ * 2. Используется getArticleBySlug() вместо getArticleById()
+ * 3. В редиректах используется article.slug
+ * 4. URL: /profil/moje-clanky/nova-sprava-o-financiach/ukazka
+ * 
  * @param {Object} props
  * @param {Promise<Object>} props.params - параметры маршрута (async в Next.js 15)
  */
@@ -26,16 +36,16 @@ export default async function UkazkaPage({ params }) {
         redirect('/profil');
     }
 
-    // Получаем ID статьи из динамического параметра
-    const articleId = resolvedParams['moje-clankyId'];
+    // ✅ ИЗМЕНЕНО: Получаем SLUG статьи из параметров вместо ID
+    const articleSlug = resolvedParams['articleSlug'];
 
-    // Если нет ID - редирект на список статей
-    if (!articleId) {
+    // Если нет slug - редирект на список статей
+    if (!articleSlug) {
         redirect('/profil/moje-clanky');
     }
 
-    // ✅ НОВОЕ: Получаем статью для проверки статуса
-    const result = await getArticleById(articleId);
+    // ✅ ИЗМЕНЕНО: Получаем статью по SLUG вместо ID
+    const result = await getArticleBySlug(articleSlug);
 
     // Если статья не найдена - редирект на список
     if (!result.success || !result.data) {
@@ -57,12 +67,15 @@ export default async function UkazkaPage({ params }) {
 
     // ✅ НОВАЯ ЛОГИКА: Для опубликованных статей - редирект на полный просмотр
     if (article.status === 'published') {
-        redirect(`/profil/moje-clanky/${articleId}`);
+        // ✅ ИЗМЕНЕНО: Используем article.slug в редиректе
+        redirect(`/profil/moje-clanky/${article.slug}`);
     }
 
     // ✅ Для draft, rejected, pending - показываем предпросмотр без комментариев
     // ArticlePreviewPage сам проверит права доступа:
     // - Author может просматривать только СВОИ статьи
     // - Admin может просматривать любые статьи
-    return <ArticlePreviewPage user={user} articleId={articleId} />;
+    // ⚠️ ВАЖНО: Передаём articleId (не slug!) в ArticlePreviewPage
+    // потому что компонент использует ID для API запросов
+    return <ArticlePreviewPage user={user} articleId={article._id} />;
 }

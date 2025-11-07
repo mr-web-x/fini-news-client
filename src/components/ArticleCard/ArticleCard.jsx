@@ -98,7 +98,7 @@ const ArticleCard = ({
                             {/* ✅ НОВОЕ: Для опубликованных статей - просмотр с комментариями */}
                             {article.status === 'published' && (
                                 <Link
-                                    href={`/profil/moje-clanky/${article._id}`}
+                                    href={`/profil/moje-clanky/${article.slug}`}
                                     className="article-card__action-btn article-card__action-btn--view"
                                 >
                                     👁️ Zobraziť
@@ -108,7 +108,7 @@ const ArticleCard = ({
                             {/* Для статей на модерации - только предпросмотр */}
                             {article.status === 'pending' && (
                                 <Link
-                                    href={`/profil/moje-clanky/${article._id}/ukazka`}
+                                    href={`/profil/moje-clanky/${article.slug}/ukazka`}
                                     className="article-card__action-btn article-card__action-btn--preview"
                                 >
                                     👁️ Náhľad
@@ -119,13 +119,13 @@ const ArticleCard = ({
                             {(article.status === 'draft' || article.status === 'rejected') && (
                                 <>
                                     <Link
-                                        href={`/profil/moje-clanky/${article._id}/upravit`}
+                                        href={`/profil/moje-clanky/${article.slug}/upravit`}
                                         className="article-card__action-btn article-card__action-btn--edit"
                                     >
                                         ✏️ Upraviť
                                     </Link>
                                     <Link
-                                        href={`/profil/moje-clanky/${article._id}/ukazka`}
+                                        href={`/profil/moje-clanky/${article.slug}/ukazka`}
                                         className="article-card__action-btn article-card__action-btn--preview"
                                     >
                                         👁️ Náhľad
@@ -174,7 +174,7 @@ const ArticleCard = ({
 
                             {/* Просмотр статьи БЕЗ скролла к комментариям */}
                             <Link
-                                href={`/profil/vsetky-clanky/${article._id}`}
+                                href={`/profil/vsetky-clanky/${article.slug}`}
                                 className="article-card__action-btn article-card__action-btn--view"
                             >
                                 👁️ Zobraziť článok
@@ -182,7 +182,7 @@ const ArticleCard = ({
 
                             {/* Иконка комментариев - скролл к комментариям (с #comments) */}
                             <Link
-                                href={`/profil/vsetky-clanky/${article._id}#comments`}
+                                href={`/profil/vsetky-clanky/${article.slug}#comments`}
                                 className="article-card__action-btn article-card__action-btn--comment"
                             >
                                 💬 Komentáre

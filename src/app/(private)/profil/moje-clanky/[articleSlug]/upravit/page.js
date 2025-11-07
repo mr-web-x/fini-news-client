@@ -1,11 +1,21 @@
 import { getMe } from '@/actions/auth.actions';
-import { getArticleById } from '@/actions/articles.actions';
+import { getArticleBySlug } from '@/actions/articles.actions';
 import { redirect } from 'next/navigation';
 import NewArticlePage from '@/features/NewArticlePage/NewArticlePage';
 
 /**
- * Страница редактирования статьи
- * Route: /profil/moje-clanky/[moje-clankyId]/upravit
+ * ========================================
+ * ОБНОВЛЕННАЯ СТРАНИЦА РЕДАКТИРОВАНИЯ
+ * ========================================
+ * 
+ * Route: /profil/moje-clanky/[articleSlug]/upravit
+ * 
+ * ИЗМЕНЕНИЯ:
+ * 1. Параметр изменён с [moje-clankyId] на [articleSlug]
+ * 2. Используется getArticleBySlug() вместо getArticleById()
+ * 3. В редиректах используется article.slug
+ * 4. URL: /profil/moje-clanky/nova-sprava-o-financiach/upravit
+ * 
  * @param {Object} props
  * @param {Promise<Object>} props.params - параметры маршрута (async в Next.js 15)
  */
@@ -26,16 +36,16 @@ export default async function UpravitArticlePage({ params }) {
         redirect('/profil');
     }
 
-    // Получаем ID статьи из параметров
-    const articleId = resolvedParams['moje-clankyId'];
+    // ✅ ИЗМЕНЕНО: Получаем SLUG статьи из параметров вместо ID
+    const articleSlug = resolvedParams['articleSlug'];
 
-    // Если нет ID - редирект на список статей
-    if (!articleId) {
+    // Если нет slug - редирект на список статей
+    if (!articleSlug) {
         redirect('/profil/moje-clanky');
     }
 
-    // Получаем статью по ID
-    const result = await getArticleById(articleId);
+    // ✅ ИЗМЕНЕНО: Получаем статью по SLUG вместо ID
+    const result = await getArticleBySlug(articleSlug);
 
     // Если статья не найдена - редирект на список
     if (!result.success || !result.data) {
@@ -57,16 +67,19 @@ export default async function UpravitArticlePage({ params }) {
 
     // ✅ НОВАЯ ЛОГИКА: Разрешаем редактирование только для draft и rejected
     if (article.status === 'published') {
+        // ✅ ИЗМЕНЕНО: Используем article.slug в редиректе
         // Опубликованные статьи - редирект на просмотр
-        redirect(`/profil/moje-clanky/${articleId}`);
+        redirect(`/profil/moje-clanky/${article.slug}`);
     }
 
     if (article.status === 'pending') {
+        // ✅ ИЗМЕНЕНО: Используем article.slug в редиректе
         // На модерации - редирект на предпросмотр
-        redirect(`/profil/moje-clanky/${articleId}/ukazka`);
+        redirect(`/profil/moje-clanky/${article.slug}/ukazka`);
     }
 
     // ✅ Для draft и rejected - показываем форму редактирования
-    // Передаём articleId через пропсы в NewArticlePage
-    return <NewArticlePage user={user} articleId={articleId} />;
+    // ⚠️ ВАЖНО: Передаём articleId (не slug!) в NewArticlePage
+    // потому что компонент использует ID для API запросов
+    return <NewArticlePage user={user} articleId={article._id} />;
 }

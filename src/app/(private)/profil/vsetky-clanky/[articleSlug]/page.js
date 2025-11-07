@@ -1,17 +1,27 @@
-import { getArticleById } from '@/actions/articles.actions';
+import { getArticleBySlug } from '@/actions/articles.actions';
 import { getMe } from '@/actions/auth.actions';
 import { redirect } from 'next/navigation';
 import ArticleViewPage from '@/features/ArticleViewPage/ArticleViewPage';
 
 /**
- * Серверная страница просмотра статьи в приватной зоне
- * Route: /profil/vsetky-clanky/[vsetky-clankyId]
+ * ========================================
+ * ОБНОВЛЕННАЯ АДМИНСКАЯ СТРАНИЦА ПРОСМОТРА
+ * ========================================
+ * 
+ * Route: /profil/vsetky-clanky/[articleSlug]
+ * 
+ * ИЗМЕНЕНИЯ:
+ * 1. Параметр изменён с [vsetky-clankyId] на [articleSlug]
+ * 2. Используется getArticleBySlug() вместо getArticleById()
+ * 3. URL: /profil/vsetky-clanky/nova-sprava-o-financiach
+ * 
  * @param {Object} params - параметры маршрута
- * @param {string} params.vsetky-clankyId - ID статьи
+ * @param {string} params.articleSlug - slug статьи
  */
 export default async function VsetkyClankyDetailPage({ params }) {
-    // Получаем ID статьи из параметров маршрута
-    const articleId = params['vsetky-clankyId'];
+    // ✅ ИЗМЕНЕНО: Получаем SLUG статьи из параметров вместо ID
+    const resolvedParams = await params;
+    const articleSlug = resolvedParams['articleSlug'];
 
     // Получаем данные пользователя (обязательно для приватной зоны)
     const user = await getMe();
@@ -26,13 +36,13 @@ export default async function VsetkyClankyDetailPage({ params }) {
         redirect('/profil');
     }
 
-    // Если нет ID - редирект на список всех статей
-    if (!articleId) {
+    // Если нет slug - редирект на список всех статей
+    if (!articleSlug) {
         redirect('/profil/vsetky-clanky');
     }
 
-    // Получаем статью по ID
-    const result = await getArticleById(articleId);
+    // ✅ ИЗМЕНЕНО: Получаем статью по SLUG вместо ID
+    const result = await getArticleBySlug(articleSlug);
 
     // Если статья не найдена - редирект на список
     if (!result.success || !result.data) {

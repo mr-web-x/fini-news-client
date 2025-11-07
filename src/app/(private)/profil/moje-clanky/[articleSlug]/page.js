@@ -1,11 +1,20 @@
 import { getMe } from '@/actions/auth.actions';
-import { getArticleById } from '@/actions/articles.actions';
+import { getArticleBySlug } from '@/actions/articles.actions';
 import { redirect } from 'next/navigation';
 import ArticleViewPage from '@/features/ArticleViewPage/ArticleViewPage';
 
 /**
- * Страница просмотра опубликованной статьи автора
- * Route: /profil/moje-clanky/[moje-clankyId]
+ * ========================================
+ * НОВАЯ СТРАНИЦА ПРОСМОТРА СТАТЬИ
+ * ========================================
+ * 
+ * Route: /profil/moje-clanky/[articleSlug]
+ * 
+ * ИЗМЕНЕНИЯ:
+ * 1. Параметр маршрута изменён с [moje-clankyId] на [articleSlug]
+ * 2. Используется getArticleBySlug() вместо getArticleById()
+ * 3. URL теперь выглядит так: /profil/moje-clanky/nova-sprava-o-financiach
+ * 
  * @param {Object} props
  * @param {Promise<Object>} props.params - параметры маршрута (async в Next.js 15)
  */
@@ -26,16 +35,16 @@ export default async function MojeClankyDetailPage({ params }) {
         redirect('/profil');
     }
 
-    // Получаем ID статьи из параметров
-    const articleId = resolvedParams['moje-clankyId'];
+    // ✅ ИЗМЕНЕНО: Получаем SLUG статьи из параметров вместо ID
+    const articleSlug = resolvedParams['articleSlug'];
 
-    // Если нет ID - редирект на список статей
-    if (!articleId) {
+    // Если нет slug - редирект на список статей
+    if (!articleSlug) {
         redirect('/profil/moje-clanky');
     }
 
-    // Получаем статью по ID
-    const result = await getArticleById(articleId);
+    // ✅ ИЗМЕНЕНО: Получаем статью по SLUG вместо ID
+    const result = await getArticleBySlug(articleSlug);
 
     // Если статья не найдена - редирект на список
     if (!result.success || !result.data) {
@@ -58,13 +67,15 @@ export default async function MojeClankyDetailPage({ params }) {
     // ✅ НОВАЯ ЛОГИКА: Разрешаем просмотр только для published статей
     // Для других статусов - редирект на соответствующие страницы
     if (article.status === 'draft' || article.status === 'rejected') {
+        // ✅ ИЗМЕНЕНО: Используем slug в редиректе
         // Черновики и отклонённые - редирект на редактирование
-        redirect(`/profil/moje-clanky/${articleId}/upravit`);
+        redirect(`/profil/moje-clanky/${articleSlug}/upravit`);
     }
 
     if (article.status === 'pending') {
+        // ✅ ИЗМЕНЕНО: Используем slug в редиректе
         // На модерации - редирект на предпросмотр
-        redirect(`/profil/moje-clanky/${articleId}/ukazka`);
+        redirect(`/profil/moje-clanky/${articleSlug}/ukazka`);
     }
 
     // ✅ Для published статей - показываем ArticleViewPage с комментариями
