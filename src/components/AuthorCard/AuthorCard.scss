@@ -1,0 +1,213 @@
+// src/components/AuthorCard/AuthorCard.scss
+
+.author-card {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 24px;
+    transition: all 0.3s ease;
+    height: 100%;
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-color: #cbd5e1;
+    }
+}
+
+.author-card__avatar {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #f1f5f9;
+    transition: border-color 0.3s ease;
+
+    .author-card:hover & {
+        border-color: #2563eb;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.author-card__info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+}
+
+.author-card__name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+}
+
+.author-card__position {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2563eb;
+    margin: 0 0 16px 0;
+    padding: 4px 12px;
+    background: #eff6ff;
+    border-radius: 20px;
+}
+
+.author-card__bio {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0 0 16px 0;
+    flex: 1;
+}
+
+.author-card__stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 8px 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.author-card__articles-count {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.author-card__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background: #1d4ed8;
+        transform: translateX(4px);
+    }
+
+    &:active {
+        transform: translateX(2px);
+    }
+}
+
+/* === RESPONSIVE === */
+
+@media (max-width: 768px) {
+    .author-card {
+        padding: 20px;
+    }
+
+    .author-card__avatar {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 16px;
+    }
+
+    .author-card__name {
+        font-size: 18px;
+    }
+
+    .author-card__position {
+        font-size: 13px;
+    }
+
+    .author-card__bio {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    .author-card__link {
+        padding: 8px 20px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .author-card {
+        padding: 16px;
+    }
+
+    .author-card__avatar {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 12px;
+    }
+
+    .author-card__name {
+        font-size: 16px;
+    }
+
+    .author-card__bio {
+        font-size: 12px;
+    }
+}
+
+/* === DARK MODE SUPPORT === */
+@media (prefers-color-scheme: dark) {
+    .author-card {
+        background: #2d3748;
+        border-color: #4a5568;
+
+        &:hover {
+            border-color: #667eea;
+        }
+    }
+
+    .author-card__avatar {
+        border-color: #4a5568;
+
+        .author-card:hover & {
+            border-color: #667eea;
+        }
+    }
+
+    .author-card__name {
+        color: #f7fafc;
+    }
+
+    .author-card__position {
+        color: #90cdf4;
+        background: #2c5282;
+    }
+
+    .author-card__bio {
+        color: #cbd5e0;
+    }
+
+    .author-card__stats {
+        background: #1a202c;
+    }
+
+    .author-card__articles-count {
+        color: #e2e8f0;
+    }
+
+    .author-card__link {
+        background: #667eea;
+
+        &:hover {
+            background: #5a67d8;
+        }
+    }
+}

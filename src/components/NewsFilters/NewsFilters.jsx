@@ -8,8 +8,7 @@ const NewsFilters = ({ categories, selectedCategory, selectedSort }) => {
 
     const sortOptions = [
         { value: "createdAt", label: "Najnovšie" },
-        { value: "views", label: "Najpopulárnejšie" },
-        { value: "title", label: "Podľa názvu" },
+        { value: "views", label: "Najpopulárnejšie" }
     ]
 
     const handleCategoryChange = (categorySlug) => {

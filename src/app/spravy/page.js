@@ -3,6 +3,9 @@ import NewsListPage from "@/features/PublicPages/NewsListPage/NewsListPage";
 import articlesService from "@/services/articles.service";
 import categoriesService from "@/services/categories.service";
 
+// ✅ ДОБАВЛЕНО: Отключаем кеширование для динамических параметров
+export const dynamic = 'force-dynamic';
+
 /**
  * ========================================
  * УПРОЩЁННАЯ ВЕРСИЯ - БЕЗ ФРОНТЕНД ЛОГИКИ
@@ -20,7 +23,7 @@ export default async function SpravyPage({ searchParams }) {
 
     // ✅ НОВОЕ: Просто берём параметры из URL как есть
     const categorySlug = params?.category || null;  // "banky"
-    const sortBy = params?.sortBy || 'createdAt';   // "views", "createdAt", "title"
+    const sortBy = params?.sortBy || 'createdAt';   // "views", "createdAt"
     const page = parseInt(params?.page) || 1;
     const limit = 2; // Количество статей на странице
 
@@ -54,7 +57,7 @@ export default async function SpravyPage({ searchParams }) {
         const filters = {
             page: page,           // Страница
             limit: limit,         // Лимит на странице
-            sortBy: sortBy,       // Сортировка: "views", "createdAt", "title"
+            sortBy: sortBy,       // Сортировка: "views", "createdAt"
             category: categorySlug // Категория по slug: "banky", "akcie" и т.д.
         };
 

@@ -21,7 +21,7 @@ const CategoryCard = ({ category, articles = [] }) => {
                 </div>
                 <h3 className="category-name">{category.name}</h3>
                 <Link
-                    href={`/spravy/${category.slug}`}
+                    href={`/spravy?category=${category.slug}`}
                     className="category-link"
                     style={{ color: category.color || "#2563eb" }}
                 >

@@ -1,18 +1,19 @@
 "use client"
 import "./Pagination.scss"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, usePathname } from "next/navigation"
 
 const Pagination = ({ currentPage = 1, totalPages = 1 }) => {
     const searchParams = useSearchParams()
+    const pathname = usePathname() // ✅ ДОБАВЛЕНО: получаем текущий путь
 
     if (totalPages <= 1) return null
 
-    // Функция для создания URL с сохранением текущих параметров
+    // ✅ ИСПРАВЛЕНО: Используем текущий путь вместо хардкода /spravy
     const createPageUrl = (page) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set('page', page)
-        return `/spravy?${params.toString()}`
+        return `${pathname}?${params.toString()}` // ✅ Используем текущий путь
     }
 
     // Генерация массива страниц для отображения

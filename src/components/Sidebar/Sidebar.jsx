@@ -15,7 +15,7 @@ const Sidebar = ({ topArticles = [] }) => {
                         topArticles.map((article, index) => (
                             <Link
                                 key={article._id}
-                                href={`/spravy/${article.category?.slug || 'uncategorized'}/${article.slug}`}
+                                href={`/spravy/${article.slug}`}
                                 className="sidebar-article"
                             >
                                 <div className="sidebar-article__number">{index + 1}</div>
