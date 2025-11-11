@@ -1,0 +1,122 @@
+// src/components/AuthorStats/AuthorStats.scss
+
+.author-stats {
+    margin: 40px 0;
+
+    @media (max-width: 768px) {
+        margin: 32px 0;
+    }
+}
+
+.author-stats__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+.author-stats__item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-color: #cbd5e1;
+    }
+
+    @media (max-width: 768px) {
+        padding: 20px;
+    }
+}
+
+.author-stats__icon {
+    font-size: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: #f8fafc;
+    border-radius: 12px;
+
+    @media (max-width: 768px) {
+        font-size: 32px;
+        width: 50px;
+        height: 50px;
+    }
+}
+
+.author-stats__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.author-stats__value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+
+    &--date {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        font-size: 24px;
+
+        &--date {
+            font-size: 16px;
+        }
+    }
+}
+
+.author-stats__label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    @media (max-width: 768px) {
+        font-size: 13px;
+    }
+}
+
+// === DARK MODE ===
+@media (prefers-color-scheme: dark) {
+    .author-stats__item {
+        background: #2d3748;
+        border-color: #4a5568;
+
+        &:hover {
+            border-color: #667eea;
+        }
+    }
+
+    .author-stats__icon {
+        background: #1a202c;
+    }
+
+    .author-stats__value {
+        color: #f7fafc;
+    }
+
+    .author-stats__label {
+        color: #cbd5e0;
+    }
+}

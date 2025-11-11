@@ -35,6 +35,16 @@ class UsersService {
         const response = await api.get(`/api/users/authors/${id}`);
         return response.data;
     }
+
+    /**
+ * Получить автора по slug (публичный доступ)
+ * @param {string} slug - Slug автора (например: "jan-novak")
+ * @returns {Promise<Object>} - Данные автора со статистикой
+ */
+async getAuthorBySlug(slug) {
+    const response = await api.get(`/api/users/authors/${slug}`);
+    return response.data;
+}
 }
 
 // Экспортируем singleton instance

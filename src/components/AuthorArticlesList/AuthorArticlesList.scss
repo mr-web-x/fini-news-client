@@ -1,0 +1,221 @@
+// src/components/AuthorArticlesList/AuthorArticlesList.scss
+
+.author-articles-list {
+    margin-top: 60px;
+
+    @media (max-width: 768px) {
+        margin-top: 40px;
+    }
+}
+
+// === HEADER ===
+.author-articles-list__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 32px;
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+}
+
+.author-articles-list__title-wrapper {
+    flex: 1;
+}
+
+.author-articles-list__title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+
+    @media (max-width: 768px) {
+        font-size: 26px;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 22px;
+    }
+}
+
+.author-articles-list__subtitle {
+    font-size: 16px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.5;
+
+    @media (max-width: 768px) {
+        font-size: 15px;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 14px;
+    }
+}
+
+// === SORT ===
+.author-articles-list__sort {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #475569;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        width: 100%;
+    }
+}
+
+.sort-select {
+    padding: 10px 16px;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+        border-color: #cbd5e1;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        flex: 1;
+    }
+}
+
+// === GRID ===
+.author-articles-list__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+
+    @media (max-width: 1024px) {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+}
+
+// === EMPTY STATE ===
+.author-articles-list__empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px dashed #e2e8f0;
+
+    .empty-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    h3 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 12px 0;
+    }
+
+    p {
+        font-size: 16px;
+        color: #64748b;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+        padding: 48px 20px;
+
+        .empty-icon {
+            font-size: 48px;
+        }
+
+        h3 {
+            font-size: 20px;
+        }
+
+        p {
+            font-size: 14px;
+        }
+    }
+}
+
+// === PAGINATION ===
+.author-articles-list__pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+
+    @media (max-width: 768px) {
+        margin-top: 32px;
+    }
+}
+
+// === DARK MODE ===
+@media (prefers-color-scheme: dark) {
+    .author-articles-list__title {
+        color: #f7fafc;
+    }
+
+    .author-articles-list__subtitle {
+        color: #cbd5e0;
+    }
+
+    .author-articles-list__sort label {
+        color: #e2e8f0;
+    }
+
+    .sort-select {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #f7fafc;
+
+        &:hover {
+            border-color: #667eea;
+        }
+
+        &:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+    }
+
+    .author-articles-list__empty {
+        background: #2d3748;
+        border-color: #4a5568;
+
+        h3 {
+            color: #f7fafc;
+        }
+
+        p {
+            color: #cbd5e0;
+        }
+    }
+}

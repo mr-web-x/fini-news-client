@@ -1,0 +1,90 @@
+// src/components/AuthorBio/AuthorBio.scss
+
+.author-bio {
+    padding: 32px;
+    background: #e0f2f1;
+    border-radius: 12px;
+    border: 1px solid #b2dfdb;
+
+    @media (max-width: 768px) {
+        padding: 24px;
+    }
+
+    @media (max-width: 480px) {
+        padding: 20px;
+    }
+}
+
+.author-bio__content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.author-bio__text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #1e293b;
+    margin: 0;
+    white-space: pre-line;
+
+    @media (max-width: 768px) {
+        font-size: 15px;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 14px;
+    }
+}
+
+.author-bio__toggle {
+    align-self: flex-end;
+    padding: 8px 20px;
+    background: transparent;
+    color: #0d9488;
+    border: 2px solid #0d9488;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background: #0d9488;
+        color: #ffffff;
+        transform: translateY(-2px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+        align-self: center;
+        width: 100%;
+        padding: 10px 20px;
+    }
+}
+
+// === DARK MODE ===
+@media (prefers-color-scheme: dark) {
+    .author-bio {
+        background: #1e3a38;
+        border-color: #0f5350;
+    }
+
+    .author-bio__text {
+        color: #e2e8f0;
+    }
+
+    .author-bio__toggle {
+        color: #5eead4;
+        border-color: #5eead4;
+
+        &:hover {
+            background: #5eead4;
+            color: #0f172a;
+        }
+    }
+}
