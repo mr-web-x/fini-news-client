@@ -115,7 +115,7 @@ const ArticleDetailPage = ({
                             {/* Автор */}
                             {article.author && (
                                 <Link
-                                    href={`/autori/${article.author._id}`}
+                                    href={`/autori/${article.author.meno}`}
                                     className="article-detail__author"
                                 >
                                     {article.author.avatar ? (
