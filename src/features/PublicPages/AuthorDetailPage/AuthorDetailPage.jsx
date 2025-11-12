@@ -16,6 +16,9 @@ const AuthorDetailPage = ({
     // Полное имя автора
     const fullName = `${author.firstName || ''} ${author.lastName || ''}`.trim() || 'Autor'
 
+    // ✅ НОВОЕ: URL автора для пагинации (slug с fallback на ID)
+    const authorUrl = author.slug || author.id;
+
     return (
         <div className="author-detail-page">
             <div className="container">
@@ -54,7 +57,7 @@ const AuthorDetailPage = ({
                     totalPages={totalPages}
                     total={total}
                     authorName={fullName}
-                    authorSlug={author.slug}
+                    authorSlug={authorUrl}
                 />
             </div>
         </div>

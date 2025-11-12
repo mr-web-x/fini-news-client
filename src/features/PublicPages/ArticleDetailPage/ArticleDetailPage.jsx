@@ -18,6 +18,7 @@ const ArticleDetailPage = ({
     console.log('🔍 ArticleDetailPage DEBUG:', {
         articleAuthor: article.author,
         hasAuthor: !!article.author,
+        authorSlug: article.author?.slug, // ✅ НОВОЕ: Логируем slug
         authorBio: article.author?.bio,
         bioLength: article.author?.bio?.length,
         bioType: typeof article.author?.bio,
@@ -56,6 +57,9 @@ const ArticleDetailPage = ({
     const authorFullName = article.author
         ? `${article.author.firstName || ''} ${article.author.lastName || ''}`.trim()
         : 'Autor';
+
+    // ✅ НОВОЕ: URL автора (slug или fallback на ID)
+    const authorUrl = article.author?.slug || article.author?.id || '#';
 
     // ✅ Callback при добавлении комментария - перезагружаем страницу
     const handleCommentAdded = () => {
@@ -115,7 +119,7 @@ const ArticleDetailPage = ({
                             {/* Автор */}
                             {article.author && (
                                 <Link
-                                    href={`/autori/${article.author.meno}`}
+                                    href={`/autori/${authorUrl}`}
                                     className="article-detail__author"
                                 >
                                     {article.author.avatar ? (
@@ -187,40 +191,43 @@ const ArticleDetailPage = ({
                         )}
 
                         {/* Информация об авторе (врезка) */}
-
                         {article.author && (
                             <div className="article-author-bio">
-                                {article.author.avatar ? (
-                                    <img
-                                        src={article.author.avatar}
-                                        alt={authorFullName}
-                                        className="article-author-bio__avatar"
-                                    />
-                                ) : (
-                                    <div className="article-author-bio__avatar-placeholder">
-                                        {article.author.firstName?.[0] || '?'}{article.author.lastName?.[0] || ''}
-                                    </div>
-                                )}
+                                <Link
+                                    href={`/autori/${authorUrl}`}
+                                    className="article-author-bio__avatar-link"
+                                >
+                                    {article.author.avatar ? (
+                                        <img
+                                            src={article.author.avatar}
+                                            alt={authorFullName}
+                                            className="article-author-bio__avatar"
+                                        />
+                                    ) : (
+                                        <div className="article-author-bio__avatar-placeholder">
+                                            {article.author.firstName?.[0] || '?'}{article.author.lastName?.[0] || ''}
+                                        </div>
+                                    )}
+                                </Link>
+
                                 <div className="article-author-bio__content">
-                                    <h3 className="article-author-bio__name">
-                                        {authorFullName}
-                                    </h3>
+                                    <Link
+                                        href={`/autori/${authorUrl}`}
+                                        className="article-author-bio__name-link"
+                                    >
+                                        <h3 className="article-author-bio__name">{authorFullName}</h3>
+                                    </Link>
+
                                     {article.author.position && (
-                                        <p className="article-author-bio__position">
-                                            {article.author.position}
-                                        </p>
+                                        <p className="article-author-bio__position">{article.author.position}</p>
                                     )}
 
-                                    <p className="article-author-bio__text">
-                                        {article.author.bio || "Autor tohto článku."}
-                                    </p>
-                                    <div style={{ display: 'none' }} className="debug-info">
-                                        Debug - Bio: {article.author.bio}
-                                        Bio Length: {article.author.bio?.length}
-                                        Has Bio: {!!article.author.bio}
-                                    </div>
+                                    {article.author.bio && (
+                                        <p className="article-author-bio__bio">{article.author.bio}</p>
+                                    )}
+
                                     <Link
-                                        href={`/autori/${article.author._id}`}
+                                        href={`/autori/${authorUrl}`}
                                         className="article-author-bio__link"
                                     >
                                         Všetky články autora →
@@ -229,23 +236,17 @@ const ArticleDetailPage = ({
                             </div>
                         )}
 
-                        {/* Социальные кнопки */}
-                        <div className="article-detail__share">
-                            <h3 className="article-detail__share-title">Zdieľať článok</h3>
-                            <div className="article-detail__share-buttons">
-                                <button className="share-button share-button--facebook">
-                                    Facebook
-                                </button>
-                                <button className="share-button share-button--twitter">
-                                    Twitter
-                                </button>
-                                <button className="share-button share-button--linkedin">
-                                    LinkedIn
-                                </button>
-                                <button className="share-button share-button--copy">
-                                    Kopírovať odkaz
-                                </button>
-                            </div>
+                        {/* Кнопки действий */}
+                        <div className="article-detail__actions">
+                            <button className="article-detail__action article-detail__action--share">
+                                🔗 Zdieľať
+                            </button>
+                            <button className="article-detail__action article-detail__action--bookmark">
+                                🔖 Uložiť
+                            </button>
+                            <button className="article-detail__action article-detail__action--copy">
+                                📋 Kopírovať odkaz
+                            </button>
                         </div>
 
                         {/* Похожие статьи */}

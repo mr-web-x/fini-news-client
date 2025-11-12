@@ -13,6 +13,9 @@ const AuthorCard = ({ author }) => {
         ? `${author.bio.substring(0, 150)}...`
         : author.bio || 'Finančný expert a autor na fini.sk'
 
+    // ✅ НОВОЕ: Используем slug для URL, fallback на ID если slug отсутствует
+    const authorUrl = author.slug || author.id;
+
     return (
         <div className="author-card">
             {/* Фото автора */}
@@ -45,12 +48,12 @@ const AuthorCard = ({ author }) => {
                     </span>
                 </div>
 
-                {/* Кнопка "Všetky články" */}
+                {/* ✅ ИСПРАВЛЕНО: Кнопка "Všetky články" теперь использует slug */}
                 <Link
-                    href={`/autori/${author.id}`}
+                    href={`/autori/${authorUrl}`}
                     className="author-card__link"
                 >
-                    Všetky články →
+                    Stránka autora →
                 </Link>
             </div>
         </div>

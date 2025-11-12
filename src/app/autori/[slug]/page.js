@@ -1,4 +1,4 @@
-// src/app/autori/[meno]/page.js
+// src/app/autori/[slug]/page.js
 import AuthorDetailPage from "@/features/PublicPages/AuthorDetailPage/AuthorDetailPage";
 import usersService from "@/services/users.service";
 import articlesService from "@/services/articles.service";
@@ -19,28 +19,33 @@ export const dynamic = 'force-dynamic';
  * 4. Передаём всё в AuthorDetailPage
  */
 export default async function AutorDetailPage({ params, searchParams }) {
-    const { meno } = await params; // slug автора: "jan-novak"
+    // ✅ ИЗМЕНЕНО: Получаем slug вместо meno
+    const { slug } = await params; // slug автора: "jan-novak"
     const queryParams = await searchParams;
 
     // ✅ Берём параметры из URL
     const page = parseInt(queryParams?.page) || 1;
     const sortBy = queryParams?.sortBy || 'createdAt';
-    const limit = 10; // Количество статей на странице
+    const limit = 2; // Количество статей на странице
 
     let author = null;
     let articles = [];
     let total = 0;
     let totalPages = 1;
 
-    console.log('📄 Author Page Params:', { meno, page, sortBy });
+    console.log('📄 Author Page Params:', { slug, page, sortBy }); // ✅ ИЗМЕНЕНО: логируем slug
 
     // ✅ Загружаем данные автора
     try {
-        const authorResponse = await usersService.getAuthorBySlug(meno);
+        const authorResponse = await usersService.getAuthorBySlug(slug);
 
         if (authorResponse?.success && authorResponse?.data) {
             author = authorResponse.data;
-            console.log('✅ Author Loaded:', author.firstName, author.lastName);
+            console.log('✅ Author Loaded:', author.firstName, author.lastName, '| Slug:', author.slug);
+        } else if (authorResponse && !authorResponse.success) {
+            // ✅ НОВОЕ: Если API вернул структуру без success
+            author = authorResponse;
+            console.log('✅ Author Loaded:', author.firstName, author.lastName, '| Slug:', author.slug);
         } else {
             console.error('❌ Author not found or invalid response structure');
             // Можно добавить редирект на 404
@@ -70,18 +75,25 @@ export default async function AutorDetailPage({ params, searchParams }) {
                 totalPages = articlesResponse.data.totalPages || 1;
 
                 console.log('✅ Articles Loaded:', articles.length, 'articles | Total:', total);
+            } else if (articlesResponse && !articlesResponse.success) {
+                // ✅ НОВОЕ: Обработка прямой структуры ответа
+                articles = articlesResponse.articles || [];
+                total = articlesResponse.total || 0;
+                totalPages = articlesResponse.totalPages || 1;
+
+                console.log('✅ Articles Loaded:', articles.length, 'articles | Total:', total);
             }
         } catch (error) {
             console.error('❌ Error loading articles:', error);
         }
     }
 
-    // Если автор не найден, показываем 404 (можно добавить notFound() из next/navigation)
+    // Если автор не найден, показываем 404
     if (!author) {
         return (
             <div style={{ padding: '100px 20px', textAlign: 'center' }}>
                 <h1>Autor nenájdený</h1>
-                <p>Autor s menom "{meno}" neexistuje.</p>
+                <p>Autor s menom "{slug}" neexistuje.</p>
             </div>
         );
     }
