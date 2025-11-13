@@ -79,7 +79,7 @@ const ArticleDetailPage = ({
 
 
     return (
-        <div className="article-detail-page">
+        <main className="article-detail-page">
             <div className="container">
                 {/* Breadcrumbs */}
                 <nav className="breadcrumbs">
@@ -308,7 +308,7 @@ const ArticleDetailPage = ({
                     </section>
                 </div>
             </div>
-        </div>
+        </main>
     )
 }
 

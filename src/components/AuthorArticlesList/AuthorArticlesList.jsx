@@ -1,6 +1,7 @@
 "use client"
 import "./AuthorArticlesList.scss"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useRef } from "react"
 import NewsCard from "@/components/NewsCard/NewsCard"
 import Pagination from "@/components/Pagination/Pagination"
 
@@ -15,6 +16,38 @@ const AuthorArticlesList = ({
     const router = useRouter()
     const searchParams = useSearchParams()
 
+    // ✅ Ref для блока со статьями
+    const articlesListRef = useRef(null)
+
+    // ✅ Ref для хранения предыдущих значений
+    const prevPageRef = useRef(currentPage)
+    const prevSortRef = useRef(searchParams.get('sortBy') || 'createdAt')
+
+    // ✅ Получаем текущую сортировку
+    const currentSort = searchParams.get('sortBy') || 'createdAt'
+
+    // ✅ Эффект для прокрутки ТОЛЬКО при изменении page или sortBy
+    useEffect(() => {
+        // Проверяем, изменились ли page или sortBy
+        const pageChanged = prevPageRef.current !== currentPage
+        const sortChanged = prevSortRef.current !== currentSort
+
+        // Прокручиваем ТОЛЬКО если что-то изменилось
+        if ((pageChanged || sortChanged) && articlesListRef.current) {
+            const offsetTop = articlesListRef.current.offsetTop - 70
+
+            window.scrollTo({
+                top: offsetTop,
+                behavior: 'smooth'
+            })
+        }
+
+        // Обновляем предыдущие значения
+        prevPageRef.current = currentPage
+        prevSortRef.current = currentSort
+
+    }, [currentPage, currentSort])
+
     // Обработчик сортировки
     const handleSortChange = (sortValue) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -23,15 +56,13 @@ const AuthorArticlesList = ({
         router.push(`/autori/${authorSlug}?${params.toString()}`)
     }
 
-    const currentSort = searchParams.get('sortBy') || 'createdAt'
-
     const sortOptions = [
         { value: "createdAt", label: "Najnovšie" },
         { value: "views", label: "Najpopulárnejšie" }
     ]
 
     return (
-        <div className="author-articles-list">
+        <div className="author-articles-list" ref={articlesListRef}>
             {/* Header секция */}
             <div className="author-articles-list__header">
                 <div className="author-articles-list__title-wrapper">
