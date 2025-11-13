@@ -6,33 +6,34 @@ import api from '@/lib/serverApiClient';
  */
 class ArticlesService {
 
-async getAllArticles(filters = {}) {
-    const params = new URLSearchParams();
+    async getAllArticles(filters = {}) {
+        const params = new URLSearchParams();
 
-    // ✅ НОВОЕ: Отправляем параметры как есть, без преобразований
-    
-    // Пагинация
-    if (filters.page) params.append('page', filters.page);
-    if (filters.limit) params.append('limit', filters.limit);
+        // ✅ НОВОЕ: Отправляем параметры как есть, без преобразований
 
-    // Сортировка (простая строка)
-    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+        // Пагинация
+        if (filters.page) params.append('page', filters.page);
+        if (filters.limit) params.append('limit', filters.limit);
 
-    // Фильтрация
-    if (filters.category) params.append('category', filters.category); // slug
-    if (filters.author) params.append('author', filters.author);
-    if (filters.search) params.append('search', filters.search);
-    if (filters.tags) params.append('tags', filters.tags);
+        // Сортировка (простая строка)
+        if (filters.sortBy) params.append('sortBy', filters.sortBy);
 
-    // ❌ УДАЛЕНО: skip и sort больше не нужны
-    // Frontend не вычисляет skip
-    // Frontend не преобразует sortBy в sort
+        // Фильтрация
+        if (filters.category) params.append('category', filters.category); // slug
+        if (filters.author) params.append('author', filters.author);
+        if (filters.search) params.append('search', filters.search);
+        if (filters.tags) params.append('tags', filters.tags);
+        if (filters.days) params.append('days', filters.days);
 
-    console.log('📤 Sending to Backend:', params.toString());
+        // ❌ УДАЛЕНО: skip и sort больше не нужны
+        // Frontend не вычисляет skip
+        // Frontend не преобразует sortBy в sort
 
-    const response = await api.get(`/api/articles?${params.toString()}`);
-    return response.data;
-}
+        console.log('📤 Sending to Backend:', params.toString());
+
+        const response = await api.get(`/api/articles?${params.toString()}`);
+        return response.data;
+    }
     /**
      * Получить статью по slug (публичный доступ)
      * @param {string} slug - Slug статьи

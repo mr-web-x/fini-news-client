@@ -1,11 +1,14 @@
 import HomePage from "@/features/PublicPages/HomePage/HomePage";
 import articlesService from "@/services/articles.service";
 import categoriesService from "@/services/categories.service";
+import usersService from "@/services/users.service"; // ✅ ДОБАВЛЕНО
 
 export default async function Home() {
   // Загружаем данные на сервере через services
   let articles = [];
   let categoriesData = [];
+  let popularArticles = [];
+  let topAuthors = []; // ✅ ДОБАВЛЕНО
 
   try {
     // Получаем последние 6 статей
@@ -16,6 +19,42 @@ export default async function Home() {
     articles = articlesResponse?.articles || articlesResponse || [];
   } catch (error) {
     console.error('Error loading articles:', error);
+  }
+
+  try {
+    const popularResponse = await articlesService.getAllArticles({
+      limit: 5,
+      sortBy: 'views',
+      days: 7
+    });
+
+    popularArticles = popularResponse?.articles || popularResponse || [];
+  } catch (error) {
+    console.error('Error loading popular articles:', error);
+  }
+
+  // ✅ ДОБАВЛЕНО: Загрузка топ-3 авторов
+  try {
+    const authorsResponse = await usersService.getAllAuthors({
+      limit: 3,
+      page: 1
+    });
+
+    // Обрабатываем разные структуры ответа
+    if (authorsResponse?.data?.authors) {
+      topAuthors = authorsResponse.data.authors;
+    } else if (authorsResponse?.authors) {
+      topAuthors = authorsResponse.authors;
+    } else if (Array.isArray(authorsResponse)) {
+      topAuthors = authorsResponse;
+    }
+
+    // Сортируем по количеству статей (убывание)
+    topAuthors.sort((a, b) => (b.articlesCount || 0) - (a.articlesCount || 0));
+
+    console.log('✅ Loaded top authors:', topAuthors.length);
+  } catch (error) {
+    console.error('Error loading authors:', error);
   }
 
   try {
@@ -76,6 +115,8 @@ export default async function Home() {
     <HomePage
       articles={articles}
       categoriesData={categoriesData}
+      popularArticles={popularArticles}
+      topAuthors={topAuthors} // ✅ ДОБАВЛЕНО
     />
   );
 }
