@@ -4,23 +4,21 @@ import "./Header.scss";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Search, X } from "lucide-react";
 import SearchDropdown from "@/components/SearchDropdown/SearchDropdown";
 import { searchArticlesAction } from "@/actions/search.actions";
+import AuthButton from "../AuthButton/AuthButton";
 
 const Header = ({ user = null }) => {
     const pathname = usePathname();
-    const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-
-    // === НОВОЕ: Состояния для поиска ===
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
-    const searchRef = useRef(null); // Ref для клика вне области
+    const searchRef = useRef(null);
 
     // Категории для dropdown
     const categories = [
@@ -48,7 +46,7 @@ const Header = ({ user = null }) => {
         setIsMenuOpen(false);
     }, [pathname]);
 
-    // === НОВОЕ: Закрытие search dropdown при клике вне его ===
+    // Закрытие search dropdown при клике вне его
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -60,27 +58,23 @@ const Header = ({ user = null }) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // === НОВОЕ: Debounce поиск (500ms) ===
+    // Debounce поиск (500ms)
     useEffect(() => {
-        // Если поле пустое - закрываем dropdown и очищаем результаты
         if (searchQuery.trim().length === 0) {
             setIsSearchOpen(false);
             setSearchResults([]);
             return;
         }
 
-        // Минимум 2 символа для поиска
         if (searchQuery.trim().length < 2) {
             return;
         }
 
-        // Debounce: ждём 500ms после последнего ввода
         const debounceTimer = setTimeout(async () => {
             setIsSearching(true);
             setIsSearchOpen(true);
 
             try {
-                // Вызываем Server Action
                 const result = await searchArticlesAction(searchQuery.trim());
 
                 if (result.success) {
@@ -97,144 +91,132 @@ const Header = ({ user = null }) => {
             }
         }, 500);
 
-        // Cleanup: отменяем предыдущий таймер при новом вводе
         return () => clearTimeout(debounceTimer);
     }, [searchQuery]);
 
-    // === НОВОЕ: Очистка поиска ===
+    // Очистка поиска
     const handleClearSearch = () => {
         setSearchQuery("");
         setSearchResults([]);
         setIsSearchOpen(false);
     };
 
-    // === НОВОЕ: Закрытие dropdown ===
+    // Закрытие dropdown
     const handleCloseSearchDropdown = () => {
         setIsSearchOpen(false);
     };
 
-    // Старый обработчик submit (для страницы /hladanie)
     const handleSearch = (e) => {
         e.preventDefault();
-        if (searchQuery.trim()) {
-            router.push(`/hladanie?q=${encodeURIComponent(searchQuery)}`);
-            setIsSearchOpen(false); // Закрываем dropdown при переходе
-        }
     };
 
     return (
         <header className="header">
-            <div className="container">
-                <div className="header__wrapper">
-                    {/* Logo */}
-                    <Link href="/" className="header__logo">
+            <div className="row">
+                {/* Logo - слева */}
+                <div className="header__logo">
+                    <Link href="/" className="logo">
                         <Image
                             alt="Fini.sk logo"
                             src="/icons/logo.svg"
-                            width={36}
-                            height={36}
+                            width={18}
+                            height={18}
                             priority
                         />
-                        <span className="header__logo-text">Fini.sk</span>
+                        <span>Fini.sk</span>
+                    </Link>
+                </div>
+
+                {/* Desktop Navigation - справа */}
+                <nav className="header__menu">
+                    <Link
+                        href="/"
+                        className={pathname === '/' ? 'active' : ''}
+                    >
+                        Domov
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <nav className="header__nav">
-                        <Link
-                            href="/"
-                            className={`header__nav-link ${pathname === '/' ? 'header__nav-link--active' : ''}`}
+                    {/* Dropdown для Správy */}
+                    <div className="header-dropdown">
+                        <button
+                            className={`header__dropdown-btn ${pathname.startsWith('/spravy') ? 'active' : ''}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsDropdownOpen(!isDropdownOpen);
+                            }}
                         >
-                            Domov
-                        </Link>
+                            Správy
+                            <span className={`header__dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>
+                                ▼
+                            </span>
+                        </button>
 
-                        {/* Dropdown for Správy */}
-                        <div className="header-dropdown">
-                            <button
-                                className={`header__nav-link header__nav-link--dropdown ${pathname.startsWith('/spravy') ? 'header__nav-link--active' : ''
-                                    }`}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsDropdownOpen(!isDropdownOpen);
-                                }}
-                            >
-                                Správy
-                                <span className={`header__dropdown-arrow ${isDropdownOpen ? 'header__dropdown-arrow--open' : ''}`}>
-                                    ▼
-                                </span>
-                            </button>
-
-                            {isDropdownOpen && (
-                                <div className="header__dropdown-menu">
-                                    <Link href="/spravy" className="header__dropdown-item header__dropdown-item--all">
-                                        <span className="header__dropdown-icon">📰</span>
-                                        <div>
-                                            <div className="header__dropdown-title">Všetky správy</div>
-                                            <div className="header__dropdown-desc">Všetky články na jednom mieste</div>
-                                        </div>
+                        {isDropdownOpen && (
+                            <div className="header__dropdown-menu">
+                                <Link href="/spravy" className="header__dropdown-item header__dropdown-item--all">
+                                    <span className="header__dropdown-icon">📰</span>
+                                    <div>
+                                        <div className="header__dropdown-title">Všetky správy</div>
+                                        <div className="header__dropdown-desc">Všetky články na jednom mieste</div>
+                                    </div>
+                                </Link>
+                                <div className="header__dropdown-divider"></div>
+                                {categories.map((category) => (
+                                    <Link
+                                        key={category.slug}
+                                        href={`/spravy?category=${category.slug}`}
+                                        className="header__dropdown-item"
+                                    >
+                                        <span className="header__dropdown-icon">{category.icon}</span>
+                                        <span className="header__dropdown-title">{category.name}</span>
                                     </Link>
-                                    <div className="header__dropdown-divider"></div>
-                                    {categories.map((category) => (
-                                        <Link
-                                            key={category.slug}
-                                            href={`/spravy/${category.slug}`}
-                                            className="header__dropdown-item"
-                                        >
-                                            <span className="header__dropdown-icon">{category.icon}</span>
-                                            <span className="header__dropdown-title">{category.name}</span>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-                        <Link
-                            href="/autori"
-                            className={`header__nav-link ${pathname === '/autori' ? 'header__nav-link--active' : ''}`}
-                        >
-                            Autori
-                        </Link>
+                    <Link
+                        href="/autori"
+                        className={pathname === '/autori' ? 'active' : ''}
+                    >
+                        Autori
+                    </Link>
 
-                        <Link
-                            href="/o-nas"
-                            className={`header__nav-link ${pathname === '/o-nas' ? 'header__nav-link--active' : ''}`}
-                        >
-                            O nás
-                        </Link>
+                    <Link
+                        href="/o-nas"
+                        className={pathname === '/o-nas' ? 'active' : ''}
+                    >
+                        O nás
+                    </Link>
 
-                        <Link
-                            href="https://fini.sk/kontakty.html"
-                            className={`header__nav-link ${pathname === '/kontakt' ? 'header__nav-link--active' : ''}`}
-                        >
-                            Kontakt
-                        </Link>
-                    </nav>
+                    <Link href="https://fini.sk/kontakty.html">
+                        Kontakt
+                    </Link>
 
-                    {/* Actions */}
-                    <div className="header__actions">
-                        {/* === НОВОЕ: Search Input с dropdown === */}
+                    {/* Search + Auth в одной ячейке */}
+                    <div className="header__actions-container">
+                        {/* Search */}
                         <div className="header__search-wrapper" ref={searchRef}>
-                            <form onSubmit={handleSearch} className="header__search-form">
-                                <div className="header__search-input-wrapper">
-                                    <Search size={18} className="header__search-icon" />
-                                    <input
-                                        type="text"
-                                        placeholder="Hľadať..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="header__search-input"
-                                    />
-                                    {searchQuery.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={handleClearSearch}
-                                            className="header__search-clear"
-                                            aria-label="Vymazať"
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                    )}
-                                </div>
-                            </form>
+                            <div className="header__search-input-wrapper">
+                                <Search size={16} className="header__search-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Hľadať..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="header__search-input"
+                                />
+                                {searchQuery.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={handleClearSearch}
+                                        className="header__search-clear"
+                                        aria-label="Vymazať"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
+                            </div>
 
                             {/* Search Dropdown */}
                             {isSearchOpen && (
@@ -247,65 +229,54 @@ const Header = ({ user = null }) => {
                             )}
                         </div>
 
-                        {/* Auth Button / User Avatar */}
-                        {user ? (
-                            <Link href="/profil" className="header__user">
-                                <img
-                                    src={user.avatar || "/icons/user-placeholder.svg"}
-                                    alt={user.displayName || "User"}
-                                    className="header__user-avatar"
-                                />
-                                <span className="header__user-name">{user.displayName}</span>
-                            </Link>
-                        ) : (
-                            <Link href="/prihlasenie" className="header__login-btn">
-                                Prihlásiť sa
-                            </Link>
-                        )}
+                        {/* Auth Button */}
+                        <AuthButton user={user} />
+                    </div>
+                </nav>
 
-                        {/* Mobile Menu Button (Burger) */}
-                        <button
-                            className={`header__burger ${isMenuOpen ? 'header__burger--active' : ''}`}
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            aria-label="Menu"
-                        >
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </button>
+                {/* Mobile Navigation - справа */}
+                <div className="header__mobile-nav">
+                    <div
+                        className={`burger ${isMenuOpen ? 'active' : ''}`}
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    >
+                        <figure></figure>
+                        <figure></figure>
+                        <figure></figure>
                     </div>
                 </div>
-
-                {/* Mobile Menu */}
-                {isMenuOpen && (
-                    <div className="header__mobile-menu">
-                        <Link href="/" className="header__mobile-link">
-                            Domov
-                        </Link>
-                        <Link href="/spravy" className="header__mobile-link">
-                            Všetky správy
-                        </Link>
-                        {categories.map((category) => (
-                            <Link
-                                key={category.slug}
-                                href={`/spravy/${category.slug}`}
-                                className="header__mobile-link header__mobile-link--sub"
-                            >
-                                {category.icon} {category.name}
-                            </Link>
-                        ))}
-                        <Link href="/autori" className="header__mobile-link">
-                            Autori
-                        </Link>
-                        <Link href="/o-nas" className="header__mobile-link">
-                            O nás
-                        </Link>
-                        <a href="https://fini.sk/kontakty.html" className="header__mobile-link">
-                            Kontakt
-                        </a>
-                    </div>
-                )}
             </div>
+
+            {/* Mobile Menu Overlay */}
+            {isMenuOpen && (
+                <div className="header__mobile-menu active">
+                    <Link href="/" onClick={() => setIsMenuOpen(false)}>
+                        Domov
+                    </Link>
+                    <Link href="/spravy" onClick={() => setIsMenuOpen(false)}>
+                        Všetky správy
+                    </Link>
+                    {categories.map((category) => (
+                        <Link
+                            key={category.slug}
+                            href={`/spravy?category=${category.slug}`}
+                            className="submenu-item"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            {category.icon} {category.name}
+                        </Link>
+                    ))}
+                    <Link href="/autori" onClick={() => setIsMenuOpen(false)}>
+                        Autori
+                    </Link>
+                    <Link href="/o-nas" onClick={() => setIsMenuOpen(false)}>
+                        O nás
+                    </Link>
+                    <a href="https://fini.sk/kontakty.html">
+                        Kontakt
+                    </a>
+                </div>
+            )}
         </header>
     );
 };

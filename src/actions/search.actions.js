@@ -1,9 +1,9 @@
 "use server";
 
-import articlesService from "@/services/articles.service";
+import { searchArticles } from '@/actions/articles.actions';
 
 /**
- * Server Action для поиска статей
+ * Server Action для поиска статей в Header
  * @param {string} query - Поисковый запрос
  * @returns {Promise<Object>} - Результаты поиска (топ-5 по просмотрам)
  */
@@ -18,7 +18,6 @@ export async function searchArticlesAction(query) {
             };
         }
 
-        // Минимальная длина запроса (опционально)
         if (query.trim().length < 2) {
             return {
                 success: false,
@@ -27,25 +26,29 @@ export async function searchArticlesAction(query) {
             };
         }
 
-        // Запрос к articlesService
-        const result = await articlesService.searchArticles(query, {
-            limit: 5, // Топ-5 статей
-            // Backend автоматически сортирует по views (descending)
+        // ✅ ИСПОЛЬЗУЕМ существующий action из articles.actions
+        const result = await searchArticles(query, {
+            limit: 5  // Топ-5 статей для dropdown
         });
 
-        // Проверка результата
-        if (!result || !result.data) {
+        console.log('🔍 Search result:', result);
+
+        // Проверка успешности
+        if (!result.success) {
             return {
                 success: false,
                 data: [],
-                message: 'Chyba pri vyhľadávaní'
+                message: result.message || 'Chyba pri vyhľadávaní'
             };
         }
 
+        // ✅ ИСПРАВЛЕНО: Берём данные из result.data
+        const articles = Array.isArray(result.data) ? result.data : [];
+
         return {
             success: true,
-            data: result.data.articles || result.data || [],
-            total: result.data.total || 0
+            data: articles,
+            total: articles.length
         };
 
     } catch (error) {
