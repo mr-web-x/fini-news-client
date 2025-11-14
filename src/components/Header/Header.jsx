@@ -3,8 +3,11 @@
 import "./Header.scss";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { Search, X } from "lucide-react";
+import SearchDropdown from "@/components/SearchDropdown/SearchDropdown";
+import { searchArticlesAction } from "@/actions/search.actions";
 
 const Header = ({ user = null }) => {
     const pathname = usePathname();
@@ -12,6 +15,12 @@ const Header = ({ user = null }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+
+    // === НОВОЕ: Состояния для поиска ===
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const searchRef = useRef(null); // Ref для клика вне области
 
     // Категории для dropdown
     const categories = [
@@ -39,10 +48,77 @@ const Header = ({ user = null }) => {
         setIsMenuOpen(false);
     }, [pathname]);
 
+    // === НОВОЕ: Закрытие search dropdown при клике вне его ===
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (searchRef.current && !searchRef.current.contains(e.target)) {
+                setIsSearchOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // === НОВОЕ: Debounce поиск (500ms) ===
+    useEffect(() => {
+        // Если поле пустое - закрываем dropdown и очищаем результаты
+        if (searchQuery.trim().length === 0) {
+            setIsSearchOpen(false);
+            setSearchResults([]);
+            return;
+        }
+
+        // Минимум 2 символа для поиска
+        if (searchQuery.trim().length < 2) {
+            return;
+        }
+
+        // Debounce: ждём 500ms после последнего ввода
+        const debounceTimer = setTimeout(async () => {
+            setIsSearching(true);
+            setIsSearchOpen(true);
+
+            try {
+                // Вызываем Server Action
+                const result = await searchArticlesAction(searchQuery.trim());
+
+                if (result.success) {
+                    setSearchResults(result.data);
+                } else {
+                    setSearchResults([]);
+                    console.error('Search error:', result.message);
+                }
+            } catch (error) {
+                console.error('Search failed:', error);
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 500);
+
+        // Cleanup: отменяем предыдущий таймер при новом вводе
+        return () => clearTimeout(debounceTimer);
+    }, [searchQuery]);
+
+    // === НОВОЕ: Очистка поиска ===
+    const handleClearSearch = () => {
+        setSearchQuery("");
+        setSearchResults([]);
+        setIsSearchOpen(false);
+    };
+
+    // === НОВОЕ: Закрытие dropdown ===
+    const handleCloseSearchDropdown = () => {
+        setIsSearchOpen(false);
+    };
+
+    // Старый обработчик submit (для страницы /hladanie)
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
             router.push(`/hladanie?q=${encodeURIComponent(searchQuery)}`);
+            setIsSearchOpen(false); // Закрываем dropdown при переходе
         }
     };
 
@@ -126,7 +202,7 @@ const Header = ({ user = null }) => {
                         </Link>
 
                         <Link
-                            href="/kontakt"
+                            href="https://fini.sk/kontakty.html"
                             className={`header__nav-link ${pathname === '/kontakt' ? 'header__nav-link--active' : ''}`}
                         >
                             Kontakt
@@ -135,16 +211,41 @@ const Header = ({ user = null }) => {
 
                     {/* Actions */}
                     <div className="header__actions">
-                        {/* Search Input - всегда видимый */}
-                        <form onSubmit={handleSearch} className="header__search-form">
-                            <input
-                                type="text"
-                                placeholder="Hľadať..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="header__search-input"
-                            />
-                        </form>
+                        {/* === НОВОЕ: Search Input с dropdown === */}
+                        <div className="header__search-wrapper" ref={searchRef}>
+                            <form onSubmit={handleSearch} className="header__search-form">
+                                <div className="header__search-input-wrapper">
+                                    <Search size={18} className="header__search-icon" />
+                                    <input
+                                        type="text"
+                                        placeholder="Hľadať..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="header__search-input"
+                                    />
+                                    {searchQuery.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleClearSearch}
+                                            className="header__search-clear"
+                                            aria-label="Vymazať"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            </form>
+
+                            {/* Search Dropdown */}
+                            {isSearchOpen && (
+                                <SearchDropdown
+                                    results={searchResults}
+                                    isLoading={isSearching}
+                                    onClose={handleCloseSearchDropdown}
+                                    query={searchQuery}
+                                />
+                            )}
+                        </div>
 
                         {/* Auth Button / User Avatar */}
                         {user ? (
@@ -199,9 +300,9 @@ const Header = ({ user = null }) => {
                         <Link href="/o-nas" className="header__mobile-link">
                             O nás
                         </Link>
-                        <Link href="/kontakt" className="header__mobile-link">
+                        <a href="https://fini.sk/kontakty.html" className="header__mobile-link">
                             Kontakt
-                        </Link>
+                        </a>
                     </div>
                 )}
             </div>

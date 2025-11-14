@@ -1,22 +1,30 @@
-/* ============================================
-   HEADER - Публичная шапка сайта
-   ============================================ */
+// src/components/Header/Header.scss
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 
 .header {
-    background: var(--zsiqf-primary-bg, #fff);
-    border-bottom: 1px solid #ccc;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    z-index: 1000;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    z-index: 100;
+    font-family: "Montserrat", sans-serif;
+
+    .container {
+        max-width: 1260px;
+        padding: 0 20px;
+        margin: 0 auto;
+    }
 }
 
+/* === WRAPPER === */
 .header__wrapper {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 30px;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 12px 0;
 }
 
 /* === LOGO === */
@@ -25,11 +33,10 @@
     align-items: center;
     gap: 12px;
     text-decoration: none;
-    color: #000;
     font-weight: 700;
     font-size: 24px;
+    color: #2d3748;
     transition: opacity 0.2s ease;
-    flex-shrink: 0;
 
     &:hover {
         opacity: 0.8;
@@ -38,55 +45,43 @@
 
 .header__logo-text {
     font-family: "Montserrat", sans-serif;
-    font-weight: 700;
 }
 
 /* === NAVIGATION === */
 .header__nav {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    flex: 1;
+    gap: 8px;
 }
 
 .header__nav-link {
-    padding: 10px 16px;
-    color: #4a5568;
+    padding: 8px 16px;
+    color: #2d3748;
     text-decoration: none;
-    font-size: 16px;
     font-weight: 500;
-
+    font-size: 15px;
+    border-radius: 4px;
     transition: all 0.2s ease;
-    background: none;
-    border: 1px solid #FF6B61;
-    border-bottom: none;
-    border-top: none;
-    border-right: none;
     cursor: pointer;
+    background: none;
+    border: none;
     font-family: "Montserrat", sans-serif;
-    white-space: nowrap;
-
-    padding: 17px 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 
     &:hover {
+        background: #f7fafc;
         color: var(--zsiqf-custom-bg-color, #06c);
     }
 
     &--active {
         color: var(--zsiqf-custom-bg-color, #06c);
-        font-weight: 600;
-    }
-
-    &--dropdown {
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        background: #f0f9ff;
     }
 }
 
-
-
-/* === DROPDOWN MENU === */
+/* === DROPDOWN (Categories) === */
 .header-dropdown {
     position: relative;
 }
@@ -182,25 +177,48 @@
     gap: 12px;
 }
 
-/* === SEARCH FORM - ВСЕГДА ВИДИМЫЙ === */
+/* === НОВОЕ: SEARCH WRAPPER === */
+.header__search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* === НОВОЕ: SEARCH FORM === */
 .header__search-form {
     display: flex;
     align-items: center;
 }
 
+.header__search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.header__search-icon {
+    position: absolute;
+    left: 12px;
+    color: #64748b;
+    pointer-events: none;
+}
+
 .header__search-input {
     width: 200px;
-    padding: 8px 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 8px 36px 8px 36px; // Место для иконок с обеих сторон
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
     font-size: 14px;
     font-family: "Montserrat", sans-serif;
     transition: all 0.2s ease;
+    background: #f8fafc;
 
     &:focus {
         outline: none;
         border-color: var(--zsiqf-custom-bg-color, #06c);
-        width: 250px;
+        background: white;
+        width: 280px;
+        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
     }
 
     &::placeholder {
@@ -208,40 +226,61 @@
     }
 }
 
-/* === LOGIN BUTTON === */
-.header__login-btn {
-    padding: 10px 20px;
-    background: var(--zsiqf-custom-bg-color, #06c);
-    color: white;
-    text-decoration: none;
-    font-size: 15px;
-    font-weight: 600;
+/* === НОВОЕ: CLEAR BUTTON === */
+.header__search-clear {
+    position: absolute;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
     border-radius: 4px;
+    cursor: pointer;
+    color: #64748b;
     transition: all 0.2s ease;
-    font-family: "Montserrat", sans-serif;
-    white-space: nowrap;
 
     &:hover {
-        opacity: 0.9;
+        background: #e2e8f0;
+        color: #2d3748;
     }
 }
 
-/* === USER AVATAR === */
+/* === LOGIN BUTTON === */
+.header__login-btn {
+    padding: 8px 20px;
+    background: var(--zsiqf-custom-bg-color, #06c);
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-family: "Montserrat", sans-serif;
+
+    &:hover {
+        background: #0056b3;
+        transform: translateY(-1px);
+    }
+}
+
+/* === USER === */
 .header__user {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 6px 12px 6px 6px;
-    background: #f7fafc;
+    gap: 8px;
+    padding: 6px 12px;
     border: 1px solid #e2e8f0;
-    border-radius: 4px;
+    border-radius: 6px;
     text-decoration: none;
     color: #2d3748;
     transition: all 0.2s ease;
 
     &:hover {
-        background: #edf2f7;
-        border-color: #cbd5e0;
+        background: #f7fafc;
+        border-color: #cbd5e1;
     }
 }
 
@@ -253,8 +292,8 @@
 }
 
 .header__user-name {
-    font-size: 14px;
     font-weight: 600;
+    font-size: 14px;
     font-family: "Montserrat", sans-serif;
 }
 
@@ -262,27 +301,23 @@
 .header__burger {
     display: none;
     flex-direction: column;
-    justify-content: space-between;
-    width: 30px;
-    height: 22px;
+    gap: 4px;
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
-    position: relative;
+    padding: 8px;
 
     span {
-        display: block;
-        width: 100%;
-        height: 3px;
-        background: #000;
-        border-radius: 2px;
+        width: 24px;
+        height: 2px;
+        background: #2d3748;
         transition: all 0.3s ease;
+        border-radius: 2px;
     }
 
     &--active {
         span:nth-child(1) {
-            transform: rotate(45deg) translate(7px, 7px);
+            transform: rotate(45deg) translate(6px, 6px);
         }
 
         span:nth-child(2) {
@@ -290,7 +325,7 @@
         }
 
         span:nth-child(3) {
-            transform: rotate(-45deg) translate(7px, -7px);
+            transform: rotate(-45deg) translate(6px, -6px);
         }
     }
 }
@@ -300,11 +335,11 @@
     display: none;
     flex-direction: column;
     padding: 16px 0;
-    border-top: 1px solid #ccc;
-    animation: slideDown 0.3s ease;
+    border-top: 1px solid #e2e8f0;
+    animation: mobileMenuSlideDown 0.3s ease;
 }
 
-@keyframes slideDown {
+@keyframes mobileMenuSlideDown {
     from {
         opacity: 0;
         max-height: 0;
@@ -357,7 +392,7 @@
         width: 150px;
 
         &:focus {
-            width: 200px;
+            width: 220px;
         }
     }
 }
@@ -375,7 +410,8 @@
         display: flex;
     }
 
-    .header__search-input {
+    // НОВОЕ: Скрываем поиск на мобильных
+    .header__search-wrapper {
         display: none;
     }
 
