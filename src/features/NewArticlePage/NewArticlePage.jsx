@@ -10,6 +10,13 @@ import {
 } from "@/actions/articles.actions";
 import { getAllCategories } from "@/actions/categories.actions";
 import { Editor } from '@tinymce/tinymce-react';
+import {
+    validateImageFile,
+    createImagePreview,
+    revokeImagePreview,
+    getArticleImageUrl,
+    formatFileSize
+} from "@/utils/imageHelpers";
 import "./NewArticlePage.scss";
 
 const NewArticlePage = ({ user, articleId: propsArticleId }) => {
@@ -22,6 +29,7 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
     const excerptRef = useRef(null);
     const categoryRef = useRef(null);
     const contentRef = useRef(null);
+    const imageInputRef = useRef(null); // ✨ NEW: Ref для input file
 
     const queryArticleId = searchParams.get('id');
     const articleId = propsArticleId || queryArticleId;
@@ -34,6 +42,13 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         category: '',
         tags: ''
     });
+
+    // ✨ NEW: State для изображения
+    const [selectedImage, setSelectedImage] = useState(null); // File объект
+    const [imagePreview, setImagePreview] = useState(null); // URL для preview
+    const [existingImage, setExistingImage] = useState(null); // Имя существующей картинки
+    const [imageToDelete, setImageToDelete] = useState(false); // Флаг удаления
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [loadingArticle, setLoadingArticle] = useState(false);
@@ -50,6 +65,15 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             loadArticle(articleId);
         }
     }, [articleId]);
+
+    // ✨ NEW: Очистка preview URL при размонтировании
+    useEffect(() => {
+        return () => {
+            if (imagePreview) {
+                revokeImagePreview(imagePreview);
+            }
+        };
+    }, [imagePreview]);
 
     const loadCategories = async () => {
         setLoadingCategories(true);
@@ -112,6 +136,12 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                 tags: article.tags?.join(', ') || ''
             });
 
+            // ✨ NEW: Загружаем существующее изображение
+            if (article.coverImage) {
+                setExistingImage(article.coverImage);
+                setImagePreview(getArticleImageUrl(article.coverImage));
+            }
+
         } catch (error) {
             console.error('Error loading article:', error);
             setMessage({ type: 'error', text: 'Chyba pri načítavaní článku' });
@@ -135,10 +165,59 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         }));
     };
 
+    // ✨ NEW: Обработчик выбора изображения
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Валидация файла
+        const validation = validateImageFile(file);
+        if (!validation.valid) {
+            setMessage({ type: 'error', text: validation.error });
+            return;
+        }
+
+        // Очищаем старый preview если был
+        if (imagePreview && selectedImage) {
+            revokeImagePreview(imagePreview);
+        }
+
+        // Устанавливаем новое изображение
+        setSelectedImage(file);
+        setImagePreview(createImagePreview(file));
+        setImageToDelete(false); // Сбрасываем флаг удаления
+        setMessage({ type: '', text: '' });
+    };
+
+    // ✨ NEW: Удаление выбранного изображения
+    const handleImageRemove = () => {
+        // Очищаем preview
+        if (imagePreview && selectedImage) {
+            revokeImagePreview(imagePreview);
+        }
+
+        setSelectedImage(null);
+        setImagePreview(null);
+
+        // Если есть существующая картинка - помечаем на удаление
+        if (existingImage) {
+            setImageToDelete(true);
+        }
+
+        // Очищаем input
+        if (imageInputRef.current) {
+            imageInputRef.current.value = '';
+        }
+    };
+
+    // ✨ NEW: Открытие file picker
+    const handleImageClick = () => {
+        imageInputRef.current?.click();
+    };
+
     // ✅ ФУНКЦИЯ АВТОФОКУСА НА ОШИБКУ
     const focusOnError = (fieldName) => {
         let targetRef = null;
-        let fieldElement = null;
 
         switch (fieldName) {
             case 'title':
@@ -153,6 +232,9 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             case 'content':
                 targetRef = contentRef;
                 break;
+            case 'image':
+                targetRef = imageInputRef;
+                break;
         }
 
         if (targetRef?.current) {
@@ -161,50 +243,31 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                 setTimeout(() => {
                     editorRef.current.focus();
                 }, 100);
-                return;
+            } else {
+                targetRef.current.focus();
+                targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-
-            // Для обычных полей ввода
-            fieldElement = targetRef.current.closest('.new-article__field');
-
-            // Добавляем класс ошибки с анимацией
-            if (fieldElement) {
-                fieldElement.classList.add('new-article__field--error');
-
-                // Убираем класс через 2 секунды
-                setTimeout(() => {
-                    fieldElement.classList.remove('new-article__field--error');
-                }, 2000);
-            }
-
-            // Фокусируемся на поле
-            targetRef.current.focus();
-
-            // Скроллим к полю
-            targetRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
         }
+    };
+
+    // Подсчет символов для excerpt
+    const excerptCount = {
+        count: formData.excerpt.length,
+        remaining: 200 - formData.excerpt.length,
+        className: formData.excerpt.length > 200 ? 'new-article__char-count--error' : ''
     };
 
     const handleSave = async (submitForReview = false) => {
         setMessage({ type: '', text: '' });
 
-        // Валидация с автофокусом (ваш существующий код)
-        if (!formData.title.trim()) {
-            setMessage({ type: 'error', text: 'Nadpis článku je povinný' });
+        // Валидация
+        if (!formData.title || formData.title.trim().length < 10) {
+            setMessage({ type: 'error', text: 'Nadpis musí obsahovať minimálne 10 znakov' });
             focusOnError('title');
             return;
         }
 
-        if (!formData.excerpt.trim()) {
-            setMessage({ type: 'error', text: 'Perex je povinný' });
-            focusOnError('excerpt');
-            return;
-        }
-
-        if (formData.excerpt.trim().length < 150) {
+        if (!formData.excerpt || formData.excerpt.trim().length < 150) {
             setMessage({ type: 'error', text: 'Perex musí obsahovať minimálne 150 znakov' });
             focusOnError('excerpt');
             return;
@@ -216,7 +279,7 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             return;
         }
 
-        if (!formData.content.trim()) {
+        if (!formData.content || formData.content.trim() === '') {
             setMessage({ type: 'error', text: 'Obsah článku je povinný' });
             focusOnError('content');
             return;
@@ -231,6 +294,16 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         if (!formData.category) {
             setMessage({ type: 'error', text: 'Kategória je povinná' });
             focusOnError('category');
+            return;
+        }
+
+        // ✨ NEW: Валидация изображения при отправке на модерацию
+        if (submitForReview && !selectedImage && !existingImage) {
+            setMessage({
+                type: 'error',
+                text: 'Obrázok je povinný pre odoslanie článku na moderáciu'
+            });
+            focusOnError('image');
             return;
         }
 
@@ -251,9 +324,11 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             let result;
 
             if (isEditMode) {
-                result = await updateArticle(articleId, articleData);
+                // ✨ NEW: Передаем изображение в updateArticle
+                result = await updateArticle(articleId, articleData, selectedImage);
             } else {
-                result = await createArticle(articleData);
+                // ✨ NEW: Передаем изображение в createArticle
+                result = await createArticle(articleData, selectedImage);
             }
 
             if (!result.success) {
@@ -293,53 +368,21 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         : 'Článok bol úspešne vytvorený ako koncept'
                 });
 
-                // ✅ ИЗМЕНЕНИЕ: Для авторов всегда перенаправляем на предпросмотр
-                if (user?.role === 'author' || user?.role === 'admin') {
-                    setTimeout(() => {
-                        router.push(`/profil/moje-clanky/${savedArticle._id}/ukazka`);
-                    }, 1000);
-                } else {
-                    // Для других ролей оставляем старое поведение
-                    if (isEditMode) {
-                        setTimeout(() => {
-                            router.push(`/profil/moje-clanky/${savedArticle._id}/ukazka`);
-                        }, 1000);
-                    } else {
-                        router.push(`/profil/novy-clanok?id=${savedArticle._id}`);
-                    }
-                }
+                setTimeout(() => {
+                    router.push('/profil/moje-clanky');
+                }, 1500);
             }
 
         } catch (error) {
             console.error('Error saving article:', error);
             setMessage({
                 type: 'error',
-                text: 'Neočakávaná chyba. Skúste to znova.'
+                text: 'Nastala neočakávaná chyba pri ukladaní článku'
             });
         } finally {
             setLoading(false);
         }
     };
-
-    const handlePreview = () => {
-        if (articleId) {
-            router.push(`/profil/moje-clanky/${articleId}/ukazka`);
-        }
-    };
-
-    const getCharacterCount = (text, min, max) => {
-        const count = text.length;
-        const remaining = max - count;
-        return {
-            count,
-            remaining,
-            className: count > max ? 'text-danger' : count < min ? 'text-warning' : ''
-        };
-    };
-
-    // Использование:
-    const excerptCount = getCharacterCount(formData.excerpt, 150, 200);
-    const contentCount = getCharacterCount(formData.content, 500, 5000);
 
     if (loadingArticle) {
         return (
@@ -356,7 +399,7 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         <div className="new-article">
             <div className="new-article__container">
                 <div className="new-article__header">
-                    <h1>
+                    <h1 className="new-article__title">
                         {isEditMode ? 'Upraviť článok' : 'Nový článok'}
                     </h1>
                     <p>
@@ -445,6 +488,74 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         )}
                     </div>
 
+                    {/* ✨ NEW: Загрузка изображения */}
+                    <div className="new-article__field">
+                        <label className="new-article__label">
+                            Obrázok článku {!isEditMode && !existingImage && '(povinný pre moderáciu)'}
+                        </label>
+
+                        {/* Скрытый input */}
+                        <input
+                            ref={imageInputRef}
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            onChange={handleImageSelect}
+                            style={{ display: 'none' }}
+                            disabled={loading}
+                        />
+
+                        {/* Preview изображения */}
+                        {imagePreview ? (
+                            <div className="new-article__image-preview">
+                                <img
+                                    src={imagePreview}
+                                    alt="Preview"
+                                    className="new-article__image-preview-img"
+                                />
+                                <div className="new-article__image-actions">
+                                    <button
+                                        type="button"
+                                        onClick={handleImageClick}
+                                        className="new-article__image-button new-article__image-button--change"
+                                        disabled={loading}
+                                    >
+                                        📷 Zmeniť obrázok
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleImageRemove}
+                                        className="new-article__image-button new-article__image-button--remove"
+                                        disabled={loading}
+                                    >
+                                        🗑️ Odstrániť
+                                    </button>
+                                </div>
+                                {selectedImage && (
+                                    <div className="new-article__image-info">
+                                        {selectedImage.name} ({formatFileSize(selectedImage.size)})
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div
+                                className="new-article__image-placeholder"
+                                onClick={handleImageClick}
+                            >
+                                <div className="new-article__image-placeholder-icon">📷</div>
+                                <p className="new-article__image-placeholder-text">
+                                    Kliknite pre nahratie obrázka
+                                </p>
+                                <p className="new-article__image-placeholder-hint">
+                                    JPG, PNG alebo WEBP (max 5MB)
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="new-article__field-hint">
+                            Odporúčaná veľkosť: 1200 x 630 px pre optimálne zobrazenie
+                        </div>
+                    </div>
+
                     {/* Tagy */}
                     <div className="new-article__field">
                         <label htmlFor="tags" className="new-article__label">
@@ -486,107 +597,52 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                                         'emoticons', 'codesample'
                                     ],
                                     toolbar: 'undo redo | blocks fontfamily fontsize | ' +
-                                        'bold italic underline strikethrough | forecolor backcolor | ' +
-                                        'alignleft aligncenter alignright alignjustify | ' +
-                                        'bullist numlist outdent indent | ' +
-                                        'table tabledelete | tableprops tablerowprops tablecellprops | ' +
-                                        'tableinsertrowbefore tableinsertrowafter tabledeleterow | ' +
-                                        'tableinsertcolbefore tableinsertcolafter tabledeletecol | ' +
-                                        'link image media emoticons codesample | ' +
-                                        'removeformat code fullscreen preview help',
-
-                                    toolbar_mode: 'sliding',
-
-                                    // Настройки таблиц
-                                    table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
-                                    table_appearance_options: true,
-                                    table_grid: true,
-                                    table_resize_bars: true,
-                                    table_default_attributes: {
-                                        border: '1'
-                                    },
-                                    table_default_styles: {
-                                        width: '100%',
-                                        'border-collapse': 'collapse'
-                                    },
-
-                                    // Настройки изображений
-                                    image_advtab: true,
-                                    image_title: true,
-                                    image_description: true,
-                                    automatic_uploads: true,
-                                    file_picker_types: 'image',
-
-                                    // Настройки медиа
-                                    media_live_embeds: true,
-
-                                    // Стили контента
-                                    content_style: `
-                                        body { 
-                                            font-family: 'Montserrat', Arial, sans-serif; 
-                                            font-size: 16px;
-                                            line-height: 1.6;
-                                            color: #2d3748;
-                                            padding: 20px;
-                                        }
-                                        table {
-                                            border-collapse: collapse;
-                                            width: 100%;
-                                            margin: 20px 0;
-                                        }
-                                        table td, table th {
-                                            border: 1px solid #e2e8f0;
-                                            padding: 12px;
-                                            text-align: left;
-                                        }
-                                        table th {
-                                            background-color: #f7fafc;
-                                            font-weight: 600;
-                                        }
-                                    `,
-
-                                    placeholder: 'Začnite písať obsah vášho článku...'
+                                        'bold italic forecolor | alignleft aligncenter ' +
+                                        'alignright alignjustify | bullist numlist outdent indent | ' +
+                                        'removeformat | table | link image | code | help',
+                                    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size:14px }',
+                                    language: 'sk',
+                                    branding: false
                                 }}
                                 disabled={loading}
                             />
                         </div>
-                        <div className={`new-article__char-count ${contentCount.className}`}>
-                            {contentCount.count} znakov
-                            {contentCount.count < 500 && ` (ešte ${500 - contentCount.count} znakov do minima)`}
+                        <div className="new-article__field-hint">
+                            Minimálne 500 znakov
                         </div>
                     </div>
 
+                    {/* Кнопки действий */}
                     <div className="new-article__actions">
-                        {isEditMode && (
+                        <button
+                            type="button"
+                            onClick={() => router.back()}
+                            className="new-article__button new-article__button--cancel"
+                            disabled={loading}
+                        >
+                            Zrušiť
+                        </button>
+
+                        <div className="new-article__actions-right">
                             <button
                                 type="button"
-                                className="new-article__btn new-article__btn--secondary"
-                                onClick={handlePreview}
+                                onClick={() => handleSave(false)}
+                                className="new-article__button new-article__button--draft"
                                 disabled={loading}
                             >
-                                👁️ Náhľad
+                                {loading ? 'Ukladám...' : isEditMode ? 'Uložiť zmeny' : 'Uložiť ako koncept'}
                             </button>
-                        )}
 
-                        <button
-                            type="button"
-                            className="new-article__btn new-article__btn--draft"
-                            onClick={() => handleSave(false)}
-                            disabled={loading}
-                        >
-                            {loading ? 'Ukladanie...' : isEditMode ? 'Uložiť zmeny' : 'Uložiť ako koncept'}
-                        </button>
-
-                        <button
-                            type="button"
-                            className="new-article__btn new-article__btn--primary"
-                            onClick={() => handleSave(true)}
-                            disabled={loading}
-                        >
-                            {loading ? 'Odosiela sa...' : 'Odoslať na moderáciu'}
-                        </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSave(true)}
+                                className="new-article__button new-article__button--submit"
+                                disabled={loading}
+                            >
+                                {loading ? 'Odosielam...' : 'Odoslať na moderáciu'}
+                            </button>
+                        </div>
                     </div>
-
                 </form>
             </div>
         </div>

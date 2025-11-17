@@ -91,6 +91,7 @@ class ArticlesService {
         const config = token ? {
             headers: {
                 Authorization: `Bearer ${token}`
+                // Content-Type НЕ указываем - браузер сам установит для FormData
             }
         } : {};
 
@@ -109,6 +110,7 @@ class ArticlesService {
         const config = token ? {
             headers: {
                 Authorization: `Bearer ${token}`
+                // Content-Type НЕ указываем - браузер сам установит для FormData
             }
         } : {};
 

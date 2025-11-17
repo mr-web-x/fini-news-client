@@ -449,3 +449,208 @@
     outline: 2px solid #48bb78;
     outline-offset: 2px;
 }
+
+// ✨ NEW: Блок загрузки изображения
+.new-article__image-preview {
+    border: 2px solid var(--border-color, #e5e7eb);
+    border-radius: 12px;
+    padding: 1rem;
+    background: var(--bg-secondary, #f9fafb);
+    transition: all 0.3s ease;
+
+    &:hover {
+        border-color: var(--primary-color, #3b82f6);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    }
+}
+
+.new-article__image-preview-img {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #f3f4f6;
+    margin-bottom: 1rem;
+}
+
+.new-article__image-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.new-article__image-button {
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    &--change {
+        background: var(--primary-color, #3b82f6);
+        color: white;
+        border-color: var(--primary-color, #3b82f6);
+
+        &:hover:not(:disabled) {
+            background: var(--primary-dark, #2563eb);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        &:active:not(:disabled) {
+            transform: translateY(0);
+        }
+    }
+
+    &--remove {
+        background: white;
+        color: #ef4444;
+        border-color: #fecaca;
+
+        &:hover:not(:disabled) {
+            background: #fef2f2;
+            border-color: #ef4444;
+            transform: translateY(-1px);
+        }
+
+        &:active:not(:disabled) {
+            transform: translateY(0);
+        }
+    }
+}
+
+.new-article__image-info {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: var(--text-secondary, #6b7280);
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.new-article__image-placeholder {
+    border: 2px dashed var(--border-color, #d1d5db);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--bg-secondary, #f9fafb);
+
+    &:hover {
+        border-color: var(--primary-color, #3b82f6);
+        background: rgba(59, 130, 246, 0.02);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+.new-article__image-placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.new-article__image-placeholder-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary, #1f2937);
+    margin-bottom: 0.5rem;
+}
+
+.new-article__image-placeholder-hint {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #6b7280);
+    margin: 0;
+}
+
+// Responsive для мобильных устройств
+@media (max-width: 768px) {
+    .new-article__image-preview-img {
+        max-height: 250px;
+    }
+
+    .new-article__image-actions {
+        flex-direction: column;
+
+        .new-article__image-button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    .new-article__image-placeholder {
+        padding: 2rem 1rem;
+    }
+
+    .new-article__image-placeholder-icon {
+        font-size: 2.5rem;
+    }
+}
+
+// Анимация при загрузке
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.new-article__image-preview--loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+// Состояние ошибки
+.new-article__field--error {
+    .new-article__image-placeholder {
+        border-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    .new-article__image-preview {
+        border-color: #ef4444;
+    }
+}
+
+// Дополнительные стили для лейбла с информацией об обязательности
+.new-article__label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary, #1f2937);
+    font-size: 0.9375rem;
+
+    small {
+        font-weight: normal;
+        color: var(--text-secondary, #6b7280);
+        font-size: 0.875rem;
+    }
+}
+
+// Стиль для hint под полем изображения
+.new-article__field-hint {
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--text-secondary, #6b7280);
+    line-height: 1.5;
+}

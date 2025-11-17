@@ -181,7 +181,7 @@ export async function incrementArticleViews(id) {
  * @param {Object} data - Данные статьи из формы
  * @returns {Promise<Object>} - Результат операции
  */
-export async function createArticle(data) {
+export async function createArticle(data, imageFile) {
     try {
         const token = await getAuthToken();
 
@@ -221,7 +221,26 @@ export async function createArticle(data) {
             };
         }
 
-        const article = await articlesService.createArticle(data, token);
+        // ✨ NEW: Создаем FormData вместо JSON
+        const formData = new FormData();
+        formData.append('title', data.title);
+        formData.append('excerpt', data.excerpt);
+        formData.append('content', data.content);
+        formData.append('category', data.category);
+
+        // ✅ ИСПРАВЛЕНО: Отправляем каждый тег отдельно
+        if (data.tags && data.tags.length > 0) {
+            data.tags.forEach(tag => {
+                formData.append('tags[]', tag);
+            });
+        }
+
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+
+        // ✨ NEW: Отправляем FormData
+        const article = await articlesService.createArticle(formData, token);
 
         return {
             success: true,
@@ -243,15 +262,15 @@ export async function createArticle(data) {
  * @param {Object} data - Обновлённые данные
  * @returns {Promise<Object>} - Результат операции
  */
-export async function updateArticle(id, data) {
+export async function updateArticle(id, data, imageFile) {
     try {
         const token = await getAuthToken();
 
-        // ✅ ДОБАВЬ ЛОГИРОВАНИЕ:
         console.log('🟢 [Server Action] updateArticle вызван:', {
             id,
             hasToken: !!token,
-            dataKeys: Object.keys(data)
+            dataKeys: Object.keys(data),
+            hasImage: !!imageFile
         });
 
         if (!token) {
@@ -268,9 +287,27 @@ export async function updateArticle(id, data) {
             };
         }
 
-        const article = await articlesService.updateArticle(id, data, token);
+        // ✨ NEW: Создаем FormData вместо JSON
+        const formData = new FormData();
+        formData.append('title', data.title);
+        formData.append('excerpt', data.excerpt);
+        formData.append('content', data.content);
+        formData.append('category', data.category);
 
-        // ✅ ДОБАВЬ ЛОГИРОВАНИЕ ОТВЕТА:
+        // ✅ ИСПРАВЛЕНО: Отправляем каждый тег отдельно
+        if (data.tags && data.tags.length > 0) {
+            data.tags.forEach(tag => {
+                formData.append('tags[]', tag);
+            });
+        }
+
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+
+        // ✨ NEW: Отправляем FormData
+        const article = await articlesService.updateArticle(id, formData, token);
+
         console.log('🟢 [Server Action] updateArticle успешно:', article._id);
 
         return {
@@ -279,7 +316,6 @@ export async function updateArticle(id, data) {
             message: 'Статья успешно обновлена'
         };
     } catch (error) {
-        // ✅ ДОБАВЬ ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ ОШИБКИ:
         console.error('❌ [Server Action] updateArticle error:', {
             message: error.message,
             stack: error.stack
