@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getArticleById, approveArticle, rejectArticle } from '@/actions/articles.actions';
+import { getArticleImageUrl } from '@/utils/imageHelpers';
 import Modal from '@/components/Modal/Modal';
 import './ArticlePreviewPage.scss';
 
@@ -27,29 +29,21 @@ const ArticlePreviewPage = ({ user, articleId }) => {
     useEffect(() => {
         if (article && article.content) {
             const wrapTables = () => {
-                // Находим все таблицы в контенте статьи
                 const bodyElement = document.querySelector('.article-preview__body');
                 if (!bodyElement) return;
 
                 const tables = bodyElement.querySelectorAll('table');
 
                 tables.forEach(table => {
-                    // Проверяем, не обёрнута ли уже таблица
                     if (!table.parentElement.classList.contains('table-wrapper')) {
-                        // Создаём wrapper
                         const wrapper = document.createElement('div');
                         wrapper.className = 'table-wrapper';
-
-                        // Вставляем wrapper перед таблицей
                         table.parentNode.insertBefore(wrapper, table);
-
-                        // Перемещаем таблицу в wrapper
                         wrapper.appendChild(table);
                     }
                 });
             };
 
-            // Запускаем обёртывание с небольшой задержкой
             setTimeout(wrapTables, 100);
         }
     }, [article]);
@@ -70,24 +64,67 @@ const ArticlePreviewPage = ({ user, articleId }) => {
 
             // Проверка прав доступа
             if (user.role === 'author') {
-                // Author может просматривать только свои статьи
                 const authorId = articleData.author?.id || articleData.author;
                 const userId = user.id;
 
-                // Сравниваем как строки
                 if (String(authorId) !== String(userId)) {
                     setError('Nemáte oprávnenie na prezeranie tohto článku');
                     return;
                 }
             }
-            // Admin может просматривать любые статьи
 
             setArticle(articleData);
-        } catch (err) {
-            console.error('Error loading article:', err);
+        } catch (error) {
+            console.error('Error loading article:', error);
             setError('Chyba pri načítavaní článku');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleApprove = async () => {
+        if (!confirm('Naozaj chcete schváliť tento článok?')) return;
+
+        setIsProcessing(true);
+        try {
+            const result = await approveArticle(articleId);
+
+            if (result.success) {
+                setMessage({ type: 'success', text: 'Článok bol schválený a publikovaný' });
+                setTimeout(() => router.push('/profil/moderacia'), 1500);
+            } else {
+                setMessage({ type: 'error', text: result.message });
+            }
+        } catch (error) {
+            console.error('Error approving article:', error);
+            setMessage({ type: 'error', text: 'Chyba pri schvaľovaní článku' });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleRejectSubmit = async () => {
+        if (!rejectReason.trim()) {
+            setMessage({ type: 'error', text: 'Zadajte dôvod zamietnutia' });
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const result = await rejectArticle(articleId, rejectReason);
+
+            if (result.success) {
+                setMessage({ type: 'success', text: 'Článok bol zamietnutý' });
+                setShowRejectModal(false);
+                setTimeout(() => router.push('/profil/moderacia'), 1500);
+            } else {
+                setMessage({ type: 'error', text: result.message });
+            }
+        } catch (error) {
+            console.error('Error rejecting article:', error);
+            setMessage({ type: 'error', text: 'Chyba pri zamietaní článku' });
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -116,67 +153,8 @@ const ArticlePreviewPage = ({ user, articleId }) => {
         return new Date(dateString).toLocaleDateString('sk-SK', {
             year: 'numeric',
             month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            day: 'numeric'
         });
-    };
-
-    const handleApprove = async () => {
-        if (!window.confirm('Naozaj chcete schváliť tento článok?')) {
-            return;
-        }
-
-        setIsProcessing(true);
-        setMessage({ type: '', text: '' });
-
-        try {
-            const result = await approveArticle(articleId);
-
-            if (result.success) {
-                setMessage({ type: 'success', text: 'Článok bol úspešne schválený' });
-                setTimeout(() => {
-                    router.push('/profil/vsetky-clanky');
-                }, 1500);
-            } else {
-                setMessage({ type: 'error', text: result.message || 'Chyba pri schvaľovaní článku' });
-            }
-        } catch (error) {
-            console.error('Error approving article:', error);
-            setMessage({ type: 'error', text: 'Neočakávaná chyba' });
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleReject = async () => {
-        if (!rejectReason.trim()) {
-            setMessage({ type: 'error', text: 'Prosím, uveďte dôvod zamietnutia' });
-            return;
-        }
-
-        setIsProcessing(true);
-        setMessage({ type: '', text: '' });
-
-        try {
-            const result = await rejectArticle(articleId, rejectReason.trim());
-
-            if (result.success) {
-                setMessage({ type: 'success', text: 'Článok bol zamietnutý' });
-                setShowRejectModal(false);
-                setRejectReason('');
-                setTimeout(() => {
-                    router.push('/profil/vsetky-clanky');
-                }, 1500);
-            } else {
-                setMessage({ type: 'error', text: result.message || 'Chyba pri zamietaní článku' });
-            }
-        } catch (error) {
-            console.error('Error rejecting article:', error);
-            setMessage({ type: 'error', text: 'Neočakávaná chyba' });
-        } finally {
-            setIsProcessing(false);
-        }
     };
 
     if (loading) {
@@ -194,55 +172,38 @@ const ArticlePreviewPage = ({ user, articleId }) => {
         return (
             <div className="article-preview">
                 <div className="article-preview__error">
-                    <h2>❌ {error}</h2>
-                    <Link
-                        href={user.role === 'admin' ? '/profil/vsetky-clanky' : '/profil/moje-clanky'}
-                        className="article-preview__back-btn"
-                    >
-                        🔙 Späť na zoznam
+                    <h2>❌ Chyba</h2>
+                    <p>{error}</p>
+                    <Link href="/profil/moje-clanky" className="article-preview__back-btn">
+                        ← Späť na moje články
                     </Link>
                 </div>
             </div>
         );
     }
 
-    if (!article) {
-        return null;
-    }
+    if (!article) return null;
 
     return (
         <div className="article-preview">
-            {/* Header с действиями */}
+            {/* Header */}
             <div className="article-preview__header">
-                <Link
-                    href={user.role === 'admin' ? '/profil/vsetky-clanky' : '/profil/moje-clanky'}
-                    className="article-preview__back-link"
-                >
-                    ← Späť na zoznam
+                <Link href="/profil/moje-clanky" className="article-preview__back-link">
+                    ← Späť
                 </Link>
 
                 <div className="article-preview__actions">
-                    {/* ✅ ИСПРАВЛЕНО: Кнопка "Upraviť" для Author */}
-                    {user.role === 'author' && (article.status === 'draft' || article.status === 'rejected') && (
+                    {/* Edit button (only for draft/rejected) */}
+                    {(article.status === 'draft' || article.status === 'rejected') && (
                         <Link
-                            href={`/profil/moje-clanky/${articleId}/upravit`}
+                            href={`/profil/novy-clanok?id=${article._id}`}
                             className="article-preview__action-btn article-preview__action-btn--edit"
                         >
                             ✏️ Upraviť
                         </Link>
                     )}
 
-                    {/* ✅ НОВОЕ: Кнопка "Upraviť" для Admin (для всех неопубликованных статей) */}
-                    {user.role === 'admin' && article.status !== 'published' && (
-                        <Link
-                            href={`/profil/moje-clanky/${articleId}/upravit`}
-                            className="article-preview__action-btn article-preview__action-btn--edit"
-                        >
-                            ✏️ Upraviť
-                        </Link>
-                    )}
-
-                    {/* Действия для Admin - модерация */}
+                    {/* Admin actions */}
                     {user.role === 'admin' && article.status === 'pending' && (
                         <>
                             <button
@@ -271,17 +232,17 @@ const ArticlePreviewPage = ({ user, articleId }) => {
                 </div>
             )}
 
-            {/* Article Content */}
-            <article className="article-preview__content">
-                {/* Meta Info */}
+            {/* Content */}
+            <div className="article-preview__content">
+                {/* Meta info */}
                 <div className="article-preview__meta">
                     <span className={`article-preview__status ${getStatusColor(article.status)}`}>
                         {getStatusLabel(article.status)}
                     </span>
                     <span className="article-preview__date">
-                        {formatDate(article.createdAt)}
+                        📅 {formatDate(article.createdAt)}
                     </span>
-                    {user.role === 'admin' && article.author && (
+                    {article.author && (
                         <span className="article-preview__author">
                             👤 {article.author.displayName || article.author.email}
                         </span>
@@ -297,6 +258,20 @@ const ArticlePreviewPage = ({ user, articleId }) => {
 
                 {/* Title */}
                 <h1 className="article-preview__title">{article.title}</h1>
+
+                {/* ✨ NEW: Cover Image */}
+                {article.coverImage && (
+                    <div className="article-preview__image">
+                        <Image
+                            src={getArticleImageUrl(article.coverImage)}
+                            alt={article.title}
+                            width={1200}
+                            height={630}
+                            style={{ width: '100%', height: 'auto' }}
+                            priority
+                        />
+                    </div>
+                )}
 
                 {/* Perex (Excerpt) */}
                 {article.excerpt && (
@@ -316,7 +291,7 @@ const ArticlePreviewPage = ({ user, articleId }) => {
                     </div>
                 )}
 
-                {/* ✅ ВАЖНО: Main Content будет автоматически обёрнут в table-wrapper */}
+                {/* Main Content */}
                 <div
                     className="article-preview__body"
                     dangerouslySetInnerHTML={{ __html: article.content }}
@@ -325,60 +300,41 @@ const ArticlePreviewPage = ({ user, articleId }) => {
                 {/* Statistics */}
                 <div className="article-preview__stats">
                     <div className="article-preview__stat">
-                        <span className="article-preview__stat-icon">👁️</span>
+                        <span className="article-preview__stat-label">Zobrazenia:</span>
                         <span className="article-preview__stat-value">{article.views || 0}</span>
-                        <span className="article-preview__stat-label">zobrazení</span>
                     </div>
                     <div className="article-preview__stat">
-                        <span className="article-preview__stat-icon">💬</span>
+                        <span className="article-preview__stat-label">Komentáre:</span>
                         <span className="article-preview__stat-value">{article.commentsCount || 0}</span>
-                        <span className="article-preview__stat-label">komentárov</span>
                     </div>
                 </div>
+            </div>
 
-                {/* ✅ ИСПРАВЛЕНО: moderationNote → rejectionReason */}
-                {article.status === 'rejected' && article.rejectionReason && (
-                    <div className="article-preview__moderation-note">
-                        <strong>Dôvod zamietnutia:</strong> {article.rejectionReason}
-                    </div>
-                )}
-            </article>
-
-            {/* ✅ Модальное окно для отклонения (только для admin) */}
-            {user.role === 'admin' && (
-                <Modal
-                    isOpen={showRejectModal}
-                    onClose={() => {
-                        setShowRejectModal(false);
-                        setRejectReason('');
-                    }}
-                    title="Zamietnuť článok"
-                >
+            {/* Reject Modal */}
+            {showRejectModal && (
+                <Modal onClose={() => setShowRejectModal(false)}>
                     <div className="reject-modal">
+                        <h3 className="reject-modal__title">Zamietnuť článok</h3>
                         <p className="reject-modal__description">
-                            Uveďte dôvod zamietnutia článku. Autor dostane túto správu.
+                            Zadajte dôvod zamietnutia, ktorý uvidí autor:
                         </p>
                         <textarea
+                            className="reject-modal__textarea"
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
-                            placeholder="Napríklad: Článok neobsahuje dostatočné zdroje..."
-                            className="reject-modal__textarea"
+                            placeholder="Napríklad: Článok obsahuje faktické chyby..."
                             rows={5}
-                            disabled={isProcessing}
                         />
                         <div className="reject-modal__actions">
                             <button
-                                onClick={() => {
-                                    setShowRejectModal(false);
-                                    setRejectReason('');
-                                }}
+                                onClick={() => setShowRejectModal(false)}
                                 className="reject-modal__btn reject-modal__btn--cancel"
                                 disabled={isProcessing}
                             >
                                 Zrušiť
                             </button>
                             <button
-                                onClick={handleReject}
+                                onClick={handleRejectSubmit}
                                 className="reject-modal__btn reject-modal__btn--submit"
                                 disabled={isProcessing || !rejectReason.trim()}
                             >
