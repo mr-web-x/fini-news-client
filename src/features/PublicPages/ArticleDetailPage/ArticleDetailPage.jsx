@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import "./ArticleDetailPage.scss"
 import Link from "next/link"
+import Image from "next/image";
+import { getArticleImageUrl } from "@/utils/imageHelpers";
 import CommentsList from "@/components/CommentsList/CommentsList"
 import CommentForm from "@/components/CommentForm/CommentForm"
 import NewsCard from "@/components/NewsCard/NewsCard"
@@ -155,12 +157,16 @@ const ArticleDetailPage = ({
                             </span>
                         </div>
 
-                        {/* Изображение - пока заглушка */}
                         {article.coverImage && (
                             <div className="article-detail__image">
-                                <div className="article-detail__image-placeholder">
-                                    📷 Cover Image
-                                </div>
+                                <Image
+                                    src={getArticleImageUrl(article.coverImage)}
+                                    alt={article.title}
+                                    width={1200}
+                                    height={630}
+                                    style={{ width: '100%', height: 'auto' }}
+                                    priority
+                                />
                             </div>
                         )}
 

@@ -90,10 +90,14 @@ class ArticlesService {
     async createArticle(data, token = null) {
         const config = token ? {
             headers: {
-                Authorization: `Bearer ${token}`
-                // Content-Type НЕ указываем - браузер сам установит для FormData
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data' // ✅ ДОБАВЬ ЭТО!
             }
-        } : {};
+        } : {
+            headers: {
+                'Content-Type': 'multipart/form-data' // ✅ И ЗДЕСЬ!
+            }
+        };
 
         const response = await api.post('/api/articles', data, config);
         return response.data;
@@ -109,10 +113,14 @@ class ArticlesService {
     async updateArticle(id, data, token = null) {
         const config = token ? {
             headers: {
-                Authorization: `Bearer ${token}`
-                // Content-Type НЕ указываем - браузер сам установит для FormData
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data' // ✅ ДОБАВЬ ЭТО!
             }
-        } : {};
+        } : {
+            headers: {
+                'Content-Type': 'multipart/form-data' // ✅ И ЗДЕСЬ!
+            }
+        };
 
         const response = await api.put(`/api/articles/${id}`, data, config);
         return response.data;

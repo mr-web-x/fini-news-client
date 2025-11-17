@@ -238,6 +238,16 @@ export async function createArticle(data, imageFile) {
         if (imageFile) {
             formData.append('image', imageFile);
         }
+        // ✅ ОТЛАДКА FormData
+        console.log('📤 [Action] Отправляем данные:');
+        console.log('📤 imageFile:', imageFile);
+        console.log('📤 imageFile type:', imageFile?.type);
+        console.log('📤 imageFile size:', imageFile?.size);
+
+        // Проверка содержимого FormData
+        for (let pair of formData.entries()) {
+            console.log('📤 FormData:', pair[0], '=', pair[1]);
+        }
 
         // ✨ NEW: Отправляем FormData
         const article = await articlesService.createArticle(formData, token);
@@ -415,12 +425,12 @@ export async function getMyArticles(status = 'all') {
             };
         }
 
-        // ИСПРАВЛЕНО: используем getMyArticles вместо getUserArticles
-        const articles = await articlesService.getMyArticles(status, token);
+        // ✅ ИСПРАВЛЕНО: передаем только status
+        const result = await articlesService.getMyArticles(status, token);
 
         return {
             success: true,
-            data: articles
+            data: result
         };
     } catch (error) {
         console.error('[Server Action] getMyArticles error:', error);
@@ -430,7 +440,6 @@ export async function getMyArticles(status = 'all') {
         };
     }
 }
-
 // ========================================
 // ДЕЙСТВИЯ ДЛЯ АДМИНА
 // ========================================

@@ -2,6 +2,7 @@
 import "./NewsCard.scss"
 import Link from "next/link"
 import Image from "next/image"
+import { getArticleImageUrl } from "@/utils/imageHelpers";
 
 const NewsCard = ({ article }) => {
     // Форматирование даты
@@ -19,7 +20,7 @@ const NewsCard = ({ article }) => {
             <article>
                 <div className="news-card-image">
                     <Image
-                        src={article.coverImage || "/images/placeholder.jpg"}
+                        src={getArticleImageUrl(article.coverImage)}
                         alt={article.title}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
