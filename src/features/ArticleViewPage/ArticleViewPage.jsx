@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getArticleComments } from '@/actions/comments.actions';
+import { getArticleImageUrl } from '@/utils/imageHelpers';
 import CommentsList from '@/components/CommentsList/CommentsList';
 import CommentForm from '@/components/CommentForm/CommentForm';
 import "./ArticleViewPage.scss";
@@ -193,6 +195,20 @@ const ArticleViewPage = ({ article, user }) => {
                                 </span>
                             )}
                         </div>
+                    </div>
+                )}
+
+                {/* ✨ NEW: Cover Image */}
+                {article.coverImage && (
+                    <div className="article-view__cover-image">
+                        <Image
+                            src={getArticleImageUrl(article.coverImage)}
+                            alt={article.title}
+                            width={1200}
+                            height={630}
+                            style={{ width: '100%', height: 'auto' }}
+                            priority
+                        />
                     </div>
                 )}
 

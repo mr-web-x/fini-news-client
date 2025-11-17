@@ -654,3 +654,50 @@
     color: var(--text-secondary, #6b7280);
     line-height: 1.5;
 }
+
+/* ✨ NEW: Добавить в конец NewArticlePage.scss */
+
+/* === SUCCESS MESSAGE WITH ACTIONS === */
+.new-article__success-message {
+    p {
+        margin: 0 0 16px 0;
+        font-weight: 600;
+    }
+}
+
+.new-article__success-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.new-article__preview-link,
+.new-article__back-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.new-article__preview-link {
+    background-color: #2563eb;
+    color: #ffffff;
+
+    &:hover {
+        background-color: #1d4ed8;
+        transform: translateY(-1px);
+    }
+}
+
+.new-article__back-link {
+    background-color: #f1f5f9;
+    color: #1e293b;
+
+    &:hover {
+        background-color: #e2e8f0;
+    }
+}

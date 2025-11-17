@@ -757,7 +757,7 @@
     word-break: break-word !important;
 }
 
-/* === IMAGE BLOCK === */
+/* === COVER IMAGE === */
 .article-preview__image {
     width: 100%;
     margin: 32px 0;
@@ -780,4 +780,21 @@
         margin: 20px 0;
         border-radius: 6px;
     }
+}
+
+/* === SPACING ADJUSTMENTS === */
+.article-preview__title+.article-preview__image {
+    margin-top: 24px;
+}
+
+.article-preview__image+.article-preview__excerpt {
+    margin-top: 32px;
+}
+
+.article-preview__image+.article-preview__tags {
+    margin-top: 24px;
+}
+
+.article-preview__image+.article-preview__body {
+    margin-top: 32px;
 }

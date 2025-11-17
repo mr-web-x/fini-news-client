@@ -1,6 +1,8 @@
-"use client"
-import "./Sidebar.scss"
-import Link from "next/link"
+"use client";
+import "./Sidebar.scss";
+import Link from "next/link";
+import Image from "next/image";
+import { getArticleImageUrl } from "@/utils/imageHelpers";
 
 const Sidebar = ({ topArticles = [] }) => {
     return (
@@ -19,6 +21,20 @@ const Sidebar = ({ topArticles = [] }) => {
                                 className="sidebar-article"
                             >
                                 <div className="sidebar-article__number">{index + 1}</div>
+
+                                {/* ✨ NEW: Article Image */}
+                                {article.coverImage && (
+                                    <div className="sidebar-article__image">
+                                        <Image
+                                            src={getArticleImageUrl(article.coverImage)}
+                                            alt={article.title}
+                                            width={80}
+                                            height={60}
+                                            style={{ objectFit: 'cover' }}
+                                        />
+                                    </div>
+                                )}
+
                                 <div className="sidebar-article__content">
                                     <h4 className="sidebar-article__title">{article.title}</h4>
                                     <div className="sidebar-article__meta">
@@ -58,7 +74,7 @@ const Sidebar = ({ topArticles = [] }) => {
                 </div>
             </div>
         </aside>
-    )
-}
+    );
+};
 
-export default Sidebar
+export default Sidebar;

@@ -260,7 +260,6 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
     const handleSave = async (submitForReview = false) => {
         setMessage({ type: '', text: '' });
 
-        // Валидация
         if (!formData.title || formData.title.trim().length < 10) {
             setMessage({ type: 'error', text: 'Nadpis musí obsahovať minimálne 10 znakov' });
             focusOnError('title');
@@ -297,7 +296,6 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             return;
         }
 
-        // ✨ NEW: Валидация изображения при отправке на модерацию
         if (submitForReview && !selectedImage && !existingImage) {
             setMessage({
                 type: 'error',
@@ -324,10 +322,8 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             let result;
 
             if (isEditMode) {
-                // ✨ NEW: Передаем изображение в updateArticle
                 result = await updateArticle(articleId, articleData, selectedImage);
             } else {
-                // ✨ NEW: Передаем изображение в createArticle
                 result = await createArticle(articleData, selectedImage);
             }
 
@@ -341,6 +337,7 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
 
             const savedArticle = result.data;
             const currentArticleId = savedArticle._id || articleId;
+            const articleSlug = savedArticle.slug;
 
             if (submitForReview) {
                 const submitResult = await submitArticleForReview(currentArticleId);
@@ -364,12 +361,12 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                 setMessage({
                     type: 'success',
                     text: isEditMode
-                        ? 'Článok bol úspešne upravený'
-                        : 'Článok bol úspešne vytvorený ako koncept'
+                        ? 'Článok bol úspešne upravený! Presmerúvame vás na náhľad...'
+                        : 'Článok bol úspešne vytvorený ako koncept! Presmerúvame vás na náhľad...'
                 });
 
                 setTimeout(() => {
-                    router.push('/profil/moje-clanky');
+                    router.push(`/profil/moje-clanky/${articleSlug}/ukazka`);
                 }, 1500);
             }
 
@@ -383,17 +380,6 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             setLoading(false);
         }
     };
-
-    if (loadingArticle) {
-        return (
-            <div className="new-article">
-                <div className="new-article__loading">
-                    <div className="spinner"></div>
-                    <p>Načítavam článok...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="new-article">

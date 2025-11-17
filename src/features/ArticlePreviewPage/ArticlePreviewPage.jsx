@@ -196,7 +196,7 @@ const ArticlePreviewPage = ({ user, articleId }) => {
                     {/* Edit button (only for draft/rejected) */}
                     {(article.status === 'draft' || article.status === 'rejected') && (
                         <Link
-                            href={`/profil/novy-clanok?id=${article._id}`}
+                            href={`/profil/moje-clanky/${article.slug}/upravit`}
                             className="article-preview__action-btn article-preview__action-btn--edit"
                         >
                             ✏️ Upraviť

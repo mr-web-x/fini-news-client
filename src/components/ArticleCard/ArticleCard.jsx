@@ -5,16 +5,6 @@ import Image from 'next/image';
 import { getArticleImageUrl } from '@/utils/imageHelpers';
 import "./ArticleCard.scss";
 
-/**
- * Универсальный компонент карточки статьи
- * 
- * @param {Object} article - объект статьи
- * @param {string} variant - тип карточки ('author' или 'admin')
- * @param {function} onDelete - функция удаления статьи
- * @param {function} onApprove - функция одобрения статьи (только admin)
- * @param {function} onReject - функция отклонения статьи (только admin)
- * @param {function} onSubmitForReview - функция отправки на модерацию (только author)
- */
 const ArticleCard = ({
     article,
     variant = 'author',
@@ -63,7 +53,6 @@ const ArticleCard = ({
                 <span className="article-card__date">
                     {formatDate(article.createdAt)}
                 </span>
-                {/* Показываем автора только для admin */}
                 {variant === 'admin' && article.author && (
                     <span className="article-card__author">
                         👤 {article.author.firstName} {article.author.lastName}
@@ -71,7 +60,7 @@ const ArticleCard = ({
                 )}
             </div>
 
-            {/* ✨ NEW: Cover Image */}
+            {/* Cover Image */}
             {article.coverImage && (
                 <div className="article-card__image">
                     <Image
@@ -89,7 +78,6 @@ const ArticleCard = ({
                 <h3 className="article-card__title">{article.title}</h3>
                 <p className="article-card__excerpt">{article.excerpt}</p>
 
-                {/* Причина отклонения (для rejected статей) */}
                 {article.status === 'rejected' && article.rejectionReason && (
                     <div className="article-card__moderation-note">
                         <strong>Dôvod zamietnutia:</strong> {article.rejectionReason}
@@ -99,18 +87,18 @@ const ArticleCard = ({
 
             {/* Footer */}
             <div className="article-card__footer">
-                {/* Статистика */}
+                {/* Statistics */}
                 <div className="article-card__stats">
                     <span className="article-card__stat">👁️ {article.views || 0}</span>
                     <span className="article-card__stat">💬 {article.commentsCount || 0}</span>
                 </div>
 
-                {/* Действия */}
+                {/* Actions */}
                 <div className="article-card__actions">
                     {/* ==================== AUTHOR VARIANT ==================== */}
                     {variant === 'author' && (
                         <>
-                            {/* Для опубликованных статей - просмотр с комментариями */}
+                            {/* Для published - просмотр на сайте */}
                             {article.status === 'published' && (
                                 <Link
                                     href={`/spravy/${article.slug}`}
@@ -120,11 +108,51 @@ const ArticleCard = ({
                                 </Link>
                             )}
 
-                            {/* Для draft и rejected - редактирование */}
-                            {(article.status === 'draft' || article.status === 'rejected') && (
+                            {/* ✨ FIX: Для draft - ДОБАВИЛ предпросмотр + редактирование */}
+                            {article.status === 'draft' && (
                                 <>
                                     <Link
-                                        href={`/profil/novy-clanok?id=${article._id}`}
+                                        href={`/profil/moje-clanky/${article.slug}/ukazka`}
+                                        className="article-card__action-btn article-card__action-btn--preview"
+                                    >
+                                        👁️ Náhľad
+                                    </Link>
+
+                                    <Link
+                                        href={`/profil/moje-clanky/${article.slug}/upravit`}
+                                        className="article-card__action-btn article-card__action-btn--edit"
+                                    >
+                                        ✏️ Upraviť
+                                    </Link>
+
+                                    <button
+                                        onClick={() => onSubmitForReview(article._id)}
+                                        className="article-card__action-btn article-card__action-btn--submit"
+                                    >
+                                        📤 Odoslať na moderáciu
+                                    </button>
+
+                                    <button
+                                        onClick={() => onDelete(article._id)}
+                                        className="article-card__action-btn article-card__action-btn--delete"
+                                    >
+                                        🗑️ Vymazať
+                                    </button>
+                                </>
+                            )}
+
+                            {/* Для rejected - редактирование */}
+                            {article.status === 'rejected' && (
+                                <>
+                                    <Link
+                                        href={`/profil/moje-clanky/${article.slug}/ukazka`}
+                                        className="article-card__action-btn article-card__action-btn--preview"
+                                    >
+                                        👁️ Náhľad
+                                    </Link>
+
+                                    <Link
+                                        href={`/profil/moje-clanky/${article.slug}/upravit`}
                                         className="article-card__action-btn article-card__action-btn--edit"
                                     >
                                         ✏️ Upraviť
@@ -149,7 +177,7 @@ const ArticleCard = ({
                             {/* Для pending - только предпросмотр */}
                             {article.status === 'pending' && (
                                 <Link
-                                    href={`/profil/nahladnutie/${article._id}`}
+                                    href={`/profil/moje-clanky/${article.slug}/ukazka`}
                                     className="article-card__action-btn article-card__action-btn--preview"
                                 >
                                     👁️ Náhľad
@@ -161,15 +189,15 @@ const ArticleCard = ({
                     {/* ==================== ADMIN VARIANT ==================== */}
                     {variant === 'admin' && (
                         <>
-                            {/* Просмотр для всех статусов */}
+                            {/* Предпросмотр для всех статусов */}
                             <Link
-                                href={`/profil/nahladnutie/${article._id}`}
+                                href={`/profil/vsetky-clanky/${article.slug}`}
                                 className="article-card__action-btn article-card__action-btn--preview"
                             >
                                 👁️ Náhľad
                             </Link>
 
-                            {/* Одобрить/Отклонить для pending */}
+                            {/* Approve/Reject для pending */}
                             {article.status === 'pending' && (
                                 <>
                                     <button
@@ -187,17 +215,17 @@ const ArticleCard = ({
                                 </>
                             )}
 
-                            {/* Редактировать для draft */}
+                            {/* Edit для draft */}
                             {article.status === 'draft' && (
                                 <Link
-                                    href={`/profil/novy-clanok?id=${article._id}`}
+                                    href={`/profil/vsetky-clanky/${article.slug}/upravit`}
                                     className="article-card__action-btn article-card__action-btn--edit"
                                 >
                                     ✏️ Upraviť
                                 </Link>
                             )}
 
-                            {/* Удалить (для всех кроме pending) */}
+                            {/* Delete (кроме pending) */}
                             {article.status !== 'pending' && (
                                 <button
                                     onClick={() => onDelete(article._id)}

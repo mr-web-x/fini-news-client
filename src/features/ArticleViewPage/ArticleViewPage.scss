@@ -674,3 +674,41 @@
         }
     }
 }
+
+/* === COVER IMAGE === */
+.article-view__cover-image {
+    width: 100%;
+    margin: 32px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        margin: 24px 0;
+        border-radius: 8px;
+    }
+
+    @media (max-width: 480px) {
+        margin: 20px 0;
+        border-radius: 6px;
+    }
+}
+
+/* === SPACING ADJUSTMENTS === */
+.article-view__author+.article-view__cover-image {
+    margin-top: 24px;
+}
+
+.article-view__cover-image+.article-view__excerpt {
+    margin-top: 32px;
+}
+
+.article-view__cover-image+.article-view__body {
+    margin-top: 32px;
+}
