@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react"; // ❌ useState больше не нужен
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -8,11 +8,12 @@ import "./PrivateLayout.scss";
 
 const PrivateLayout = ({ children, user }) => {
     const pathname = usePathname();
-    const [currentUser, setCurrentUser] = useState(user);
 
-    useEffect(() => {
-        setCurrentUser(user);
-    }, [user]);
+    // ❌ УДАЛИ ЭТО:
+    // const [currentUser, setCurrentUser] = useState(user);
+    // useEffect(() => {
+    //     setCurrentUser(user);
+    // }, [user]);
 
     // Навигация в зависимости от роли
     const getNavigationItems = () => {
@@ -78,9 +79,9 @@ const PrivateLayout = ({ children, user }) => {
 
         const allItems = [...baseItems, ...userItems, ...authorItems, ...adminItems];
 
-        // Фильтруем по роли пользователя
+        // ✅ ИСПОЛЬЗУЙ user напрямую из props
         return allItems.filter(item =>
-            item.roles.includes(currentUser?.role || "user")
+            item.roles.includes(user?.role || "user")
         );
     };
 
@@ -130,20 +131,20 @@ const PrivateLayout = ({ children, user }) => {
                             </Link>
                         </div>
 
-                        {/* User info */}
+                        {/* User info - ✅ используем user напрямую */}
                         <div className="sidebar__user">
                             <div className="sidebar__user-avatar">
                                 <img
-                                    src={currentUser?.avatar || "/icons/user-placeholder.svg"}
+                                    src={user?.avatar || "/icons/user-placeholder.svg"}
                                     alt="User avatar"
                                 />
                             </div>
                             <div className="sidebar__user-info">
                                 <h3 className="sidebar__user-name">
-                                    {currentUser?.displayName || "Používateľ"}
+                                    {user?.displayName || "Používateľ"}
                                 </h3>
                                 <p className="sidebar__user-role">
-                                    {getRoleLabel(currentUser?.role)}
+                                    {getRoleLabel(user?.role)}
                                 </p>
                             </div>
                         </div>
@@ -184,7 +185,6 @@ const PrivateLayout = ({ children, user }) => {
                     </main>
                 </div>
             </div>
-
         </div>
     );
 };

@@ -29,7 +29,7 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
     const excerptRef = useRef(null);
     const categoryRef = useRef(null);
     const contentRef = useRef(null);
-    const imageInputRef = useRef(null); // ✨ NEW: Ref для input file
+    const imageFieldRef = useRef(null); // Ref для поля изображения
 
     const queryArticleId = searchParams.get('id');
     const articleId = propsArticleId || queryArticleId;
@@ -55,6 +55,15 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [categories, setCategories] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
+
+    // ✅ NEW: State для ошибок полей
+    const [fieldErrors, setFieldErrors] = useState({
+        title: '',
+        excerpt: '',
+        content: '',
+        category: '',
+        image: ''
+    });
 
     useEffect(() => {
         loadCategories();
@@ -156,6 +165,14 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             ...prev,
             [name]: value
         }));
+
+        // ✅ NEW: Очищаем ошибку при вводе
+        if (fieldErrors[name]) {
+            setFieldErrors(prev => ({
+                ...prev,
+                [name]: ''
+            }));
+        }
     };
 
     const handleEditorChange = (content) => {
@@ -163,6 +180,14 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             ...prev,
             content: content
         }));
+
+        // ✅ NEW: Очищаем ошибку при вводе
+        if (fieldErrors.content) {
+            setFieldErrors(prev => ({
+                ...prev,
+                content: ''
+            }));
+        }
     };
 
     // ✨ NEW: Обработчик выбора изображения
@@ -173,7 +198,22 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         // Валидация файла
         const validation = validateImageFile(file);
         if (!validation.valid) {
-            setMessage({ type: 'error', text: validation.error });
+            // ✅ NEW: Устанавливаем ошибку конкретно для поля изображения
+            setFieldErrors(prev => ({
+                ...prev,
+                image: validation.error
+            }));
+
+            // ✅ FIXED: Используем requestAnimationFrame для гарантии обновления DOM
+            requestAnimationFrame(() => {
+                focusOnError('image');
+            });
+
+            // Очищаем input чтобы можно было выбрать другой файл
+            if (e.target) {
+                e.target.value = '';
+            }
+
             return;
         }
 
@@ -186,7 +226,13 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
         setSelectedImage(file);
         setImagePreview(createImagePreview(file));
         setImageToDelete(false); // Сбрасываем флаг удаления
-        setMessage({ type: '', text: '' });
+
+        // ✅ NEW: Очищаем ошибку изображения при успешной загрузке
+        setFieldErrors(prev => ({
+            ...prev,
+            image: ''
+        }));
+        setMessage({ type: '', text: '' }); // Очищаем ошибку если файл валидный
     };
 
     // ✨ NEW: Удаление выбранного изображения
@@ -204,48 +250,95 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
             setImageToDelete(true);
         }
 
+        // ✅ NEW: Очищаем ошибку изображения при удалении
+        setFieldErrors(prev => ({
+            ...prev,
+            image: ''
+        }));
+
         // Очищаем input
-        if (imageInputRef.current) {
-            imageInputRef.current.value = '';
+        if (imageFieldRef.current) {
+            const input = imageFieldRef.current.querySelector('input[type="file"]');
+            if (input) input.value = '';
         }
     };
 
     // ✨ NEW: Открытие file picker
     const handleImageClick = () => {
-        imageInputRef.current?.click();
+        const input = document.getElementById('article-image-input');
+        input?.click();
     };
 
-    // ✅ ФУНКЦИЯ АВТОФОКУСА НА ОШИБКУ
+    // ✅ FIXED: ПРАВИЛЬНАЯ функция автофокуса с гарантированной прокруткой
     const focusOnError = (fieldName) => {
-        let targetRef = null;
+        let targetElement = null;
 
         switch (fieldName) {
             case 'title':
-                targetRef = titleRef;
+                targetElement = titleRef.current;
                 break;
             case 'excerpt':
-                targetRef = excerptRef;
+                targetElement = excerptRef.current;
                 break;
             case 'category':
-                targetRef = categoryRef;
+                targetElement = categoryRef.current;
                 break;
             case 'content':
-                targetRef = contentRef;
+                targetElement = contentRef.current;
                 break;
             case 'image':
-                targetRef = imageInputRef;
+                targetElement = imageFieldRef.current;
                 break;
         }
 
-        if (targetRef?.current) {
-            // Для TinyMCE editor (content)
-            if (fieldName === 'content' && editorRef.current) {
+        if (targetElement) {
+            // Находим поле формы
+            const fieldElement = targetElement.closest ?
+                targetElement.closest('.new-article__field') :
+                targetElement;
+
+            if (fieldElement) {
+                // Добавляем класс ошибки для анимации
+                fieldElement.classList.add('new-article__field--error');
+
+                // Убираем класс через 3 секунды
                 setTimeout(() => {
-                    editorRef.current.focus();
+                    fieldElement.classList.remove('new-article__field--error');
+                }, 3000);
+
+                // ✅ FIXED: ГАРАНТИРОВАННАЯ прокрутка с небольшим отступом
+                setTimeout(() => {
+                    const elementRect = fieldElement.getBoundingClientRect();
+                    const absoluteElementTop = elementRect.top + window.pageYOffset;
+                    const middle = absoluteElementTop - (window.innerHeight / 2) + (elementRect.height / 2);
+
+                    window.scrollTo({
+                        top: middle,
+                        behavior: 'smooth'
+                    });
+
+                    // Дополнительная визуализация для изображения
+                    if (fieldName === 'image') {
+                        const placeholder = fieldElement.querySelector('.new-article__image-placeholder');
+                        if (placeholder) {
+                            placeholder.style.borderColor = '#e53e3e';
+                            placeholder.style.backgroundColor = '#fed7d7';
+                            setTimeout(() => {
+                                placeholder.style.borderColor = '';
+                                placeholder.style.backgroundColor = '';
+                            }, 3000);
+                        }
+                    }
                 }, 100);
-            } else {
-                targetRef.current.focus();
-                targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Фокус на элемент ввода если применимо
+                setTimeout(() => {
+                    if (fieldName === 'content' && editorRef.current) {
+                        editorRef.current.focus();
+                    } else if (fieldName !== 'image' && targetElement.focus) {
+                        targetElement.focus();
+                    }
+                }, 150);
             }
         }
     };
@@ -259,49 +352,80 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
 
     const handleSave = async (submitForReview = false) => {
         setMessage({ type: '', text: '' });
+        // ✅ NEW: Очищаем все ошибки полей перед валидацией
+        setFieldErrors({
+            title: '',
+            excerpt: '',
+            content: '',
+            category: '',
+            image: ''
+        });
+
+        let hasErrors = false;
 
         if (!formData.title || formData.title.trim().length < 10) {
-            setMessage({ type: 'error', text: 'Nadpis musí obsahovať minimálne 10 znakov' });
-            focusOnError('title');
-            return;
+            setFieldErrors(prev => ({
+                ...prev,
+                title: 'Nadpis musí obsahovať minimálne 10 znakov'
+            }));
+            hasErrors = true;
         }
 
         if (!formData.excerpt || formData.excerpt.trim().length < 150) {
-            setMessage({ type: 'error', text: 'Perex musí obsahovať minimálne 150 znakov' });
-            focusOnError('excerpt');
-            return;
+            setFieldErrors(prev => ({
+                ...prev,
+                excerpt: 'Perex musí obsahovať minimálne 150 znakov'
+            }));
+            hasErrors = true;
         }
 
         if (formData.excerpt.trim().length > 200) {
-            setMessage({ type: 'error', text: 'Perex môže obsahovať maximálne 200 znakov' });
-            focusOnError('excerpt');
-            return;
+            setFieldErrors(prev => ({
+                ...prev,
+                excerpt: 'Perex môže obsahovať maximálne 200 znakov'
+            }));
+            hasErrors = true;
         }
 
         if (!formData.content || formData.content.trim() === '') {
-            setMessage({ type: 'error', text: 'Obsah článku je povinný' });
-            focusOnError('content');
-            return;
+            setFieldErrors(prev => ({
+                ...prev,
+                content: 'Obsah článku je povinný'
+            }));
+            hasErrors = true;
         }
 
         if (formData.content.trim().length < 500) {
-            setMessage({ type: 'error', text: 'Obsah musí obsahovať minimálne 500 znakov' });
-            focusOnError('content');
-            return;
+            setFieldErrors(prev => ({
+                ...prev,
+                content: 'Obsah musí obsahovať minimálne 500 znakov'
+            }));
+            hasErrors = true;
         }
 
         if (!formData.category) {
-            setMessage({ type: 'error', text: 'Kategória je povinná' });
-            focusOnError('category');
-            return;
+            setFieldErrors(prev => ({
+                ...prev,
+                category: 'Kategória je povinná'
+            }));
+            hasErrors = true;
         }
 
         if (submitForReview && !selectedImage && !existingImage) {
-            setMessage({
-                type: 'error',
-                text: 'Obrázok je povinný pre odoslanie článku na moderáciu'
-            });
-            focusOnError('image');
+            setFieldErrors(prev => ({
+                ...prev,
+                image: 'Obrázok je povinný pre odoslanie článku na moderáciu'
+            }));
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            // Фокусируемся на первой ошибке
+            if (fieldErrors.title) focusOnError('title');
+            else if (fieldErrors.excerpt) focusOnError('excerpt');
+            else if (fieldErrors.category) focusOnError('category');
+            else if (fieldErrors.content) focusOnError('content');
+            else if (fieldErrors.image) focusOnError('image');
             return;
         }
 
@@ -423,6 +547,12 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         <div className="new-article__char-count">
                             {formData.title.length} / 200 znakov
                         </div>
+                        {/* ✅ NEW: Отображение ошибки для title */}
+                        {fieldErrors.title && (
+                            <div className="new-article__field-error">
+                                {fieldErrors.title}
+                            </div>
+                        )}
                     </div>
 
                     {/* Perex */}
@@ -446,6 +576,12 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                             {excerptCount.remaining < 0 && ` (${Math.abs(excerptCount.remaining)} nad limit)`}
                             {excerptCount.count < 150 && ` (ešte ${150 - excerptCount.count} znakov do minima)`}
                         </div>
+                        {/* ✅ NEW: Отображение ошибки для excerpt */}
+                        {fieldErrors.excerpt && (
+                            <div className="new-article__field-error">
+                                {fieldErrors.excerpt}
+                            </div>
+                        )}
                     </div>
 
                     {/* Kategória */}
@@ -472,22 +608,28 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         {loadingCategories && (
                             <div className="new-article__loading-text">Načítavam kategórie...</div>
                         )}
+                        {/* ✅ NEW: Отображение ошибки для category */}
+                        {fieldErrors.category && (
+                            <div className="new-article__field-error">
+                                {fieldErrors.category}
+                            </div>
+                        )}
                     </div>
 
                     {/* ✨ NEW: Загрузка изображения */}
-                    <div className="new-article__field">
+                    <div className="new-article__field" ref={imageFieldRef}>
                         <label className="new-article__label">
                             Obrázok článku {!isEditMode && !existingImage && '(povinný pre moderáciu)'}
                         </label>
 
                         {/* Скрытый input */}
                         <input
-                            ref={imageInputRef}
                             type="file"
                             accept="image/jpeg,image/jpg,image/png,image/webp"
                             onChange={handleImageSelect}
                             style={{ display: 'none' }}
                             disabled={loading}
+                            id="article-image-input"
                         />
 
                         {/* Preview изображения */}
@@ -540,6 +682,13 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         <div className="new-article__field-hint">
                             Odporúčaná veľkosť: 1200 x 630 px pre optimálne zobrazenie
                         </div>
+
+                        {/* ✅ NEW: Отображение ошибки для image */}
+                        {fieldErrors.image && (
+                            <div className="new-article__field-error">
+                                {fieldErrors.image}
+                            </div>
+                        )}
                     </div>
 
                     {/* Tagy */}
@@ -596,6 +745,12 @@ const NewArticlePage = ({ user, articleId: propsArticleId }) => {
                         <div className="new-article__field-hint">
                             Minimálne 500 znakov
                         </div>
+                        {/* ✅ NEW: Отображение ошибки для content */}
+                        {fieldErrors.content && (
+                            <div className="new-article__field-error">
+                                {fieldErrors.content}
+                            </div>
+                        )}
                     </div>
 
                     {/* Кнопки действий */}

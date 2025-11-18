@@ -6,7 +6,7 @@ const AuthorProfile = ({ author }) => {
     const fullName = `${author.firstName || ''} ${author.lastName || ''}`.trim() || 'Autor'
 
     // Avatar по умолчанию если нет
-    const avatarUrl = author.avatar || '/images/default-avatar.png'
+    const avatarUrl = author.avatar || '/icons/user-placeholder.svg'
 
     // Форматирование даты регистрации
     const formatDate = (date) => {
@@ -27,7 +27,9 @@ const AuthorProfile = ({ author }) => {
                         src={avatarUrl}
                         alt={fullName}
                         onError={(e) => {
-                            e.target.src = '/images/default-avatar.png'
+                            // ✅ ПРАВИЛЬНЫЙ onError с защитой от цикла
+                            e.target.onerror = null; // Убираем обработчик
+                            e.target.src = '/icons/user-placeholder.svg';
                         }}
                     />
                 </div>

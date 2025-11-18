@@ -27,7 +27,12 @@ const nextConfig = {
         ],
     },
     reactStrictMode: true,
-    // ❌ Убрали sassOptions - Next.js будет использовать стандартный sass
+    // ✅ ПРАВИЛЬНО для Next.js 15!
+    experimental: {
+        serverActions: {
+            bodySizeLimit: '5mb',
+        },
+    },
 };
 
 export default nextConfig;

@@ -10,6 +10,11 @@ const HeroSection = () => {
                         <img
                             src="/images/placeholder.jpg"
                             alt="Hlavná správa dňa"
+                            onError={(e) => {
+                                // ✅ ДОБАВЛЯЕМ защиту от цикла
+                                e.target.onerror = null;
+                                e.target.src = '/icons/placeholder.svg'; // или другой fallback
+                            }}
                         />
                     </div>
                     <div className="hero-text">
