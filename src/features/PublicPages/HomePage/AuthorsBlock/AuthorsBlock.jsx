@@ -30,7 +30,7 @@ const AuthorsBlock = ({ authors }) => {
 
                 {/* Кнопка "Všetci autori" */}
                 <div className="authors-block__footer">
-                    <Link href="/autori" className="authors-block__view-all">
+                    <Link href="/autori" className="authors-block__view-all btn">
                         Zobraziť všetkých autorov →
                     </Link>
                 </div>

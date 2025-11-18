@@ -26,6 +26,10 @@ body {
 
 body {
   font-family: "Montserrat", sans-serif;
+  background: white;
+  position: relative;
+  z-index: 1;
+  /* ✅ ДОБАВЬ ЭТО */
 }
 
 * {
@@ -39,9 +43,22 @@ body {
 
 }
 
+main,
+header,
+footer {
+  position: relative;
+  z-index: 1;
+
+}
+
 a {
   color: inherit;
   text-decoration: none;
+  z-index: 1;
+}
+
+button {
+  z-index: 1;
 }
 
 

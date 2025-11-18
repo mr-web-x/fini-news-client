@@ -73,14 +73,14 @@ const AuthorsListPage = ({ authors = [], currentPage = 1, totalPages = 1, total 
                             placeholder="Hľadať autora podľa mena..."
                             className="search-form__input"
                         />
-                        <button type="submit" className="search-form__button">
+                        <button type="submit" className="search-form__button btn">
                             🔍 Hľadať
                         </button>
                         {searchTerm && (
                             <button
                                 type="button"
                                 onClick={handleClearSearch}
-                                className="search-form__clear"
+                                className="search-form__clear btn"
                             >
                                 ✕ Vymazať
                             </button>

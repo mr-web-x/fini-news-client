@@ -1,70 +1,100 @@
-.background-lines {
-    position: fixed;
-    inset: 0;
+.background__lines-wrapper {
+    opacity: 0.4; // ✅ Как в оригинале
+    height: 100vh;
     width: 100%;
+    top: 0;
+    left: 0;
+    position: fixed;
+    z-index: 0; // ✅ ИЗМЕНИЛ с -1 на 0
+    pointer-events: none; // ✅ Чтобы не блокировать клики
+}
+
+.mobile-lines {
+    display: none;
+}
+
+.desktop-lines .background__lines-row {
+    display: grid;
+    gap: 15px;
+    grid-template-rows: repeat(8, 1fr);
+}
+
+.desktop-lines .background__lines-column {
+    display: grid;
+    gap: 15px;
+    grid-template-columns: repeat(16, 1fr);
+}
+
+.background__lines-row .background__line {
+    opacity: 0.15; // ✅ Как в оригинале
+    height: 1px;
+    width: 100%;
+}
+
+.background__lines-column .background__line {
+    opacity: 0.3; // ✅ Как в оригинале
+    width: 1px;
     height: 100%;
-    z-index: -1;
-    opacity: 0.15;
-    pointer-events: none;
-    overflow: hidden;
+}
 
-    .lines-row,
-    .lines-column {
-        position: absolute;
-        inset: 0;
-        display: grid;
+.background__line-full-column {
+    background-image: linear-gradient(to top, black 0%, white 30%, black 90%);
+    background-size: 100% 500%;
+    background-position: 50% 50%;
+    animation: moveDown 9s linear infinite;
+}
+
+.background__line-50-column {
+    background-image: linear-gradient(to top, black 10%, white 50%, black 90%);
+    background-size: 100% 500%;
+    background-position: 50% 50%;
+    animation: moveDown 6s linear infinite;
+}
+
+.background__line-75-column {
+    background-image: linear-gradient(to top, black 0%, white 50%, black 100%);
+    background-size: 100% 500%;
+    background-position: 50% 50%;
+    animation: moveDown 4s linear infinite;
+}
+
+.background__line-full-row {
+    background-image: linear-gradient(to right, black 0%, white 30%, black 90%);
+    background-size: 100% 100%;
+    background-position: 50% 50%;
+    animation: moveRight 9s linear infinite;
+}
+
+.background__line-50-row {
+    background-image: linear-gradient(to right, black 10%, white 50%, black 90%);
+    background-size: 100% 100%;
+    background-position: 50% 50%;
+    animation: moveRight 6s linear infinite;
+}
+
+.background__line-75-row {
+    background-image: linear-gradient(to right, black 0%, white 50%, black 100%);
+    background-size: 100% 100%;
+    background-position: 50% 50%;
+    animation: moveRight 4s linear infinite;
+}
+
+@keyframes moveDown {
+    0% {
+        background-position: 0% 0%;
     }
 
-    /* Горизонтальные линии */
-    .lines-row {
-        grid-template-rows: repeat(8, 1fr);
+    100% {
+        background-position: 0% 100%;
+    }
+}
+
+@keyframes moveRight {
+    0% {
+        background-position: 0% 0%;
     }
 
-    /* Вертикальные линии */
-    .lines-column {
-        grid-template-columns: repeat(16, 1fr);
-    }
-
-    .line {
-        background: linear-gradient(to right,
-                rgba(0, 0, 0, 0.1) 0%,
-                rgba(0, 0, 0, 0.05) 50%,
-                rgba(0, 0, 0, 0.1) 100%);
-    }
-
-    .horizontal {
-        height: 1px;
-        width: 100%;
-        animation: moveRight 12s linear infinite;
-    }
-
-    .vertical {
-        width: 1px;
-        height: 100%;
-        background: linear-gradient(to bottom,
-                rgba(0, 0, 0, 0.1) 0%,
-                rgba(0, 0, 0, 0.05) 50%,
-                rgba(0, 0, 0, 0.1) 100%);
-        animation: moveDown 18s linear infinite;
-    }
-
-    @keyframes moveRight {
-        0% {
-            transform: translateX(0);
-        }
-
-        100% {
-            transform: translateX(10px);
-        }
-    }
-
-    @keyframes moveDown {
-        0% {
-            transform: translateY(0);
-        }
-
-        100% {
-            transform: translateY(10px);
-        }
+    100% {
+        background-position: 100% 0%;
     }
 }
