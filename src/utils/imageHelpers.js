@@ -34,13 +34,14 @@ export const validateImageFile = (file) => {
 };
 
 /**
- * Получение полного URL изображения
+ * ✅ ИСПРАВЛЕНО: Получение полного URL изображения
  * @param {string} imageName - Имя файла изображения
- * @returns {string} - Полный URL или путь к placeholder
+ * @returns {string} - Полный URL или data URL placeholder
  */
 export const getArticleImageUrl = (imageName) => {
     if (!imageName) {
-        return '/images/placeholder.jpg';
+        // ✅ Data URL - ВСЕГДА работает, НЕТ дополнительных запросов
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI2MzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iNjMwIiBmaWxsPSIjZTJlOGYwIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM5NGEzYjgiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtZmFtaWx5PSJBcmlhbCI+CiAgICBPYnLDoXpvayBzYSBuYcSNw610YXZhLi4uCiAgPC90ZXh0Pgo8L3N2Zz4=';
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10001';

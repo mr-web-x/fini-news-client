@@ -1,5 +1,6 @@
 "use client"
 import "./HeroSection.scss"
+import { getArticleImageUrl } from "@/utils/imageHelpers"
 
 const HeroSection = () => {
     return (
@@ -8,13 +9,8 @@ const HeroSection = () => {
                 <div className="hero-content">
                     <div className="hero-image">
                         <img
-                            src="/images/placeholder.jpg"
+                            src={getArticleImageUrl(null)} // ✅ Используем ту же функцию!
                             alt="Hlavná správa dňa"
-                            onError={(e) => {
-                                // ✅ ДОБАВЛЯЕМ защиту от цикла
-                                e.target.onerror = null;
-                                e.target.src = '/icons/placeholder.svg'; // или другой fallback
-                            }}
                         />
                     </div>
                     <div className="hero-text">
