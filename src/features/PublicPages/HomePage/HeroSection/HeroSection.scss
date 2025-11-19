@@ -1,5 +1,5 @@
 .hero-section {
-    background: none;
+    background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
 
     @media (max-width: 768px) {
         padding: 40px 0;
@@ -80,6 +80,12 @@
 
         &:hover {
             color: #2563eb;
+        }
+
+        // ✅ ДОБАВЛЕНО: Стиль для серой части текста
+        &--muted {
+            color: #999999;
+            font-weight: 400;
         }
 
         @media (max-width: 968px) {

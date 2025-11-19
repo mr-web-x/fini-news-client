@@ -1,19 +1,36 @@
 import HomePage from "@/features/PublicPages/HomePage/HomePage";
 import articlesService from "@/services/articles.service";
 import categoriesService from "@/services/categories.service";
-import usersService from "@/services/users.service"; // ✅ ДОБАВЛЕНО
+import usersService from "@/services/users.service";
 
 export default async function Home() {
   // Загружаем данные на сервере через services
   let articles = [];
   let categoriesData = [];
   let popularArticles = [];
-  let topAuthors = []; // ✅ ДОБАВЛЕНО
+  let topAuthors = [];
+  let topArticle = null; // ✅ ДОБАВЛЕНО
+
+  // ✅ ДОБАВЛЕНО: Загрузка самой популярной статьи для Hero
+  try {
+    const topArticleResponse = await articlesService.getAllArticles({
+      limit: 1,
+      sortBy: 'views'
+    });
+
+    // Берём первую статью из ответа
+    const topArticleData = topArticleResponse?.articles || topArticleResponse || [];
+    topArticle = topArticleData.length > 0 ? topArticleData[0] : null;
+
+    console.log('✅ Loaded top article for Hero:', topArticle?.title);
+  } catch (error) {
+    console.error('Error loading top article:', error);
+  }
 
   try {
-    // Получаем последние 6 статей
+    // Получаем последние 3 статьи (было 6)
     const articlesResponse = await articlesService.getAllArticles({
-      limit: 6,
+      limit: 3,
       sort: '-createdAt'
     });
     articles = articlesResponse?.articles || articlesResponse || [];
@@ -23,9 +40,9 @@ export default async function Home() {
 
   try {
     const popularResponse = await articlesService.getAllArticles({
-      limit: 5,
+      limit: 3,
       sortBy: 'views',
-      days: 7
+      days: 30
     });
 
     popularArticles = popularResponse?.articles || popularResponse || [];
@@ -33,7 +50,7 @@ export default async function Home() {
     console.error('Error loading popular articles:', error);
   }
 
-  // ✅ ДОБАВЛЕНО: Загрузка топ-3 авторов
+  // Загрузка топ-3 авторов
   try {
     const authorsResponse = await usersService.getAllAuthors({
       limit: 3,
@@ -75,6 +92,7 @@ export default async function Home() {
     const categoryStyles = {
       "banky": { icon: "🏦", color: "#2563eb" },
       "uvery": { icon: "💳", color: "#7c3aed" },
+      "akcie": { icon: "📊", color: "#10b981" },
       "poistenie": { icon: "🛡️", color: "#059669" },
       "dane": { icon: "📊", color: "#dc2626" },
       "ekonomika": { icon: "📈", color: "#ea580c" }
@@ -116,7 +134,8 @@ export default async function Home() {
       articles={articles}
       categoriesData={categoriesData}
       popularArticles={popularArticles}
-      topAuthors={topAuthors} // ✅ ДОБАВЛЕНО
+      topAuthors={topAuthors}
+      topArticle={topArticle} // ✅ ДОБАВЛЕНО
     />
   );
 }

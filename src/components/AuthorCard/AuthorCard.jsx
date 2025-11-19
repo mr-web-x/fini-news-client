@@ -1,5 +1,6 @@
 import "./AuthorCard.scss"
 import Link from "next/link"
+import Image from "next/image"
 
 const AuthorCard = ({ author }) => {
     // Полное имя автора
@@ -16,19 +17,51 @@ const AuthorCard = ({ author }) => {
     // ✅ НОВОЕ: Используем slug для URL, fallback на ID если slug отсутствует
     const authorUrl = author.slug || author.id;
 
+    // ✅ НОВОЕ: Проверяем, является ли изображение внешним
+    const isExternalImage = avatarUrl && (
+        avatarUrl.startsWith('http://') ||
+        avatarUrl.startsWith('https://') ||
+        avatarUrl.includes('googleusercontent.com') ||
+        avatarUrl.includes('gravatar.com')
+    );
+
     return (
         <div className="author-card">
             {/* Фото автора */}
             <div className="author-card__avatar">
-                <img
-                    src={avatarUrl}
-                    alt={fullName}
-                    onError={(e) => {
-                        // ✅ ПРАВИЛЬНЫЙ onError с защитой от цикла
-                        e.target.onerror = null; // Убираем обработчик
-                        e.target.src = '/icons/user-placeholder.svg';
-                    }}
-                />
+                {isExternalImage ? (
+                    // ✅ Для внешних изображений используем обычный img
+                    <img
+                        src={avatarUrl}
+                        alt={fullName}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                        }}
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/icons/user-placeholder.svg';
+                        }}
+                    />
+                ) : (
+                    // ✅ Для внутренних изображений используем Next.js Image
+                    <Image
+                        src={avatarUrl}
+                        alt={fullName}
+                        width={50}
+                        height={50}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                        }}
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/icons/user-placeholder.svg';
+                        }}
+                    />
+                )}
             </div>
 
             {/* Информация об авторе */}
@@ -53,9 +86,9 @@ const AuthorCard = ({ author }) => {
                 {/* ✅ ИСПРАВЛЕНО: Кнопка "Všetky články" теперь использует slug */}
                 <Link
                     href={`/autori/${authorUrl}`}
-                    className="author-card__link"
+                    className="author-card__link btn"
                 >
-                    Stránka autora →
+                    Stránka autora
                 </Link>
             </div>
         </div>

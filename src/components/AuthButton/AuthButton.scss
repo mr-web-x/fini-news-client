@@ -3,104 +3,44 @@
 .auth-button {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
     height: 56px;
-    padding: 0 calc(32 / 16 * 1rem);
+    width: 40px;
     text-decoration: none;
-    font-weight: 500;
-    font-size: 14px;
-    transition: background 0.3s;
-    white-space: nowrap;
-    text-transform: uppercase;
-    line-height: 56px;
+    transition: all 0.3s;
+    color: #2e2e2e;
+    background: transparent;
 
-    // === ВАРИАНТ: Кнопка входа ===
-    &--login {
-        color: #2e2e2e;
-        background: transparent;
-
-        &:hover {
-            background: rgba(46, 46, 46, 0.3);
-        }
-
-        svg {
-            margin-top: 2px; // Выравнивание иконки
-        }
+    &:hover {
+        background: rgba(46, 46, 46, 0.1);
     }
 
-    // === ВАРИАНТ: Кнопка профиля (авторизованный) ===
-    &--profile {
-        color: #2e2e2e;
-        background: transparent;
-        text-transform: none;
-
-        &:hover {
-            background: rgba(46, 46, 46, 0.1);
-        }
-    }
-
-    // === АВАТАР ===
-    &__avatar {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        object-fit: cover;
+    svg {
         flex-shrink: 0;
-        border: 2px solid #2e2e2e;
-    }
-
-    // === ИМЯ ПОЛЬЗОВАТЕЛЯ ===
-    &__name {
-        font-weight: 500;
-        font-size: 14px;
-        max-width: 150px;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     // === RESPONSIVE ===
     @media (max-width: 1124px) {
-        &__name {
-            display: none; // Скрываем имя на планшетах
-        }
+        width: 36px;
+        height: 56px;
 
-        &--profile {
-            padding: 0 16px;
-        }
-
-        &--login {
-            padding: 0 16px;
+        svg {
+            width: 18px;
+            height: 18px;
         }
     }
 
     @media (max-width: 768px) {
-        &--login span {
-            display: none; // Скрываем текст, оставляем только иконку
-        }
+        width: 32px;
 
-        &--login {
-            padding: 0 12px;
-        }
-
-        &--profile {
-            padding: 0 12px;
+        svg {
+            width: 16px;
+            height: 16px;
         }
     }
 
     @media (max-width: 480px) {
-        &__avatar {
-            width: 20px;
-            height: 20px;
-            border-width: 1px;
-        }
-
-        &--login {
-            padding: 0 10px;
-        }
-
-        &--profile {
-            padding: 0 10px;
-        }
+        width: 28px;
 
         svg {
             width: 14px;

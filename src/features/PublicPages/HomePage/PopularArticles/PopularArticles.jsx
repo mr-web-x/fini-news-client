@@ -9,11 +9,11 @@ const PopularArticles = ({ articles }) => {
 
     return (
         <section className="popular-articles">
-            <div className="popular-articles__container">
+            <div className="container">
                 <div className="popular-articles__header">
                     <h2 className="popular-articles__title">Najviac čítané</h2>
                     <p className="popular-articles__subtitle">
-                        Najčítanejšie články za posledných 7 dní
+                        Najčítanejšie články za posledných 30 dní
                     </p>
                 </div>
 

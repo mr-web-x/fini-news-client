@@ -16,14 +16,10 @@ const CategoryCard = ({ category, articles = [] }) => {
     return (
         <div className="category-card">
             <div className="category-header">
-                <div className="category-icon" style={{ backgroundColor: category.color || "#2563eb" }}>
-                    {category.icon || "📰"}
-                </div>
                 <h3 className="category-name">{category.name}</h3>
                 <Link
                     href={`/spravy?category=${category.slug}`}
                     className="category-link"
-                    style={{ color: category.color || "#2563eb" }}
                 >
                     Všetky správy →
                 </Link>
