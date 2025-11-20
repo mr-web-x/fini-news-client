@@ -78,6 +78,12 @@ button {
   margin: 0 auto;
 }
 
+.content__container {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+}
+
 .row {
   display: flex;
   justify-content: space-between;

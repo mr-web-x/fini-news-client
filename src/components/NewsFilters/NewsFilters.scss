@@ -89,27 +89,183 @@
     white-space: nowrap;
     flex-shrink: 0;
 
-    &:hover {
-        border-color: #3b82f6;
-        color: #3b82f6;
-        background: #eff6ff;
-    }
-
-    &.active {
-        border-color: #3b82f6;
-        background: #3b82f6;
-        color: white;
+    // Разные цвета для каждой кнопки как в хедере
+    &:nth-child(1) {
+        color: #ff6b61;
 
         &:hover {
-            background: #2563eb;
-            border-color: #2563eb;
+            border-color: #ff6b61;
+            background: rgba(255, 107, 97, 0.3);
+        }
+
+        &.active {
+            border-color: #ff6b61;
+            background: #ff6b61;
+            color: white;
+
+            &:hover {
+                background: #e55a50;
+                border-color: #e55a50;
+            }
+        }
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(255, 107, 97, 0.1);
         }
     }
 
-    &:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    &:nth-child(2) {
+        color: #7163b8;
+
+        &:hover {
+            border-color: #7163b8;
+            background: rgba(113, 99, 184, 0.3);
+        }
+
+        &.active {
+            border-color: #7163b8;
+            background: #7163b8;
+            color: white;
+
+            &:hover {
+                background: #6254a7;
+                border-color: #6254a7;
+            }
+        }
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(113, 99, 184, 0.1);
+        }
     }
+
+    &:nth-child(3) {
+        color: #3dbdd8;
+
+        &:hover {
+            border-color: #3dbdd8;
+            background: rgba(61, 190, 216, 0.3);
+        }
+
+        &.active {
+            border-color: #3dbdd8;
+            background: #3dbdd8;
+            color: white;
+
+            &:hover {
+                background: #2aa8c2;
+                border-color: #2aa8c2;
+            }
+        }
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(61, 190, 216, 0.1);
+        }
+    }
+
+    &:nth-child(4) {
+        color: #5dc98f;
+
+        &:hover {
+            border-color: #5dc98f;
+            background: rgba(93, 201, 143, 0.3);
+        }
+
+        &.active {
+            border-color: #5dc98f;
+            background: #5dc98f;
+            color: white;
+
+            &:hover {
+                background: #4cb57e;
+                border-color: #4cb57e;
+            }
+        }
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(93, 201, 143, 0.1);
+        }
+    }
+
+    &:nth-child(5) {
+        color: #008D91;
+
+        &:hover {
+            border-color: #008D91;
+            background: rgba(0, 140, 145, 0.3);
+        }
+
+        &.active {
+            border-color: #008D91;
+            background: #008D91;
+            color: white;
+
+            &:hover {
+                background: #00777a;
+                border-color: #00777a;
+            }
+        }
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(0, 140, 145, 0.1);
+        }
+    }
+
+    &:nth-child(6) {
+        color: #2e2e2e;
+
+        &:hover {
+            border-color: #2e2e2e;
+            background: rgba(46, 46, 46, 0.3);
+        }
+
+        &.active {
+            border-color: #2e2e2e;
+            background: #2e2e2e;
+            color: white;
+
+            &:hover {
+                background: #1a1a1a;
+                border-color: #1a1a1a;
+            }
+        }
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(46, 46, 46, 0.1);
+        }
+    }
+
+    // Для остальных кнопок (если их больше 6) - чередуем цвета
+    &:nth-child(7) {
+        color: #ff6b61;
+
+        &:hover {
+            border-color: #ff6b61;
+            background: rgba(255, 107, 97, 0.3);
+        }
+
+        &.active {
+            border-color: #ff6b61;
+            background: #ff6b61;
+            color: white;
+        }
+    }
+
+    &:nth-child(8) {
+        color: #7163b8;
+
+        &:hover {
+            border-color: #7163b8;
+            background: rgba(113, 99, 184, 0.3);
+        }
+
+        &.active {
+            border-color: #7163b8;
+            background: #7163b8;
+            color: white;
+        }
+    }
+
+    // И так далее...
 
     @media (max-width: 992px) {
         padding: 0.5rem 1rem;
@@ -171,13 +327,14 @@
     min-width: 180px;
 
     &:hover {
-        border-color: #3b82f6;
+        border-color: #008D91;
+        background: rgba(0, 140, 145, 0.05);
     }
 
     &:focus {
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        border-color: #008D91;
+        box-shadow: 0 0 0 3px rgba(0, 140, 145, 0.1);
     }
 
     @media (max-width: 992px) {

@@ -28,7 +28,7 @@
     &__grid {
         display: flex;
         flex-wrap: wrap;
-        gap: 2rem;
+        gap: 30px;
         justify-content: center;
 
         @media (max-width: 768px) {

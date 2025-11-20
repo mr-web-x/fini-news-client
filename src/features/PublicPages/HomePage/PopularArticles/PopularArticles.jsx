@@ -10,17 +10,19 @@ const PopularArticles = ({ articles }) => {
     return (
         <section className="popular-articles">
             <div className="container">
-                <div className="popular-articles__header">
-                    <h2 className="popular-articles__title">Najviac čítané</h2>
-                    <p className="popular-articles__subtitle">
-                        Najčítanejšie články za posledných 30 dní
-                    </p>
-                </div>
+                <div className="content__container">
+                    <div className="popular-articles__header">
+                        <h2 className="popular-articles__title">Najviac čítané</h2>
+                        <p className="popular-articles__subtitle">
+                            Najčítanejšie články za posledných 30 dní
+                        </p>
+                    </div>
 
-                <div className="popular-articles__grid">
-                    {articles.map((article) => (
-                        <NewsCard key={article._id || article.id} article={article} />
-                    ))}
+                    <div className="popular-articles__grid">
+                        {articles.map((article) => (
+                            <NewsCard key={article._id || article.id} article={article} />
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

@@ -22,7 +22,7 @@
 .pagination__button {
     padding: 10px 20px;
     background-color: #ffffff;
-    color: #2563eb;
+    color: #008D91; // Бирюзовый цвет как в хедере
     font-size: 14px;
     font-weight: 600;
     border: 1px solid #e2e8f0;
@@ -32,15 +32,16 @@
     cursor: pointer;
 
     &:hover:not(&--disabled) {
-        background-color: #2563eb;
+        background-color: #008D91; // Бирюзовый цвет
         color: #ffffff;
-        border-color: #2563eb;
+        border-color: #008D91;
     }
 
     &--disabled {
         opacity: 0.4;
         cursor: not-allowed;
         pointer-events: none;
+        color: #94a3b8;
     }
 
     @media (max-width: 480px) {
@@ -75,17 +76,18 @@
     transition: all 0.2s ease;
 
     &:hover {
-        background-color: #f1f5f9;
-        border-color: #cbd5e1;
+        background-color: rgba(0, 140, 145, 0.3); // Полупрозрачный бирюзовый как в хедере
+        border-color: #008D91;
+        color: #008D91;
     }
 
     &--active {
-        background-color: #2563eb;
+        background-color: #008D91; // Бирюзовый цвет
         color: #ffffff;
-        border-color: #2563eb;
+        border-color: #008D91;
 
         &:hover {
-            background-color: #1d4ed8;
+            background-color: #00777a; // Темнее при ховере
         }
     }
 

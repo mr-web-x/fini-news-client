@@ -25,7 +25,7 @@ export default async function SpravyPage({ searchParams }) {
     const categorySlug = params?.category || null;  // "banky"
     const sortBy = params?.sortBy || 'createdAt';   // "views", "createdAt"
     const page = parseInt(params?.page) || 1;
-    const limit = 2; // Количество статей на странице
+    const limit = 6; // Количество статей на странице
 
     let articles = [];
     let total = 0;

@@ -1,7 +1,7 @@
 .search-dropdown {
     position: absolute;
     top: calc(100% + 8px);
-    left: 0;
+    left: -127px;
     right: 0;
     background: white;
     border: 1px solid #e2e8f0;
@@ -11,6 +11,7 @@
     max-height: 500px;
     overflow-y: auto;
     animation: dropdownFadeIn 0.2s ease;
+    width: 200px;
 
     // Плавная анимация появления
     @keyframes dropdownFadeIn {
@@ -231,8 +232,8 @@
     }
 
     @media (max-width: 480px) {
-        left: -10px;
-        right: -10px;
+        left: -127px;
+        right: 0px;
         border-radius: 0;
 
         &__image {

@@ -1,26 +1,59 @@
+// NewsListPage.scss
 .news-list-page {
     padding: 100px 0;
     background-color: #ffffff;
     min-height: 100vh;
 
+    @media (max-width: 1200px) {
+        padding: 80px 0;
+    }
+
+    @media (max-width: 992px) {
+        padding: 60px 0;
+    }
+
     @media (max-width: 768px) {
         padding: 40px 0 60px;
     }
 
+    @media (max-width: 576px) {
+        padding: 30px 0 50px;
+    }
+
     @media (max-width: 480px) {
-        padding: 30px 0 40px;
+        padding: 20px 0 40px;
+    }
+
+    @media (max-width: 375px) {
+        padding: 15px 0 30px;
     }
 
     &__header {
         margin-bottom: 48px;
         text-align: center;
 
-        @media (max-width: 768px) {
+        @media (max-width: 1200px) {
+            margin-bottom: 44px;
+        }
+
+        @media (max-width: 992px) {
             margin-bottom: 40px;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 768px) {
+            margin-bottom: 36px;
+        }
+
+        @media (max-width: 576px) {
             margin-bottom: 32px;
+        }
+
+        @media (max-width: 480px) {
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 375px) {
+            margin-bottom: 24px;
         }
     }
 
@@ -30,14 +63,32 @@
         color: #1e293b;
         margin: 0 0 16px 0;
 
+        @media (max-width: 1200px) {
+            font-size: 40px;
+        }
+
+        @media (max-width: 992px) {
+            font-size: 38px;
+        }
+
         @media (max-width: 768px) {
             font-size: 36px;
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 576px) {
+            font-size: 32px;
             margin-bottom: 12px;
         }
 
         @media (max-width: 480px) {
             font-size: 28px;
             margin-bottom: 10px;
+        }
+
+        @media (max-width: 375px) {
+            font-size: 24px;
+            margin-bottom: 8px;
         }
     }
 
@@ -49,29 +100,59 @@
         margin-left: auto;
         margin-right: auto;
 
-        @media (max-width: 768px) {
+        @media (max-width: 1200px) {
+            font-size: 17px;
+        }
+
+        @media (max-width: 992px) {
             font-size: 16px;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 768px) {
+            font-size: 15px;
+        }
+
+        @media (max-width: 576px) {
             font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            font-size: 13px;
+        }
+
+        @media (max-width: 375px) {
+            font-size: 12px;
         }
     }
 
     &__content {
-        display: grid;
-        grid-template-columns: 1fr 350px;
-        gap: 48px;
-        align-items: start;
+        display: flex;
+        justify-content: center;
+        gap: 30px;
 
         @media (max-width: 1200px) {
-            gap: 40px;
-            grid-template-columns: 1fr 300px;
+            gap: 25px;
         }
 
-        @media (max-width: 1024px) {
-            grid-template-columns: 1fr;
-            gap: 0;
+        @media (max-width: 992px) {
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            gap: 30px;
+            flex-direction: column;
+        }
+
+        @media (max-width: 576px) {
+            gap: 25px;
+        }
+
+        @media (max-width: 480px) {
+            gap: 20px;
+        }
+
+        @media (max-width: 375px) {
+            gap: 15px;
         }
     }
 
@@ -79,19 +160,54 @@
         display: flex;
         flex-direction: column;
         gap: 32px;
+        flex: 1;
+        min-width: 0;
+
+        @media (max-width: 1200px) {
+            gap: 30px;
+        }
+
+        @media (max-width: 992px) {
+            gap: 28px;
+        }
+
+        @media (max-width: 768px) {
+            gap: 26px;
+        }
+
+        @media (max-width: 576px) {
+            gap: 24px;
+        }
 
         @media (max-width: 480px) {
-            gap: 24px;
+            gap: 20px;
+        }
+
+        @media (max-width: 375px) {
+            gap: 16px;
         }
     }
 
     &__sidebar {
         position: sticky;
         top: 100px;
+        width: 300px;
+        flex-shrink: 0;
 
-        @media (max-width: 1024px) {
+        @media (max-width: 1200px) {
+            top: 90px;
+            width: 280px;
+        }
+
+        @media (max-width: 992px) {
+            top: 80px;
+            width: 260px;
+        }
+
+        @media (max-width: 768px) {
             position: relative;
             top: 0;
+            width: 100%;
         }
     }
 }

@@ -15,6 +15,7 @@ const NewsListPage = ({
     return (
         <div className="news-list-page">
             <div className="container">
+
                 <div className="news-list-page__header">
                     <h1 className="news-list-page__title">Všetky správy</h1>
                     <p className="news-list-page__subtitle">

@@ -12,28 +12,32 @@ const AuthorsBlock = ({ authors }) => {
     return (
         <section className="authors-block">
             <div className="container">
-                <div className="authors-block__header">
-                    <h2 className="authors-block__title">Naši experti</h2>
-                    <p className="authors-block__subtitle">
-                        Zoznámte sa s našimi finančnými expertmi
-                    </p>
+                <div className="content__container">
+                    
+                    <div className="authors-block__header">
+                        <h2 className="authors-block__title">Naši experti</h2>
+                        <p className="authors-block__subtitle">
+                            Zoznámte sa s našimi finančnými expertmi
+                        </p>
+                    </div>
+
+                    <div className="authors-block__grid">
+                        {authors.map((author) => (
+                            <AuthorCard
+                                key={author.id || author._id}
+                                author={author}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Кнопка "Všetci autori" */}
+                    <div className="authors-block__footer">
+                        <Link href="/autori" className="authors-block__view-all btn">
+                            Zobraziť všetkých autorov
+                        </Link>
+                    </div>
                 </div>
 
-                <div className="authors-block__grid">
-                    {authors.map((author) => (
-                        <AuthorCard
-                            key={author.id || author._id}
-                            author={author}
-                        />
-                    ))}
-                </div>
-
-                {/* Кнопка "Všetci autori" */}
-                <div className="authors-block__footer">
-                    <Link href="/autori" className="authors-block__view-all btn">
-                        Zobraziť všetkých autorov
-                    </Link>
-                </div>
             </div>
         </section>
     )

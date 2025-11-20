@@ -90,7 +90,7 @@ export default function Header({ user = null }) {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
-    
+
     // Добавляем/убираем класс на body для блокировки скролла
     if (!isMobileMenuOpen) {
       document.body.classList.add('active-modal');
@@ -121,11 +121,52 @@ export default function Header({ user = null }) {
       <div className="row">
         <div className="header__logo">
           <Link href="/" className="logo">
-            <img src="/assets/icons/logo.svg" alt="logo" />
+            <img src="/icons/logo.svg" alt="logo" />
             <span>Fini</span>
           </Link>
         </div>
-        
+
+        <nav className={`header__menu ${isMobileMenuOpen ? 'active' : ''}`}>
+          <Link href="https://fini.sk/" onClick={closeMobileMenu}>Domov</Link>
+          <Link href="https://fini.sk/" onClick={closeMobileMenu}>Časté otázky</Link>
+          <Link href="https://fini.sk/kontakty.html" onClick={closeMobileMenu}>Kontakt</Link>
+          <Link href="https://fini.sk/#cc-credit-calculator" onClick={closeMobileMenu}>Požiadať o pôžičku</Link>
+          <Link href="https://fastcredit.sk/forum/" target="_blank" rel="noopener noreferrer">
+            FastCredit Forum
+          </Link>
+
+          {/* Dropdown для категорий */}
+          <div className="header-dropdown">
+            <button
+              className={`header__dropdown-btn ${pathname.startsWith('/spravy') ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDropdownOpen(!isDropdownOpen);
+              }}
+            >
+              Správy
+              <span className={`header__dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>
+                ▼
+              </span>
+            </button>
+
+            {isDropdownOpen && (
+              <div className="header__dropdown-menu">
+                {categories.map((category) => (
+                  <Link
+                    key={category.slug}
+                    href={`/spravy?category=${category.slug}`}
+                    className="header__dropdown-item"
+                    onClick={closeMobileMenu}
+                  >
+                    <span className="header__dropdown-title">{category.name}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </nav>
+
         {/* Search + Auth Button в одном блоке */}
         <div className="header__search-auth-block">
           {/* Search */}
@@ -166,48 +207,9 @@ export default function Header({ user = null }) {
           <AuthButton user={user} />
         </div>
 
-        <nav className={`header__menu ${isMobileMenuOpen ? 'active' : ''}`}>
-          <Link href="/#home" onClick={closeMobileMenu}>Domov</Link>
-          <Link href="/caste-otazky" onClick={closeMobileMenu}>Časté otázky</Link>
-          <Link href="/kontakty" onClick={closeMobileMenu}>Kontakt</Link>
-          <Link href="/#cc-credit-calculator" onClick={closeMobileMenu}>Požiadať o pôžičku</Link>
-          <a href="https://fastcredit.sk/forum/" target="_blank" rel="noopener noreferrer">
-            FastCredit Forum
-          </a>
-          
-          {/* Dropdown для категорий */}
-          <div className="header-dropdown">
-            <button
-              className={`header__dropdown-btn ${pathname.startsWith('/spravy') ? 'active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsDropdownOpen(!isDropdownOpen);
-              }}
-            >
-              Správy
-              <span className={`header__dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>
-                ▼
-              </span>
-            </button>
 
-            {isDropdownOpen && (
-              <div className="header__dropdown-menu">
-                {categories.map((category) => (
-                  <Link
-                    key={category.slug}
-                    href={`/spravy?category=${category.slug}`}
-                    className="header__dropdown-item"
-                    onClick={closeMobileMenu}
-                  >
-                    <span className="header__dropdown-title">{category.name}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </nav>
         <div className="header__mobile-nav">
-          <div 
+          <div
             className={`burger ${isMobileMenuOpen ? 'active' : ''}`}
             onClick={toggleMobileMenu}
           >

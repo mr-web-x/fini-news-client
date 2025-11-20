@@ -40,9 +40,9 @@ const Footer = () => {
                         <div className="footer__bottom-left">
                             <nav className="footer__menu">
                                 <a href="https://fini.sk/">Domov</a>
-                                <a href="/caste-otazky.html">Časté otázky</a>
-                                <a href="/kontakty.html">Kontakt</a>
-                                <a href="/#cc-credit-calculator">Požiadať o pôžičku</a>
+                                <a href="https://fini.sk/">Časté otázky</a>
+                                <a href="https://fini.sk/kontakty.html">Kontakt</a>
+                                <a href="https://fini.sk/#cc-credit-calculator">Požiadať o pôžičku</a>
                                 <a href="https://fastcredit.sk/forum/" target="_blank">
                                     FastCredit Forum
                                 </a>
